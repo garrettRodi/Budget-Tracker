@@ -1,0 +1,54 @@
+﻿using BudgetTracker.Domain.Entities;
+using BudgetTracker.Domain.Interfaces;
+using BudgetTracker.Infrastructure.DataAccess;
+using Microsoft.EntityFrameworkCore;
+
+namespace BudgetTracker.Infrastructure.RepositoryImplementations
+{
+    public class ExpenseRepository : GenericRepository<Expense>, IExpenseRepository
+    {
+        public ExpenseRepository(BudgetTrackerDbContext context)
+            : base(context)
+        { }
+
+        public async Task AddAsync(Expense expense)
+        {
+            try
+            {
+                await _context.Expenses.AddAsync(expense);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Optionally log the exception or rethrow with additional context.
+                throw;
+            }
+        }
+
+        public async Task<Expense?> GetByIdAsync(Guid id)
+        {
+            return await _context.Expenses.FindAsync(id);
+        }
+
+        public async Task<IEnumerable<Expense>> GetAllAsync()
+        {
+            return await _context.Expenses.ToListAsync();
+        }
+
+        public async Task<bool> UpdateAsync(Expense expense)
+        {
+            _context.Expenses.Update(expense);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteAsync(Guid id)
+        {
+            var expense = await _context.Expenses.FindAsync(id);
+            if (expense == null)
+                return false;
+
+            _context.Expenses.Remove(expense);
+            return await _context.SaveChangesAsync() > 0;
+        }
+    }
+}
