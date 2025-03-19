@@ -5,6 +5,7 @@ using BudgetTracker.Application.Mappers;
 using BudgetTracker.Domain.Exceptions;
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Domain.Services;
+using BudgetTracker.Infrastructure.Interface;
 
 
 namespace BudgetTracker.Application.Services
@@ -14,7 +15,7 @@ namespace BudgetTracker.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IBudgetLogger _logger;
 
-        public BudgetService(IUnitOfWork unitOfWork)
+        public BudgetService(IUnitOfWork unitOfWork, IBudgetLogger logger)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
