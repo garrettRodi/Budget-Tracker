@@ -287,6 +287,27 @@ static async Task CreateBudget(IBudgetService budgetService, InputProcessor inpu
     Console.Write("Auto renew? (y/n): ");
     bool autoRenew = (Console.ReadLine()?.ToLower() == "y");
 
+    // Collect budget items
+    Console.WriteLine("How many budget items do you want to add??");
+    int itemCount = int.TryParse(Console.ReadLine(), out int count) ? count : 0;
+    var budgetItems = new List<BudgetTracker.Application.DTOs.Commands.CreateBudgetItemCommand>();
+
+    for (int i = 0; i < itemCount; i++)
+    {
+        Console.WriteLine($"--- Budget Item {i + 1} ---");
+        Console.Write("Enter category (e.g., Food, Rent, Savings, Entertainment): ");
+        string category = Console.ReadLine() ?? string.Empty;
+        Console.Write("Enter planned amount: ");
+        decimal plannedAmount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
+
+        var itemCommand = new BudgetTracker.Application.DTOs.Commands.CreateBudgetItemCommand
+        {
+            Category = category,
+            PlannedAmount = plannedAmount
+        };
+        budgetItems.Add(itemCommand);
+    }
+
     var createCommand = new CreateBudgetCommand
     {
         Name = name,

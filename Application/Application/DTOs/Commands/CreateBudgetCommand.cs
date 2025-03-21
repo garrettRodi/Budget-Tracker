@@ -14,5 +14,8 @@ namespace BudgetTracker.Application.DTOs.Commands
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool AutoRenew { get; set; }
+
+        // List of budget items with their planned amounts.
+        public List<CreateBudgetItemCommand> Items { get; set; } = new List<CreateBudgetItemCommand>();
     }
 }
