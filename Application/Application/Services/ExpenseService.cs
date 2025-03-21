@@ -1,22 +1,25 @@
-﻿using BudgetTracker.Application.DTOs.Commands;
-using BudgetTracker.Application.DTOs;
+﻿using BudgetTracker.Application.DTOs;
+using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
-using BudgetTracker.Domain.Entities;
-using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Application.Mappers;
-using System.Runtime.CompilerServices;
+using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Services;
-
+using BudgetTracker.Domain.Interfaces;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 namespace BudgetTracker.Application.Services
 {
     public class ExpenseService : IExpenseService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ISavingGoalsService _savingGoalsService;
         // (Optionally, you can later inject CurrencyConversionService if multi‑currency support is needed.)
 
-        public ExpenseService(IUnitOfWork unitOfWork)
+        public ExpenseService(IUnitOfWork unitOfWork, ISavingGoalsService savingGoalsService)
         {
             _unitOfWork = unitOfWork;
+            _savingGoalsService = savingGoalsService;
         }
 
         public async Task<ExpenseDTO> CreateExpenseAsync(CreateExpenseCommand createCommand)
@@ -28,6 +31,31 @@ namespace BudgetTracker.Application.Services
             validator.ValidateExpense(entity);
 
             await _unitOfWork.ExpenseRepository.AddAsync(entity);
+
+            // If expense category is 'Savings', update the saving goals actual progress.
+            if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
+            {
+                // Fetch all saving goals.
+                var savingGoals = await _savingGoalsService.GetAllSavingGoalsAsync();
+                // Select the first active saving goal (The one that hasn't met its target yet).
+                var activeGoal = savingGoals.FirstOrDefault(sg => sg.CurrentAmount < sg.TargetAmount);
+                if (activeGoal != null)
+                {
+                    // Update the active saving goal's current amount by adding the expense amount.
+                    activeGoal.CurrentAmount += entity.Amount;
+
+                    // Create update command for saving goal
+                    var updateCommand = new UpdateSavingGoalCommand
+                    {
+                        Id = activeGoal.Id,
+                        GoalName = activeGoal.GoalName,
+                        TargetAmount = activeGoal.TargetAmount,
+                        CurrentAmount = activeGoal.CurrentAmount,
+                        TargetDate = activeGoal.TargetDate
+                    };
+                    await _savingGoalsService.UpdateSavingGoalAsync(updateCommand);
+                }
+            }
             return entity.ToDto();
         }
 
