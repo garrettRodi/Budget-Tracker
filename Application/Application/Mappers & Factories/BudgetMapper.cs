@@ -2,6 +2,7 @@
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Domain.Entities;
 using System;
+using System.Linq;
 
 namespace BudgetTracker.Application.Mappers
 {
@@ -16,7 +17,14 @@ namespace BudgetTracker.Application.Mappers
                 Frequency = command.Frequency,
                 StartDate = command.StartDate,
                 EndDate = command.EndDate,
-                AutoRenew = command.AutoRenew
+                AutoRenew = command.AutoRenew,
+                Items = command.Items.Select(item => new BudgetItem
+                {
+                    Id = Guid.NewGuid(),
+                    Category = item.Category,
+                    PlannedAmount = item.PlannedAmount,
+                    ActualAmount = 0m
+                }).ToList()
             };
         }
 
