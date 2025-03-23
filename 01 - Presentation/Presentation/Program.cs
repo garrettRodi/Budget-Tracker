@@ -164,6 +164,88 @@ while (!exitRequested)
 Console.WriteLine("Exiting application. Press any key to close.");
 Console.ReadKey();
 
+// ----------------------- Income Helper Methods -----------------------
+
+static async Task CreateIncome(IIncomeService incomeService)
+{
+    Console.Clear();
+    Console.WriteLine("=== Create Income ===");
+    Console.Write("Enter income source (i.e., Salary, Bonus): ");
+    string source = Console.ReadLine() ?? string.Empty;
+
+    Console.Write("Enter the actual amount recieved: ");
+    decimal amount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
+    
+    Console.Write("Enter recieved date (yyyy-mm-dd): ");
+    DateTime date = DateTime.TryParse(Console.ReadLine(), out var incDate) ? incDate : DateTime.Now;
+    
+    var command = new BudgetTracker.Application.DTOs.Commands.CreateIncomeCommand
+    {
+        Source = source,
+        ActualAmount = amount,
+        ReceivedDate = date
+    };
+    var incomeDto = await incomeService.CreateIncomeAsync(command);
+    Console.WriteLine($"Income from '{incomeDto.Source}' created successfully with ID: {incomeDto.Id}");
+}
+
+static async Task ViewIncomes(IIncomeService incomeService)
+{
+    Console.Clear();
+    Console.WriteLine("=== View Incomes ===");
+    var incomes = await incomeService.GetAllIncomesAsync();
+    foreach (var income in incomes)
+    {
+        Console.WriteLine($"ID: {income.Id} | Source: {income.Source} | Amount: {income.ActualAmount} | Date: {income.ReceivedDate:d}");
+    }
+    if (!incomes.Any())
+        Console.WriteLine("No incomes found.");
+}
+
+static async Task UpdateIncome(IIncomeService incomeService)
+{
+    Console.Clear();
+    Console.WriteLine("=== Update Income ===");
+    Console.Write("Enter income ID to update: ");
+    if (Guid.TryParse(Console.ReadLine(), out var id))
+    {
+        Console.Write("Enter new income source: ");
+        string source = Console.ReadLine() ?? string.Empty;
+        Console.Write("Enter new amount: ");
+        decimal amount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
+        Console.Write("Enter new income date (yyyy-mm-dd): ");
+        DateTime date = DateTime.TryParse(Console.ReadLine(), out var incDate) ? incDate : DateTime.Now;
+        var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateIncomeCommand
+        {
+            Id = id,
+            Source = source,
+            ActualAmount = amount,
+            ReceivedDate = date
+        };
+        bool result = await incomeService.UpdateIncomeAsync(updateCommand);
+        Console.WriteLine(result ? "Income updated successfully." : "Income update failed.");
+    }
+    else
+    {
+        Console.WriteLine("Invalid ID format.");
+    }
+}
+
+static async Task DeleteIncome(IIncomeService incomeService)
+{
+    Console.Clear();
+    Console.WriteLine("=== Delete Income ===");
+    Console.Write("Enter income ID to delete: ");
+    if (Guid.TryParse(Console.ReadLine(), out var id))
+    {
+        bool result = await incomeService.DeleteIncomeAsync(id);
+        Console.WriteLine(result ? "Income deleted successfully." : "Income deletion failed.");
+    }
+    else
+    {
+        Console.WriteLine("Invalid ID format.");
+    }
+}
 
 // ----------------------- Expense Helper Methods -----------------------
 
@@ -181,7 +263,7 @@ static async Task CreateExpense(IExpenseService expenseService)
     Console.Write("Enter expense date (yyyy-mm-dd): ");
     DateTime date = DateTime.TryParse(Console.ReadLine(), out var expDate) ? expDate : DateTime.Now;
 
-    Console.Write("Enter category: ");
+    Console.Write("Enter category (if 'Savings', this expense will update your saving goal progress): ");
     string category = Console.ReadLine() ?? string.Empty;
 
     var command = new BudgetTracker.Application.DTOs.Commands.CreateExpenseCommand
@@ -408,7 +490,7 @@ static async Task CreateSavingGoal(ISavingGoalsService savingGoalsService, Input
     Console.Write("Enter target amount: ");
     decimal targetAmount = decimal.TryParse(Console.ReadLine(), out var tAmount) ? tAmount : 0m;
 
-    Console.Write("Enter current amount: ");
+    Console.Write("Enter the current saved amount (actual, if any; default 0): ");
     decimal currentAmount = decimal.TryParse(Console.ReadLine(), out var cAmount) ? cAmount : 0m;
 
     Console.Write("Enter target date (yyyy-mm-dd) or leave blank: ");

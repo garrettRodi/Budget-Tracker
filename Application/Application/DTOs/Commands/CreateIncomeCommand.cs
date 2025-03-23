@@ -9,7 +9,7 @@ namespace BudgetTracker.Application.DTOs.Commands
     public class CreateIncomeCommand
     {
         public string Source { get; set; } = string.Empty;
-        public decimal Amount { get; set; }
+        public decimal ActualAmount { get; set; }
         public DateTime ReceivedDate { get; set; }
     }
 }

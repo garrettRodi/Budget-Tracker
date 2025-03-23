@@ -14,7 +14,7 @@ namespace BudgetTracker.Application.Mappers
             {
                 Id = Guid.NewGuid(),
                 Source = command.Source,
-                Amount = command.Amount,
+                ActualAmount = command.ActualAmount,
                 ReceivedDate = command.ReceivedDate
             };
         }
@@ -23,7 +23,7 @@ namespace BudgetTracker.Application.Mappers
         public static Income ToEntity(this UpdateIncomeCommand command, Income existingIncome)
         {
             existingIncome.Source = command.Source;
-            existingIncome.Amount = command.Amount;
+            existingIncome.ActualAmount = command.ActualAmount;
             existingIncome.ReceivedDate = command.ReceivedDate;
             return existingIncome;
         }
@@ -35,7 +35,7 @@ namespace BudgetTracker.Application.Mappers
             {
                 Id = income.Id,
                 Source = income.Source,
-                Amount = income.Amount,
+                ActualAmount = income.ActualAmount,
                 ReceivedDate = income.ReceivedDate
             };
         }

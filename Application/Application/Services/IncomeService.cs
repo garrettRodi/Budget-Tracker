@@ -29,6 +29,26 @@ namespace BudgetTracker.Application.Services
             await _unitOfWork.IncomeRepository.AddAsync(income);
             await _unitOfWork.CommitAsync();
 
+            // Update the active budgets "Income" BudgetItems
+            // Retrieve all budgets and select the active one (current date is within the budget's start and end date)
+            var budgets = await _unitOfWork.BudgetRepository.GetAllAsync();
+            var activeBudget = budgets.FirstOrDefault(b => b.StartDate <= DateTime.Now && b.EndDate >= DateTime.Now);
+
+            if (activeBudget != null)
+            {
+                // Find the BudgetItem with the category "Income"
+                var matchingBudgetItem = activeBudget.Items.FirstOrDefault(item =>
+                    item.Category.Equals("Income", StringComparison.OrdinalIgnoreCase));
+
+                if (matchingBudgetItem != null)
+                {
+                    // Add the income amount to the BudgetItem's actual value
+                    matchingBudgetItem.ActualAmount += income.ActualAmount;
+                    // Update the budget container in the repository
+                    await _unitOfWork.BudgetRepository.UpdateAsync(activeBudget);
+                    await _unitOfWork.CommitAsync();
+                }
+            }
             // Convert entity to DTO and return
             return income.ToDto();
         }

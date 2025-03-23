@@ -30,22 +30,46 @@ namespace BudgetTracker.Application.Services
             var validator = new ExpenseValidator();
             validator.ValidateExpense(entity);
 
+            // Add the expense to the repository.
             await _unitOfWork.ExpenseRepository.AddAsync(entity);
+            await _unitOfWork.CommitAsync();
+
+            // Update the actual amount for the corresponding BudgetItem.
+            var budgets = await _unitOfWork.BudgetRepository.GetAllAsync();
+            var activeBudget = budgets.FirstOrDefault(b => b.StartDate <= DateTime.Now && b.EndDate >= DateTime.Now);
 
             // If expense category is 'Savings', update the saving goals actual progress.
+            if (activeBudget != null)
+            {
+                // Find a matching BudgetItem by comparing the category.
+                var matchingBudgetItem = activeBudget.Items.FirstOrDefault(item =>
+                    item.Category.Equals(entity.Category, StringComparison.OrdinalIgnoreCase));
+
+                if (matchingBudgetItem != null)
+                {
+                    // Add the expense amount to the BudgetItem's actual value.
+                    matchingBudgetItem.ActualAmount += entity.Amount;
+
+                    // Update the budget container in the repository.
+                    await _unitOfWork.BudgetRepository.UpdateAsync(activeBudget);
+                    await _unitOfWork.CommitAsync();
+                }
+            }
+           
+            // Update a Saving Goal ig the expense category is 'Savings'.
             if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
             {
-                // Fetch all saving goals.
+                // Get all saving goals using SavingGoalsService.
                 var savingGoals = await _savingGoalsService.GetAllSavingGoalsAsync();
-                // Select the first active saving goal (The one that hasn't met its target yet).
-                var activeGoal = savingGoals.FirstOrDefault(sg => sg.CurrentAmount < sg.TargetAmount);
+
+                // Choose the first active saving goal (the one that hasn't met its target).
+                var activeGoal = savingGoals.FirstOrDefault(g => g.CurrentAmount < g.TargetAmount);
                 if (activeGoal != null)
                 {
-                    // Update the active saving goal's current amount by adding the expense amount.
+                    // Add the expense amount to the saving goal's current amount.
                     activeGoal.CurrentAmount += entity.Amount;
-
-                    // Create update command for saving goal
-                    var updateCommand = new UpdateSavingGoalCommand
+                    // Prepare an update command.
+                    var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateSavingGoalCommand
                     {
                         Id = activeGoal.Id,
                         GoalName = activeGoal.GoalName,
@@ -53,9 +77,12 @@ namespace BudgetTracker.Application.Services
                         CurrentAmount = activeGoal.CurrentAmount,
                         TargetDate = activeGoal.TargetDate
                     };
+
+                    // Update the saving goal in the repository.
                     await _savingGoalsService.UpdateSavingGoalAsync(updateCommand);
                 }
             }
+
             return entity.ToDto();
         }
 
