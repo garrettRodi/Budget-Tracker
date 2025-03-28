@@ -166,18 +166,15 @@ Console.ReadKey();
 
 // ----------------------- Income Helper Methods -----------------------
 
-static async Task CreateIncome(IIncomeService incomeService)
+static async Task CreateIncome(IIncomeService incomeService, InputProcessor inputProcessor)
 {
     Console.Clear();
     Console.WriteLine("=== Create Income ===");
-    Console.Write("Enter income source (i.e., Salary, Bonus): ");
-    string source = Console.ReadLine() ?? string.Empty;
+    string source = inputProcessor.GetInput("Enter income source (i.e., Salary, Bonus): ");
+     
+    decimal amount = inputProcessor.GetValidDecimal("Enter the actual amount recieved: ");
 
-    Console.Write("Enter the actual amount recieved: ");
-    decimal amount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
-    
-    Console.Write("Enter recieved date (yyyy-mm-dd): ");
-    DateTime date = DateTime.TryParse(Console.ReadLine(), out var incDate) ? incDate : DateTime.Now;
+    DateTime date = inputProcessor.GetValidDate("Enter recieved date (yyyy-mm-dd): ");
     
     var command = new BudgetTracker.Application.DTOs.Commands.CreateIncomeCommand
     {
@@ -202,19 +199,16 @@ static async Task ViewIncomes(IIncomeService incomeService)
         Console.WriteLine("No incomes found.");
 }
 
-static async Task UpdateIncome(IIncomeService incomeService)
+static async Task UpdateIncome(IIncomeService incomeService, InputProcessor inputProcessor)
 {
     Console.Clear();
     Console.WriteLine("=== Update Income ===");
     Console.Write("Enter income ID to update: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
-        Console.Write("Enter new income source: ");
-        string source = Console.ReadLine() ?? string.Empty;
-        Console.Write("Enter new amount: ");
-        decimal amount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
-        Console.Write("Enter new income date (yyyy-mm-dd): ");
-        DateTime date = DateTime.TryParse(Console.ReadLine(), out var incDate) ? incDate : DateTime.Now;
+        string source = inputProcessor.GetInput("Enter updated income source: ");
+        decimal amount = inputProcessor.GetValidDecimal("Enter updated actual amount recieved: ");
+        DateTime date = inputProcessor.GetValidDate("Enter updated recieved date (yyyy-mm-dd): ");
         var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateIncomeCommand
         {
             Id = id,
@@ -249,22 +243,15 @@ static async Task DeleteIncome(IIncomeService incomeService)
 
 // ----------------------- Expense Helper Methods -----------------------
 
-static async Task CreateExpense(IExpenseService expenseService)
+static async Task CreateExpense(IExpenseService expenseService, InputProcessor inputProcessor)
 {
     Console.Clear();
     Console.WriteLine("=== Create Expense ===");
 
-    Console.Write("Enter expense name: ");
-    string name = Console.ReadLine() ?? string.Empty;
-
-    Console.Write("Enter amount: ");
-    decimal amount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
-
-    Console.Write("Enter expense date (yyyy-mm-dd): ");
-    DateTime date = DateTime.TryParse(Console.ReadLine(), out var expDate) ? expDate : DateTime.Now;
-
-    Console.Write("Enter category (if 'Savings', this expense will update your saving goal progress): ");
-    string category = Console.ReadLine() ?? string.Empty;
+    string name = inputProcessor.GetInput("Enter expense name: ");
+    decimal amount = inputProcessor.GetValidDecimal("Enter amount: ");
+    DateTime date = inputProcessor.GetValidDate("Enter expense date (yyyy-mm-dd): ");
+    string category = inputProcessor.GetInput("Enter category (if 'Savings', this expense will update your saving goal progress): ");
 
     var command = new BudgetTracker.Application.DTOs.Commands.CreateExpenseCommand
     {
@@ -291,24 +278,17 @@ static async Task ViewExpenses(IExpenseService expenseService)
         Console.WriteLine("No expenses found.");
 }
 
-static async Task UpdateExpense(IExpenseService expenseService)
+static async Task UpdateExpense(IExpenseService expenseService, InputProcessor inputProcessor)
 {
     Console.Clear();
     Console.WriteLine("=== Update Expense ===");
     Console.Write("Enter expense ID to update: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
-        Console.Write("Enter new expense name: ");
-        string name = Console.ReadLine() ?? string.Empty;
-
-        Console.Write("Enter new amount: ");
-        decimal amount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
-
-        Console.Write("Enter new expense date (yyyy-mm-dd): ");
-        DateTime date = DateTime.TryParse(Console.ReadLine(), out var expDate) ? expDate : DateTime.Now;
-
-        Console.Write("Enter new category: ");
-        string category = Console.ReadLine() ?? string.Empty;
+        string name = inputProcessor.GetInput("Enter updated expense name: ");
+        decimal amount = inputProcessor.GetValidDecimal("Enter updated expense amount: ");
+        DateTime date = inputProcessor.GetValidDate("Enter updated expense date (yyyy-mm-dd): ");
+        string category = inputProcessor.GetInput("Enter updated expense category: ");
 
         var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateExpenseCommand
         {
@@ -352,35 +332,21 @@ static async Task CreateBudget(IBudgetService budgetService, InputProcessor inpu
     Console.Clear();
     Console.WriteLine("=== Create Budget ===");
 
-    Console.Write("Enter budget name: ");
-    string name = Console.ReadLine() ?? string.Empty;
-
-    Console.Write("Enter budget frequency (Weekly/Monthly/Yearly): ");
-    string frequencyInput = Console.ReadLine() ?? "Monthly";
-    var frequency = Enum.TryParse(frequencyInput, true, out BudgetTracker.Domain.Entities.BudgetFrequency freq)
-        ? freq : BudgetTracker.Domain.Entities.BudgetFrequency.Monthly;
-
-    Console.Write("Enter start date (yyyy-mm-dd): ");
-    DateTime startDate = DateTime.TryParse(Console.ReadLine(), out var sDate) ? sDate : DateTime.Now;
-
-    Console.Write("Enter end date (yyyy-mm-dd): ");
-    DateTime endDate = DateTime.TryParse(Console.ReadLine(), out var eDate) ? eDate : DateTime.Now.AddMonths(1);
-
-    Console.Write("Auto renew? (y/n): ");
-    bool autoRenew = (Console.ReadLine()?.ToLower() == "y");
+    string name = inputProcessor.GetInput("Enter budget name: ");
+    var frequency = inputProcessor.GetEnum("Enter frequency (Weekly/Monthly/Yearly): ", BudgetTracker.Domain.Entities.BudgetFrequency.Monthly);
+    DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
+    DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
+    bool autoRenew = inputProcessor.GetBool("Auto renew? (y/n): ");
 
     // Collect budget items
-    Console.WriteLine("How many budget items do you want to add??");
-    int itemCount = int.TryParse(Console.ReadLine(), out int count) ? count : 0;
+    int itemCount = inputProcessor.GetValidInt("Enter number of budget items: ");
     var budgetItems = new List<BudgetTracker.Application.DTOs.Commands.CreateBudgetItemCommand>();
 
     for (int i = 0; i < itemCount; i++)
     {
         Console.WriteLine($"--- Budget Item {i + 1} ---");
-        Console.Write("Enter category (e.g., Food, Rent, Savings, Entertainment): ");
-        string category = Console.ReadLine() ?? string.Empty;
-        Console.Write("Enter planned amount: ");
-        decimal plannedAmount = decimal.TryParse(Console.ReadLine(), out var amt) ? amt : 0m;
+        string category = inputProcessor.GetInput("Enter budgetItem category: ");
+        decimal plannedAmount = inputProcessor.GetValidDecimal("Enter planned/budgeted amount: ");
 
         var itemCommand = new BudgetTracker.Application.DTOs.Commands.CreateBudgetItemCommand
         {
@@ -424,22 +390,11 @@ static async Task UpdateBudget(IBudgetService budgetService, InputProcessor inpu
     Console.Write("Enter budget ID to update: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
-        Console.Write("Enter new budget name: ");
-        string name = Console.ReadLine() ?? string.Empty;
-
-        Console.Write("Enter new frequency (Weekly/Monthly/Yearly): ");
-        string frequencyInput = Console.ReadLine() ?? "Monthly";
-        var frequency = Enum.TryParse(frequencyInput, true, out BudgetTracker.Domain.Entities.BudgetFrequency freq)
-            ? freq : BudgetTracker.Domain.Entities.BudgetFrequency.Monthly;
-
-        Console.Write("Enter new start date (yyyy-mm-dd): ");
-        DateTime startDate = DateTime.TryParse(Console.ReadLine(), out var sDate) ? sDate : DateTime.Now;
-
-        Console.Write("Enter new end date (yyyy-mm-dd): ");
-        DateTime endDate = DateTime.TryParse(Console.ReadLine(), out var eDate) ? eDate : DateTime.Now.AddMonths(1);
-
-        Console.Write("Auto renew? (y/n): ");
-        bool autoRenew = (Console.ReadLine()?.ToLower() == "y");
+        string name = inputProcessor.GetInput("Enter updated budget name: ");
+        var frequency = inputProcessor.GetEnum("Enter updated frequency (Weekly/Monthly/Yearly): ", BudgetTracker.Domain.Entities.BudgetFrequency.Monthly);
+        DateTime startDate = inputProcessor.GetValidDate("Enter updated start date (yyyy-mm-dd): ");
+        DateTime endDate = inputProcessor.GetValidDate("Enter updated end date (yyyy-mm-dd): ");
+        bool autoRenew = inputProcessor.GetBool("Auto renew? (y/n): ");
 
         var updateCommand = new UpdateBudgetCommand
         {
@@ -484,17 +439,10 @@ static async Task CreateSavingGoal(ISavingGoalsService savingGoalsService, Input
     Console.Clear();
     Console.WriteLine("=== Create Saving Goal ===");
 
-    Console.Write("Enter goal name: ");
-    string goalName = Console.ReadLine() ?? string.Empty;
-
-    Console.Write("Enter target amount: ");
-    decimal targetAmount = decimal.TryParse(Console.ReadLine(), out var tAmount) ? tAmount : 0m;
-
-    Console.Write("Enter the current saved amount (actual, if any; default 0): ");
-    decimal currentAmount = decimal.TryParse(Console.ReadLine(), out var cAmount) ? cAmount : 0m;
-
-    Console.Write("Enter target date (yyyy-mm-dd) or leave blank: ");
-    DateTime? targetDate = DateTime.TryParse(Console.ReadLine(), out var tDate) ? tDate : (DateTime?)null;
+    string goalName = inputProcessor.GetInput("Enter saving goal name: ");
+    decimal targetAmount = inputProcessor.GetValidDecimal("Enter target amount: ");
+    decimal currentAmount = inputProcessor.GetValidDecimal("Enter current amount: ");
+    DateTime? targetDate = inputProcessor.GetValidDate("Enter target date (yyyy-mm-dd): ");
 
     var command = new CreateSavingGoalCommand
     {
@@ -529,17 +477,10 @@ static async Task UpdateSavingGoal(ISavingGoalsService savingGoalsService, Input
     Console.Write("Enter saving goal ID to update: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
-        Console.Write("Enter new goal name: ");
-        string goalName = Console.ReadLine() ?? string.Empty;
-
-        Console.Write("Enter new target amount: ");
-        decimal targetAmount = decimal.TryParse(Console.ReadLine(), out var tAmount) ? tAmount : 0m;
-
-        Console.Write("Enter new current amount: ");
-        decimal currentAmount = decimal.TryParse(Console.ReadLine(), out var cAmount) ? cAmount : 0m;
-
-        Console.Write("Enter new target date (yyyy-mm-dd) or leave blank: ");
-        DateTime? targetDate = DateTime.TryParse(Console.ReadLine(), out var tDate) ? tDate : (DateTime?)null;
+        string goalName = inputProcessor.GetInput("Enter updated saving goal name: ");
+        decimal targetAmount = inputProcessor.GetValidDecimal("Enter updated target amount: ");
+        decimal currentAmount = inputProcessor.GetValidDecimal("Enter updated current amount: ");
+        DateTime? targetDate = inputProcessor.GetValidDate("Enter updated target date (yyyy-mm-dd): ");
 
         var command = new UpdateSavingGoalCommand
         {
