@@ -14,6 +14,7 @@ using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Infrastructure.Logging;
 using BudgetTracker.Infrastructure.Interface;
 using BudgetTracker.Application.DTOs.Commands;
+using BudgetTracker.Presentation.ReportingHelpers;
 
 Console.WriteLine("Welcome to the Budget Tracker!");
 
@@ -70,6 +71,7 @@ dbContext.Database.Migrate();
 // Resolve UI Helpers and application services.
 var menu = provider.GetRequiredService<Menu>();
 var inputProcessor = provider.GetRequiredService<InputProcessor>();
+var incomeService = provider.GetRequiredService<IIncomeService>();
 var expenseService = provider.GetRequiredService<IExpenseService>();
 var budgetService = provider.GetRequiredService<IBudgetService>();
 var savingGoalsService = provider.GetRequiredService<ISavingGoalsService>();
@@ -87,13 +89,13 @@ while (!exitRequested)
         switch (choice)
         {
             case "1":
-                await CreateExpense(expenseService);
+                await CreateExpense(expenseService, inputProcessor);
                 break;
             case "2":
                 await ViewExpenses(expenseService);
                 break;
             case "3":
-                await UpdateExpense(expenseService);
+                await UpdateExpense(expenseService, inputProcessor);
                 break;
             case "4":
                 await DeleteExpense(expenseService);
@@ -122,20 +124,35 @@ while (!exitRequested)
             case "12":
                 await DeleteSavingGoal(savingGoalsService, inputProcessor);
                 break;
+            case "13":
+                await CreateIncome(incomeService, inputProcessor);
+                break;
             // Reporting Options:
             case "14":
-                await GenerateExpenseReport(reportingService, inputProcessor);
+                await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor);
                 break;
             case "15":
-                await GenerateBudgetReport(reportingService);
+                await BudgetReportingHelpers.ViewBudgetReport(reportingService);
                 break;
             case "16":
-                await GenerateIncomeReport(reportingService, inputProcessor);
+                await ExpenseReportHelpers.ViewExpenseReport(reportingService, inputProcessor);
                 break;
             case "17":
-                await GenerateBudgetRuleReport(reportingService, inputProcessor);
+                await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor);
                 break;
-            case "13":
+            case "18":
+                await SavingGoalsReportingHelpers.ViewSavingGoalsReport(reportingService);
+                break;
+            case "19":
+                await BudgetReportingHelpers.ViewBudgetRuleReport(reportingService, inputProcessor);
+                break;
+            case "20":
+                await ReportDashboard.ViewDashboard(reportingService);
+                break;
+            case "21":
+                await DrillDown.DrillDownReport(reportingService, inputProcessor);
+                break;
+            case "22":
                 exitRequested = true;
                 break;
             default:
@@ -514,62 +531,4 @@ static async Task DeleteSavingGoal(ISavingGoalsService savingGoalsService, Input
     {
         Console.WriteLine("Invalid ID format.");
     }
-}
-
-
-// ----------------------- Reporting Helper Methods -----------------------
-
-static async Task GenerateExpenseReport(IReportingService reportingService, InputProcessor inputProcessor)
-{
-    Console.Clear();
-    Console.WriteLine("=== Enhanced Expense Report ===");
-    Console.Write("Enter start date (yyyy-mm-dd): ");
-    DateTime startDate = DateTime.TryParse(Console.ReadLine(), out var sDate) ? sDate : DateTime.Now.AddDays(-30);
-    Console.Write("Enter end date (yyyy-mm-dd): ");
-    DateTime endDate = DateTime.TryParse(Console.ReadLine(), out var eDate) ? eDate : DateTime.Now;
-    var report = await reportingService.GenerateExpenseReportAsync(startDate, endDate);
-    Console.WriteLine($"Report for {report.StartDate:d} to {report.EndDate:d}");
-    Console.WriteLine($"Total Expenses: {report.TotalExpenses:C}");
-    Console.WriteLine("Category Breakdown (Percentage):");
-    foreach (var kvp in report.CategoryPercentages)
-    {
-        Console.WriteLine($"  {kvp.Key}: {kvp.Value:F2}%");
-    }
-}
-
-static async Task GenerateBudgetReport(IReportingService reportingService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Budget Report ===");
-    var report = await reportingService.GenerateBudgetReportAsync();
-    Console.WriteLine($"Planned Budget: {report.BudgetedExpenses:C}");
-    Console.WriteLine($"Actual Expenses: {report.ActualExpenses:C}");
-    Console.WriteLine($"Difference: {report.Difference:C}");
-}
-
-static async Task GenerateIncomeReport(IReportingService reportingService, InputProcessor inputProcessor)
-{
-    Console.Clear();
-    Console.WriteLine("=== Income Report ===");
-    Console.Write("Enter start date (yyyy-mm-dd): ");
-    DateTime startDate = DateTime.TryParse(Console.ReadLine(), out var sDate) ? sDate : DateTime.Now.AddDays(-30);
-    Console.Write("Enter end date (yyyy-mm-dd): ");
-    DateTime endDate = DateTime.TryParse(Console.ReadLine(), out var eDate) ? eDate : DateTime.Now;
-    var report = await reportingService.GenerateIncomeReportAsync(startDate, endDate);
-    Console.WriteLine($"Income Report for {report.StartDate:d} to {report.EndDate:d}");
-    Console.WriteLine($"Total Income: {report.TotalIncome:C}");
-}
-
-static async Task GenerateBudgetRuleReport(IReportingService reportingService, InputProcessor inputProcessor)
-{
-    Console.Clear();
-    Console.WriteLine("=== Budget Rule Report ===");
-    Console.Write("Enter budget rule (e.g., 50/20/30): ");
-    string rule = Console.ReadLine() ?? "50/20/30";
-    // For demonstration, we'll use the entire timeline.
-    var report = await reportingService.GenerateBudgetRuleReportAsync(rule, DateTime.MinValue, DateTime.MaxValue);
-    Console.WriteLine($"Budget Rule: {report.Rule}");
-    Console.WriteLine($"Necessities - Planned: {report.NecessitiesPlanned:C}, Actual: {report.NecessitiesActual:C}, Variance: {report.NecessitiesPercentageVariance:F2}%");
-    Console.WriteLine($"Savings - Planned: {report.SavingsPlanned:C}, Actual: {report.SavingsActual:C}, Variance: {report.SavingsPercentageVariance:F2}%");
-    Console.WriteLine($"Discretionary - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
 }

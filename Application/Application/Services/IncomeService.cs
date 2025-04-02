@@ -20,10 +20,10 @@ namespace BudgetTracker.Application.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<IncomeDTO> CreateIncomeAsync(CreateIncomeCommand createCommand)
+        public async Task<IncomeDTO> CreateIncomeAsync(CreateIncomeCommand createIncomeCommand)
         {
             // Map command to entity
-            Income income = createCommand.ToEntity();
+            Income income = createIncomeCommand.ToEntity();
 
             // Add to repository via UnitOfWork
             await _unitOfWork.IncomeRepository.AddAsync(income);

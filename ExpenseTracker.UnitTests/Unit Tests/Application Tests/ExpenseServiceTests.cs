@@ -20,7 +20,8 @@ namespace BudgetTracker.Tests.UnitTests.ApplicationTests
         public ExpenseServiceTests()
         {
             _fakeUnitOfWork = new FakeUnitOfWork();
-            _expenseService = new ExpenseService(_fakeUnitOfWork);
+            var fakeSavingGoalsService = new FakeSavingGoalsService();
+            _expenseService = new ExpenseService(_fakeUnitOfWork, fakeSavingGoalsService);
         }
 
         [Fact]
@@ -101,7 +102,8 @@ namespace BudgetTracker.Tests.UnitTests.ApplicationTests
                 .Options;
             using var context = new BudgetTrackerDbContext(options);
             var unitOfWork = new UnitOfWork(context);
-            var expenseService = new ExpenseService(unitOfWork);
+            var fakeSavingGoalsService = new FakeSavingGoalsService(); // Using the fake saving goals service
+            var expenseService = new ExpenseService(unitOfWork, fakeSavingGoalsService);
 
             var createCommand = new CreateExpenseCommand
             {
@@ -117,7 +119,7 @@ namespace BudgetTracker.Tests.UnitTests.ApplicationTests
             // Assert
             Assert.NotNull(expenseDto);
             Assert.Equal("Service Test Expense", expenseDto.Name);
-            // Also verify that the expense was persisted via the UnitOfWork
+            // Verify that the expense was persisted via the UnitOfWork.
             var expenseInDb = await context.Expenses.FindAsync(expenseDto.Id);
             Assert.NotNull(expenseInDb);
         }

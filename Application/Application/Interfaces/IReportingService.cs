@@ -11,5 +11,6 @@ namespace BudgetTracker.Application.Interfaces
         Task<BudgetReportDTO> GenerateBudgetReportAsync();
         Task<IncomeReportDTO> GenerateIncomeReportAsync(DateTime startDate, DateTime endDate);
         Task<BudgetRuleReportDTO> GenerateBudgetRuleReportAsync(string rule, DateTime startDate, DateTime endDate);
+        Task<IEnumerable<SavingGoalReportDTO>> GenerateSavingGoalReportAsync();
     }
 }

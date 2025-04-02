@@ -19,7 +19,7 @@ namespace BudgetTracker.Tests.UnitTests.ApplicationTests
         {
             // FakeUnitOfWork should be updated to return a FakeBudgetRepository for IBudgetRepository.
             _fakeUnitOfWork = new FakeUnitOfWork();
-            _budgetService = new BudgetService(_fakeUnitOfWork);
+            _budgetService = new BudgetService(_fakeUnitOfWork, new FakeBudgetLogger());
         }
 
         [Fact]

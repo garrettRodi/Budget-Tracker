@@ -68,7 +68,7 @@ namespace BudgetTracker.Application.Services
         public async Task<IncomeReportDTO> GenerateIncomeReportAsync(DateTime startDate, DateTime endDate)
         {
             var incomes = await _unitOfWork.IncomeRepository.FindAsync(i => i.ReceivedDate >= startDate && i.ReceivedDate <= endDate);
-            decimal totalIncome = incomes.Sum(i => i.Amount);
+            decimal totalIncome = incomes.Sum(i => i.ActualAmount);
 
             return new IncomeReportDTO
             {
@@ -133,6 +133,20 @@ namespace BudgetTracker.Application.Services
                 SavingsPercentageVariance = savingsPercentageVariance,
                 DiscretionaryPercentageVariance = discretionaryPercentageVariance
             };
+        }
+
+        // Generates a report of all saving goals and their progress.
+        public async Task<IEnumerable<SavingGoalReportDTO>> GenerateSavingGoalReportAsync()
+        {
+            var goals = await _unitOfWork.SavingGoalsRepository.GetAllAsync();
+            return goals.Select(g => new SavingGoalReportDTO
+            {
+                Id = g.Id,
+                GoalName = g.GoalName,
+                TargetAmount = g.TargetAmount,
+                CurrentAmount = g.CurrentAmount,
+                TargetDate = g.TargetDate
+            });
         }
     }
 }
