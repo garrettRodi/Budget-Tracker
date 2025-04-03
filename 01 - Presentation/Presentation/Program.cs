@@ -138,21 +138,18 @@ while (!exitRequested)
                 await ExpenseReportHelpers.ViewExpenseReport(reportingService, inputProcessor);
                 break;
             case "17":
-                await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor);
-                break;
-            case "18":
                 await SavingGoalsReportingHelpers.ViewSavingGoalsReport(reportingService);
                 break;
-            case "19":
+            case "18":
                 await BudgetReportingHelpers.ViewBudgetRuleReport(reportingService, inputProcessor);
                 break;
-            case "20":
+            case "19":
                 await ReportDashboard.ViewDashboard(reportingService);
                 break;
-            case "21":
+            case "20":
                 await DrillDown.DrillDownReport(reportingService, inputProcessor);
                 break;
-            case "22":
+            case "21":
                 exitRequested = true;
                 break;
             default:

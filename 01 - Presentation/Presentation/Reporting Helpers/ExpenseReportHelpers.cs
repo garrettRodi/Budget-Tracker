@@ -12,28 +12,38 @@ namespace BudgetTracker.Presentation.ReportingHelpers
     {
         public static async Task ViewExpenseReport(IReportingService reportingService, InputProcessor inputProcessor)
         {
-            Console.Clear();
-            Console.WriteLine("=== Detailed Expense Report ===");
-
-            DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
-            DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
-
-            var report = await reportingService.GenerateExpenseReportAsync(startDate, endDate);
-
-            Console.WriteLine($"Expense Report ({startDate:d} - {endDate:d})");
-            Console.WriteLine($"Total Expenses: {report.TotalExpenses:C}");
-            Console.WriteLine("Category Breakdown:");
-            foreach (var category in report.CategoryTotals.Keys)
+            try
             {
-                decimal total = report.CategoryTotals[category];
-                decimal percentage = report.CategoryPercentages[category];
-                Console.WriteLine($"{category}: {total:C} ({percentage:F2}%)");
+                Console.Clear();
+                Console.WriteLine("=== Detailed Expense Report ===");
+
+                DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
+                DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
+
+                var report = await reportingService.GenerateExpenseReportAsync(startDate, endDate);
+
+                Console.WriteLine($"Expense Report ({startDate:d} - {endDate:d})");
+                Console.WriteLine($"Total Expenses: {report.TotalExpenses:C}");
+                Console.WriteLine("Category Breakdown:");
+                foreach (var category in report.CategoryTotals.Keys)
+                {
+                    decimal total = report.CategoryTotals[category];
+                    decimal percentage = report.CategoryPercentages[category];
+                    Console.WriteLine($"{category}: {total:C} ({percentage:F2}%)");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occurred while generating the budget report.");
+                Console.WriteLine(ex.Message);
+                // If you have a logger available, you might log the exception here.
+            }
+            finally
+            {
+                Console.WriteLine("Press any key to return to the menu...");
+                Console.ReadKey();
             }
 
-            Console.WriteLine("Press any key to return to the menu...");
-            Console.ReadKey();
         }
-
-
     }
 }
