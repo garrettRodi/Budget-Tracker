@@ -28,6 +28,11 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
 
         public async Task<IEnumerable<BudgetContainer>> GetAllAsync()
         {
+            if (_context == null)
+            {
+                throw new InvalidOperationException("BudgetTrackerDbContext is not initialized.");
+            }
+
             return await _context.BudgetContainers
                 .Include(b => b.Items)
                 .ToListAsync();

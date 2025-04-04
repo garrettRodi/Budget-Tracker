@@ -27,6 +27,10 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
 
         public async Task<IEnumerable<SavingGoals>> GetAllAsync()
         {
+            if (_context == null)
+            {
+                throw new InvalidOperationException("BudgetTrackerDbContext is not initialized.");
+            }
             return await _context.SavingGoals.ToListAsync();
         }
 

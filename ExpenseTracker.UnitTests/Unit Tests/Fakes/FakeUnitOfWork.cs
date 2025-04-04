@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Threading.Tasks;
 using BudgetTracker.Domain.Interfaces;
+using BudgetTracker.Infrastructure.DataAccess;
 using BudgetTracker.Tests.UnitTests.ApplicationTests;
 
 namespace BudgetTracker.Tests.UnitTests.Fakes
 {
     public class FakeUnitOfWork : IUnitOfWork
     {
+        private readonly BudgetTrackerDbContext _context;
+        public FakeUnitOfWork(BudgetTrackerDbContext context)
+        {
+            _context = context;
+        }
         public IExpenseRepository ExpenseRepository { get; }
         public IIncomeRepository IncomeRepository { get; }
         public IBudgetRepository BudgetRepository { get; }
@@ -23,12 +29,14 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
             CategoryMappingRepository = new FakeCategoryMappingRepository();
         }
 
-        public Task<int> CommitAsync() => Task.FromResult(1);
+        public async Task<int> CommitAsync()
+        {
+            return await _context.SaveChangesAsync();
+        }
 
         public void Dispose()
         {
-            // Nothing to dispose in the fake implementation.
-            GC.SuppressFinalize(this);
+            _context.Dispose();
         }
     }
 }
