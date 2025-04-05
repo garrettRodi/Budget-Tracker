@@ -21,14 +21,17 @@ namespace BudgetTracker.Presentation.UIHelpers
             Console.WriteLine("11. Update Saving Goal");
             Console.WriteLine("12. Delete Saving Goal");
             Console.WriteLine("13. Create Income");
-            Console.WriteLine("14. View Income Report");
-            Console.WriteLine("15. View Comprehensive Budget Report");
-            Console.WriteLine("16. View Detailed Expense Report");
-            Console.WriteLine("17. View Saving Goals Report");
-            Console.WriteLine("18. View Budget Rule Report");
-            Console.WriteLine("19. View Dashboard Summary");
-            Console.WriteLine("20. Drill-Down Expense Report");
-            Console.WriteLine("21. Exit");
+            Console.WriteLine("14. View Income");
+            Console.WriteLine("15. Update Income");
+            Console.WriteLine("16. Delete Income");
+            Console.WriteLine("17. View Income Report");
+            Console.WriteLine("18. View Comprehensive Budget Report");
+            Console.WriteLine("19. View Detailed Expense Report");
+            Console.WriteLine("20. View Saving Goals Report");
+            Console.WriteLine("21. View Budget Rule Report");
+            Console.WriteLine("22. View Dashboard Summary");
+            Console.WriteLine("23. Drill-Down Expense Report");
+            Console.WriteLine("24. Exit");
             Console.Write("Enter your choice: ");
         }
     }

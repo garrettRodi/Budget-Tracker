@@ -2,22 +2,35 @@
 using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using BudgetTracker.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Infrastructure.RepositoryImplementations
 {
     public class IncomeRepository : GenericRepository<Income>, IIncomeRepository
     {
         private readonly BudgetTrackerDbContext _context;
-        
-        public IncomeRepository(BudgetTrackerDbContext context)
+        private readonly ILogger<IncomeRepository> _logger;
+
+        public IncomeRepository(BudgetTrackerDbContext context, ILogger<IncomeRepository> logger)
             : base(context)
-        { }
+        {
+            _context = context;
+            _logger = logger;
+        }
         
 
         public async Task AddAsync(Income income)
         {
-            await _context.Incomes.AddAsync(income);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.Incomes.AddAsync(income);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "An error occurred while adding the income.");
+                throw new Exception("An error occurred while adding the income.", ex);
+            }
         }
 
         public async Task<Income?> GetByIdAsync(Guid id)

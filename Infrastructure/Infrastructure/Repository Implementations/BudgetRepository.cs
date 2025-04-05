@@ -2,16 +2,21 @@
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Infrastructure.RepositoryImplementations
 {
     public class BudgetRepository : GenericRepository<BudgetContainer>, IBudgetRepository
     {
         private readonly BudgetTrackerDbContext _context;
+        private readonly ILogger<BudgetRepository> _logger;
 
-        public BudgetRepository(BudgetTrackerDbContext context)
+        public BudgetRepository(BudgetTrackerDbContext context, ILogger<BudgetRepository> logger)
             : base(context)
-        { }
+        {
+            _context = context;
+            _logger = logger;
+        }
 
         public async Task AddAsync(BudgetContainer budget)
         {
@@ -30,6 +35,7 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
         {
             if (_context == null)
             {
+
                 throw new InvalidOperationException("BudgetTrackerDbContext is not initialized.");
             }
 

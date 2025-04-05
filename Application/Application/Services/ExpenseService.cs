@@ -5,25 +5,27 @@ using BudgetTracker.Application.Mappers;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Services;
 using BudgetTracker.Domain.Interfaces;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 namespace BudgetTracker.Application.Services
 {
     public class ExpenseService : IExpenseService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISavingGoalsService _savingGoalsService;
+        private readonly ILogger<ExpenseService> _logger; // Use Microsoft.Extensions.Logging for ILogger<T>
         // (Optionally, you can later inject CurrencyConversionService if multi‑currency support is needed.)
 
-        public ExpenseService(IUnitOfWork unitOfWork, ISavingGoalsService savingGoalsService)
+        public ExpenseService(IUnitOfWork unitOfWork, ISavingGoalsService savingGoalsService, ILogger<ExpenseService> logger)
         {
             _unitOfWork = unitOfWork;
             _savingGoalsService = savingGoalsService;
+            _logger = logger;
         }
 
         public async Task<ExpenseDTO> CreateExpenseAsync(CreateExpenseCommand createCommand)
         {
+           _logger.LogInformation("Creating a new expense with the following details: {Details}", createCommand);
+
             Expense entity = createCommand.ToEntity();
 
             // Validate the expense before saving.
@@ -33,6 +35,8 @@ namespace BudgetTracker.Application.Services
             // Add the expense to the repository.
             await _unitOfWork.ExpenseRepository.AddAsync(entity);
             await _unitOfWork.CommitAsync();
+
+            _logger.LogInformation("Updating the BudgetItems actual amount with the new expense: {Expense}", entity);
 
             // Update the actual amount for the corresponding BudgetItem.
             var budgets = await _unitOfWork.BudgetRepository.GetAllAsync();
@@ -53,10 +57,12 @@ namespace BudgetTracker.Application.Services
                     // Update the budget container in the repository.
                     await _unitOfWork.BudgetRepository.UpdateAsync(activeBudget);
                     await _unitOfWork.CommitAsync();
+
+                    _logger.LogInformation("BudgetItem updated successfully with new actual amount: {ActualAmount}", matchingBudgetItem.ActualAmount);
                 }
             }
            
-            // Update a Saving Goal ig the expense category is 'Savings'.
+            // Update a Saving Goal if the expense category is 'Savings'.
             if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
             {
                 // Get all saving goals using SavingGoalsService.
@@ -80,29 +86,53 @@ namespace BudgetTracker.Application.Services
 
                     // Update the saving goal in the repository.
                     await _savingGoalsService.UpdateSavingGoalAsync(updateCommand);
+
+                    _logger.LogInformation("Saving goal updated successfully with new current amount: {CurrentAmount}", activeGoal.CurrentAmount);
                 }
             }
+            _logger.LogInformation("Expense created successfully with ID: {Id}", entity.Id);
 
             return entity.ToDto();
         }
 
         public async Task<IEnumerable<ExpenseDTO>> GetExpenseAsync()
         {
+            _logger.LogInformation("Retrieving all expenses.");
+
             var expenses = await _unitOfWork.ExpenseRepository.GetAllAsync();
+            if (expenses == null || !expenses.Any())
+            {
+                _logger.LogWarning("No expenses found.");
+                return Enumerable.Empty<ExpenseDTO>();
+            }
+
+            _logger.LogInformation("Retrieved {Count} expenses.", expenses.Count());
             return expenses.Select(e => e.ToDto());
         }
 
         public async Task<ExpenseDTO?> GetExpenseByIdAsync(Guid id)
         {
+            _logger.LogInformation("Retrieving expense with ID: {Id}", id);
+
+            if (id == Guid.Empty)
+            {
+                _logger.LogWarning("Invalid ID provided.");
+                return null;
+            }
             var expense = await _unitOfWork.ExpenseRepository.GetByIdAsync(id);
             if (expense == null)
+            {
+                _logger.LogWarning("Expense with ID: {Id} not found.", id);
                 return null;
-
+            }
+            _logger.LogInformation("Expense created successfully with ID: {Id}", id);
             return expense.ToDto();
         }
 
         public async Task<bool> UpdateExpenseAsync(UpdateExpenseCommand updateCommand)
         {
+            _logger.LogInformation("Updating expense with ID: {Id}", updateCommand.Id);
+
             var existingExpense = await _unitOfWork.ExpenseRepository.GetByIdAsync(updateCommand.Id);
             if (existingExpense == null)
                 return false;
@@ -113,17 +143,35 @@ namespace BudgetTracker.Application.Services
 
             updateCommand.ToEntity(existingExpense);
 
+            _logger.LogInformation("Expense updated successfully with ID: {Id}", existingExpense.Id);
+
             return await _unitOfWork.ExpenseRepository.UpdateAsync(existingExpense);
         }
 
         public async Task<bool> DeleteExpenseAsync(Guid id)
         {
+            _logger.LogInformation("Deleting expense with ID: {Id}", id);
+            if (id == Guid.Empty)
+            {
+                _logger.LogWarning("Invalid ID provided.");
+                return false;
+            }
+
             return await _unitOfWork.ExpenseRepository.DeleteAsync(id);
         }
 
         public async Task<decimal> GetTotalExpensesAsync()
         {
+            _logger.LogInformation("Calculating total expenses.");
+
             var expenses = await _unitOfWork.ExpenseRepository.GetAllAsync();
+            if (expenses == null || !expenses.Any())
+            {
+                _logger.LogWarning("No expenses found.");
+                return 0;
+            }
+
+            _logger.LogInformation("Total expenses calculated: {Total}", expenses.Sum(e => e.Amount));
             return expenses.Sum(e => e.Amount);
         }
     }

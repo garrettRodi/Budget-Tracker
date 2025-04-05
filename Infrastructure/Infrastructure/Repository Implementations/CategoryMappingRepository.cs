@@ -2,18 +2,19 @@
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Infrastructure.RepositoryImplementations
 {
     public class CategoryMappingRepository : ICategoryMappingRepository
     {
         private readonly BudgetTrackerDbContext _context;
-        public CategoryMappingRepository(BudgetTrackerDbContext context)
+        ILogger<CategoryMappingRepository> _logger;
+
+        public CategoryMappingRepository(BudgetTrackerDbContext context, ILogger<CategoryMappingRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task AddAsync(CategoryMapping mapping)

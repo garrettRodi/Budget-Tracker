@@ -1,42 +1,43 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using BudgetTracker.Domain.Interfaces;
+using BudgetTracker.Infrastructure.DataAccess;
 using BudgetTracker.Infrastructure.RepositoryImplementations;
-using SQLitePCL;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Infrastructure.DataAccess
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork, IDisposable
     {
         private readonly BudgetTrackerDbContext _context;
+        private readonly ILoggerFactory _loggerFactory;
+
         private IExpenseRepository? _expenseRepository;
         private IIncomeRepository? _incomeRepository;
         private IBudgetRepository? _budgetRepository;
         private ISavingGoalsRepository? _savingGoalsRepository;
         private ICategoryMappingRepository? _categoryMappingRepository;
 
-        public UnitOfWork(BudgetTrackerDbContext context)
+        public UnitOfWork(BudgetTrackerDbContext context, ILoggerFactory loggerFactory)
         {
             _context = context;
+            _loggerFactory = loggerFactory;
         }
 
         public IExpenseRepository ExpenseRepository
-            => _expenseRepository ??= new ExpenseRepository(_context);
+            => _expenseRepository ??= new ExpenseRepository(_context, _loggerFactory.CreateLogger<ExpenseRepository>());
 
         public IIncomeRepository IncomeRepository
-            => _incomeRepository ??= new IncomeRepository(_context);
+            => _incomeRepository ??= new IncomeRepository(_context, _loggerFactory.CreateLogger<IncomeRepository>());
 
         public IBudgetRepository BudgetRepository
-            => _budgetRepository ??= new BudgetRepository(_context);
+            => _budgetRepository ??= new BudgetRepository(_context, _loggerFactory.CreateLogger<BudgetRepository>());
 
         public ISavingGoalsRepository SavingGoalsRepository
-            => _savingGoalsRepository ??= new SavingGoalsRepository(_context);
+            => _savingGoalsRepository ??= new SavingGoalsRepository(_context, _loggerFactory.CreateLogger<SavingGoalsRepository>());
 
         public ICategoryMappingRepository CategoryMappingRepository
-            => _categoryMappingRepository ??= new CategoryMappingRepository(_context);
+            => _categoryMappingRepository ??= new CategoryMappingRepository(_context, _loggerFactory.CreateLogger<CategoryMappingRepository>());
         public async Task<int> CommitAsync()
         {
             return await _context.SaveChangesAsync();

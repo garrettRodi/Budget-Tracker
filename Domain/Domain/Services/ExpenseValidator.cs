@@ -15,9 +15,16 @@ namespace BudgetTracker.Domain.Services
             if (expense.Amount < 0)
                 throw new InvalidExpenseException(expense.Amount);
 
-            // Additional business rules can be validated here.
             if (expense.ExpenseDate > DateTime.Now)
                 throw new Exception("Expense date cannot be in the future.");
+
+            if (string.IsNullOrWhiteSpace(expense.Name))
+                throw new Exception("Expense name cannot be empty.");
+
+            if (string.IsNullOrWhiteSpace(expense.Category))
+                throw  new Exception("Expense category cannot be empty.");
+
+            // Add more validation rules as needed.
         }
     }
 }

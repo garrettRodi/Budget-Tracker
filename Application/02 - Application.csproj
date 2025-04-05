@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Domain\03 - Domain.csproj" />
     <ProjectReference Include="..\Infrastructure\04 - Infrastructure.csproj" />
   </ItemGroup>

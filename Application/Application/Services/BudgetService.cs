@@ -5,7 +5,7 @@ using BudgetTracker.Application.Mappers;
 using BudgetTracker.Domain.Exceptions;
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Domain.Services;
-using BudgetTracker.Infrastructure.Interface;
+using Microsoft.Extensions.Logging; // Use Microsoft.Extensions.Logging for ILogger<T>
 
 
 namespace BudgetTracker.Application.Services
@@ -13,9 +13,9 @@ namespace BudgetTracker.Application.Services
     public class BudgetService : IBudgetService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IBudgetLogger _logger;
+        private readonly ILogger<BudgetService> _logger;
 
-        public BudgetService(IUnitOfWork unitOfWork, IBudgetLogger logger)
+        public BudgetService(IUnitOfWork unitOfWork, ILogger<BudgetService> logger)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
@@ -34,11 +34,13 @@ namespace BudgetTracker.Application.Services
                 // Persist the new budget.
                 await _unitOfWork.BudgetRepository.AddAsync(budget);
                 await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("Budget '{BudgetName}' created successfully with ID {BudgetId}", budget.Name, budget.Id);
                 return budget.ToDto();
             }
             catch (BudgetTrackerException ex)
             {
-                _logger.Log($"Budget creation failed: {ex.Message}");
+                _logger.LogError($"Budget creation failed: {ex.Message}");
                 throw new ApplicationException("Failed to create budget. Please review your input.", ex);
             }
         }
@@ -77,11 +79,13 @@ namespace BudgetTracker.Application.Services
 
                 var result = await _unitOfWork.BudgetRepository.UpdateAsync(budget);
                 await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("Budget '{BudgetName}' updated successfully", budget.Name);
                 return result;
             }
             catch (BudgetTrackerException ex)
             {
-                _logger.Log($"Budget update failed: {ex.Message}");
+                _logger.LogError($"Budget update failed: {ex.Message}");
                 throw new ApplicationException("Failed to update budget. Please review your input.", ex);
             }
         }
@@ -91,6 +95,15 @@ namespace BudgetTracker.Application.Services
         {
             var result = await _unitOfWork.BudgetRepository.DeleteAsync(id);
             await _unitOfWork.CommitAsync();
+
+            if (result)
+            {
+                _logger.LogInformation("Budget with ID {BudgetId} deleted successfully", id);
+            }
+            else
+            {
+                _logger.LogWarning("Budget with ID {BudgetId} not found for deletion", id);
+            }
             return result;
         }
     }

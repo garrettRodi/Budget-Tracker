@@ -2,16 +2,21 @@
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Infrastructure.RepositoryImplementations
 {
     public class SavingGoalsRepository : GenericRepository<SavingGoals>, ISavingGoalsRepository
     {
         private readonly BudgetTrackerDbContext _context;
+        private readonly ILogger<SavingGoalsRepository> _logger;
 
-        public SavingGoalsRepository(BudgetTrackerDbContext context)
+        public SavingGoalsRepository(BudgetTrackerDbContext context, ILogger<SavingGoalsRepository> logger)
             : base(context)
-        { }
+        {
+            _context = context;
+            _logger = logger;
+        }
         
 
         public async Task AddAsync(SavingGoals goal)

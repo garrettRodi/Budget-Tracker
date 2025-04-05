@@ -11,172 +11,193 @@ using BudgetTracker.Infrastructure.ExternalServices;
 using BudgetTracker.Presentation.UIHelpers;
 using BudgetTracker.Application.Services;
 using BudgetTracker.Application.Interfaces;
-using BudgetTracker.Infrastructure.Logging;
-using BudgetTracker.Infrastructure.Interface;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Presentation.ReportingHelpers;
+using Serilog;
 
-Console.WriteLine("Welcome to the Budget Tracker!");
+// COnfigures Serilog globally
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    //.WriteTo.Console()
+    .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
-// Create the host builder to set up dependency injection
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices((context, services) =>
-    {
-        // Register DbContext with EF Core using SQLite.
-        services.AddDbContext<BudgetTrackerDbContext>(options =>
-            options.UseSqlite("Data Source=BudgetTracker.db",
-                b => b.MigrationsAssembly("04 - Infrastructure")));
-
-        // Register repository implementations.
-        services.AddScoped<IExpenseRepository, ExpenseRepository>();
-        services.AddScoped<IIncomeRepository, IncomeRepository>();
-        services.AddScoped<IBudgetRepository, BudgetRepository>();
-        services.AddScoped<ISavingGoalsRepository, SavingGoalsRepository>();
-        services.AddScoped<ICategoryMappingRepository, CategoryMappingRepository>();
-
-        // Register application services.
-        services.AddScoped<IExpenseService, ExpenseService>();
-        services.AddScoped<IBudgetService, BudgetService>();
-        services.AddScoped<IIncomeService, IncomeService>();
-        services.AddScoped<ISavingGoalsService, SavingGoalsService>();
-        services.AddScoped<IReportingService, ReportingService>();
-        services.AddScoped<ICategoryMappingService, CategoryMappingService>();
-
-        // Register ExpenseValidator.
-        services.AddScoped<BudgetTracker.Domain.Services.ExpenseValidator>();
-
-        // Register UI Helpers.
-        services.AddScoped<Menu>();
-        services.AddScoped<InputProcessor>();
-
-        // Register HTTPClient and the CurrencyConversionService.
-        services.AddHttpClient<CurrencyConversionService>();
-
-        // Register a FileLogger with a fixed log file path.
-        services.AddScoped<IBudgetLogger>(sp => new FileLogger("log.txt"));
-
-        // Register UnitOfWork.
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-    })
-    .Build();
-
-// Create a DI scope.
-using var scope = host.Services.CreateScope();
-var provider = scope.ServiceProvider;
-
-// Apply pending migrations.
-var dbContext = provider.GetRequiredService<BudgetTrackerDbContext>();
-dbContext.Database.Migrate();
-
-// Resolve UI Helpers and application services.
-var menu = provider.GetRequiredService<Menu>();
-var inputProcessor = provider.GetRequiredService<InputProcessor>();
-var incomeService = provider.GetRequiredService<IIncomeService>();
-var expenseService = provider.GetRequiredService<IExpenseService>();
-var budgetService = provider.GetRequiredService<IBudgetService>();
-var savingGoalsService = provider.GetRequiredService<ISavingGoalsService>();
-var reportingService = provider.GetRequiredService<IReportingService>();
-var logger = provider.GetRequiredService<IBudgetLogger>();
-
-bool exitRequested = false;
-while (!exitRequested)
+try
 {
-    try
-    {
-        menu.DisplayMainMenu();
-        string choice = Console.ReadLine() ?? string.Empty;
+    Console.WriteLine("Starting Budget Tracker...");
 
-        switch (choice)
+    // The Host builder that sets up DI
+    var host = Host.CreateDefaultBuilder(args)
+        .UseSerilog() // Using Serilog as the logging provider.
+        .ConfigureServices((context, services) =>
         {
-            case "1":
-                await CreateExpense(expenseService, inputProcessor);
-                break;
-            case "2":
-                await ViewExpenses(expenseService);
-                break;
-            case "3":
-                await UpdateExpense(expenseService, inputProcessor);
-                break;
-            case "4":
-                await DeleteExpense(expenseService);
-                break;
-            case "5":
-                await CreateBudget(budgetService, inputProcessor);
-                break;
-            case "6":
-                await ViewBudgets(budgetService);
-                break;
-            case "7":
-                await UpdateBudget(budgetService, inputProcessor);
-                break;
-            case "8":
-                await DeleteBudget(budgetService, inputProcessor);
-                break;
-            case "9":
-                await CreateSavingGoal(savingGoalsService, inputProcessor);
-                break;
-            case "10":
-                await ViewSavingGoals(savingGoalsService);
-                break;
-            case "11":
-                await UpdateSavingGoal(savingGoalsService, inputProcessor);
-                break;
-            case "12":
-                await DeleteSavingGoal(savingGoalsService, inputProcessor);
-                break;
-            case "13":
-                await CreateIncome(incomeService, inputProcessor);
-                break;
-            // Reporting Options:
-            case "14":
-                await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor);
-                break;
-            case "15":
-                await BudgetReportingHelpers.ViewBudgetReport(reportingService);
-                break;
-            case "16":
-                await ExpenseReportHelpers.ViewExpenseReport(reportingService, inputProcessor);
-                break;
-            case "17":
-                await SavingGoalsReportingHelpers.ViewSavingGoalsReport(reportingService);
-                break;
-            case "18":
-                await BudgetReportingHelpers.ViewBudgetRuleReport(reportingService, inputProcessor);
-                break;
-            case "19":
-                await ReportDashboard.ViewDashboard(reportingService);
-                break;
-            case "20":
-                await DrillDown.DrillDownReport(reportingService, inputProcessor);
-                break;
-            case "21":
-                exitRequested = true;
-                break;
-            default:
-                Console.WriteLine("Invalid choice. Try again.");
-                break;
+            // Register DbContext with EF Core using SQLite.
+            services.AddDbContext<BudgetTrackerDbContext>(options =>
+                options.UseSqlite("Data Source=BudgetTracker.db",
+                    b => b.MigrationsAssembly("04 - Infrastructure")));
+
+            // Register repository implementations.
+            services.AddScoped<IExpenseRepository, ExpenseRepository>();
+            services.AddScoped<IIncomeRepository, IncomeRepository>();
+            services.AddScoped<IBudgetRepository, BudgetRepository>();
+            services.AddScoped<ISavingGoalsRepository, SavingGoalsRepository>();
+            services.AddScoped<ICategoryMappingRepository, CategoryMappingRepository>();
+
+            // Register application services.
+            services.AddScoped<IExpenseService, ExpenseService>();
+            services.AddScoped<IBudgetService, BudgetService>();
+            services.AddScoped<IIncomeService, IncomeService>();
+            services.AddScoped<ISavingGoalsService, SavingGoalsService>();
+            services.AddScoped<IReportingService, ReportingService>();
+            services.AddScoped<ICategoryMappingService, CategoryMappingService>();
+
+            // Register ExpenseValidator.
+            services.AddScoped<BudgetTracker.Domain.Services.ExpenseValidator>();
+
+            // Register UI Helpers.
+            services.AddScoped<Menu>();
+            services.AddScoped<InputProcessor>();
+
+            // Register HTTPClient and the CurrencyConversionService.
+            services.AddHttpClient<CurrencyConversionService>();
+
+            // Register UnitOfWork.
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+        })
+        .Build();
+
+    // Create a DI scope.
+    using var scope = host.Services.CreateScope();
+    var provider = scope.ServiceProvider;
+
+    // Apply pending migrations.
+    var dbContext = provider.GetRequiredService<BudgetTrackerDbContext>();
+    dbContext.Database.Migrate();
+
+    // Resolve UI Helpers and application services.
+    var menu = provider.GetRequiredService<Menu>();
+    var inputProcessor = provider.GetRequiredService<InputProcessor>();
+    var incomeService = provider.GetRequiredService<IIncomeService>();
+    var expenseService = provider.GetRequiredService<IExpenseService>();
+    var budgetService = provider.GetRequiredService<IBudgetService>();
+    var savingGoalsService = provider.GetRequiredService<ISavingGoalsService>();
+    var reportingService = provider.GetRequiredService<IReportingService>();
+
+    bool exitRequested = false;
+    while (!exitRequested)
+    {
+        try
+        {
+            menu.DisplayMainMenu();
+            string choice = Console.ReadLine() ?? string.Empty;
+
+            switch (choice)
+            {
+                case "1":
+                    await CreateExpense(expenseService, inputProcessor);
+                    break;
+                case "2":
+                    await ViewExpenses(expenseService);
+                    break;
+                case "3":
+                    await UpdateExpense(expenseService, inputProcessor);
+                    break;
+                case "4":
+                    await DeleteExpense(expenseService);
+                    break;
+                case "5":
+                    await CreateBudget(budgetService, inputProcessor);
+                    break;
+                case "6":
+                    await ViewBudgets(budgetService);
+                    break;
+                case "7":
+                    await UpdateBudget(budgetService, inputProcessor);
+                    break;
+                case "8":
+                    await DeleteBudget(budgetService, inputProcessor);
+                    break;
+                case "9":
+                    await CreateSavingGoal(savingGoalsService, inputProcessor);
+                    break;
+                case "10":
+                    await ViewSavingGoals(savingGoalsService);
+                    break;
+                case "11":
+                    await UpdateSavingGoal(savingGoalsService, inputProcessor);
+                    break;
+                case "12":
+                    await DeleteSavingGoal(savingGoalsService, inputProcessor);
+                    break;
+                case "13":
+                    await CreateIncome(incomeService, inputProcessor);
+                    break;
+                case "14":
+                    await ViewIncomes(incomeService);
+                    break;
+                case "15":
+                    await UpdateIncome(incomeService, inputProcessor);
+                    break;
+                case "16":
+                    await DeleteIncome(incomeService, inputProcessor);
+                    break;
+                // Reporting Options:
+                case "17":
+                    await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor);
+                    break;
+                case "18":
+                    await BudgetReportingHelpers.ViewBudgetReport(reportingService);
+                    break;
+                case "19":
+                    await ExpenseReportHelpers.ViewExpenseReport(reportingService, inputProcessor);
+                    break;
+                case "20":
+                    await SavingGoalsReportingHelpers.ViewSavingGoalsReport(reportingService);
+                    break;
+                case "21":
+                    await BudgetReportingHelpers.ViewBudgetRuleReport(reportingService, inputProcessor);
+                    break;
+                case "22":
+                    await ReportDashboard.ViewDashboard(reportingService);
+                    break;
+                case "23":
+                    await DrillDown.DrillDownReport(reportingService, inputProcessor);
+                    break;
+                case "24":
+                    exitRequested = true;
+                    break;
+                default:
+                    Console.WriteLine("Invalid choice. Try again.");
+                    break;
+            }
+        }
+        catch (ApplicationException appEx)
+        {
+            Console.WriteLine("Error: " + appEx.Message);
+            Log.Warning(appEx, "An application error occurred.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred. Please check the log file for details.");
+            Log.Warning(ex, "An unexpected error occurred.");
+        }
+
+        if (!exitRequested)
+        {
+            Console.WriteLine("Press any key to return to the menu...");
+            Log.Information("Application exited.");
+            Console.ReadKey();
         }
     }
-    catch (ApplicationException appEx)
-    {
-        Console.WriteLine("Error: " + appEx.Message);
-        logger.Log($"Application error: {appEx.Message}\n{appEx.StackTrace}");
-    }
-    catch (Exception ex)
-    {
-        logger.Log($"Exception: {ex.Message}\n{ex.StackTrace}");
-        Console.WriteLine("An error occurred. Please check the log file for details.");
-    }
-
-    if (!exitRequested)
-    {
-        Console.WriteLine("Press any key to return to the menu...");
-        Console.ReadKey();
-    }
 }
-
-Console.WriteLine("Exiting application. Press any key to close.");
-Console.ReadKey();
+catch (Exception ex)
+{
+   Log.Fatal(ex, "Application start-up failed.");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 // ----------------------- Income Helper Methods -----------------------
 
@@ -239,7 +260,7 @@ static async Task UpdateIncome(IIncomeService incomeService, InputProcessor inpu
     }
 }
 
-static async Task DeleteIncome(IIncomeService incomeService)
+static async Task DeleteIncome(IIncomeService incomeService, InputProcessor inputProcessor)
 {
     Console.Clear();
     Console.WriteLine("=== Delete Income ===");
