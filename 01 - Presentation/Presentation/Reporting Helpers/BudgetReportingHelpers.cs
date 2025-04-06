@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Services;
 using BudgetTracker.Presentation.UIHelpers;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
@@ -12,6 +15,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
     {
         public static async Task ViewBudgetReport(IReportingService reportingService)
         {
+
             try
             {
                 Console.Clear();
@@ -26,12 +30,6 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             {
                 Console.WriteLine("An error occurred while generating the budget report.");
                 Console.WriteLine(ex.Message);
-                // If you have a logger available, you might log the exception here.
-            }
-            finally
-            {
-                Console.WriteLine("Press any key to return to the menu...");
-                Console.ReadKey();
             }
         }
 
@@ -57,12 +55,6 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             {
                 Console.WriteLine("An error occurred while generating the budget report.");
                 Console.WriteLine(ex.Message);
-                // If you have a logger available, you might log the exception here.
-            }
-            finally
-            {
-                Console.WriteLine("Press any key to return to the menu...");
-                Console.ReadKey();
             }
         }
     }

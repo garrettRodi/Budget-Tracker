@@ -43,11 +43,6 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 Console.WriteLine(ex.Message);
                 // If you have a logger available, you might log the exception here.
             }
-            finally
-            {
-                Console.WriteLine("Press any key to return to the menu...");
-                Console.ReadKey();
-            }
         }
     }
 }

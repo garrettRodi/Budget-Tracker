@@ -83,6 +83,7 @@ try
     var savingGoalsService = provider.GetRequiredService<ISavingGoalsService>();
     var reportingService = provider.GetRequiredService<IReportingService>();
 
+
     bool exitRequested = false;
     while (!exitRequested)
     {
@@ -184,8 +185,7 @@ try
 
         if (!exitRequested)
         {
-            Console.WriteLine("Press any key to return to the menu...");
-            Log.Information("Application exited.");
+            Console.WriteLine("Press any key to continue...Program.cs");
             Console.ReadKey();
         }
     }

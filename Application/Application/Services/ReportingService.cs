@@ -18,8 +18,8 @@ namespace BudgetTracker.Application.Services
             _logger = logger;
         }
 
-        // Generates an enhanced expense report that includes total expenses,
-        // breakdown per category, and the percentage each category represents.
+            // Generates an enhanced expense report that includes total expenses,
+            // breakdown per category, and the percentage each category represents.
         public async Task<ExpenseReportDTO> GenerateExpenseReportAsync(DateTime startDate, DateTime endDate)
         {
             _logger.LogInformation("Generating expense report from {StartDate} to {EndDate}", startDate, endDate);
