@@ -14,7 +14,8 @@ namespace BudgetTracker.Application.Mappers
                 Name = dto.Name,
                 Amount = dto.Amount,
                 ExpenseDate = dto.Date,
-                Category = dto.Category
+                Category = dto.Category,
+                BudgetContainerId = dto.BudgetContainerId
             };
         }
 

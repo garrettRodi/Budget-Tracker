@@ -46,7 +46,7 @@ namespace BudgetTracker.Application.Services
             if (activeBudget != null)
             {
                 // Find a matching BudgetItem by comparing the category.
-                var matchingBudgetItem = activeBudget.Items.FirstOrDefault(item =>
+                var matchingBudgetItem = activeBudget.BudgetItems.FirstOrDefault(item =>
                     item.Category.Equals(entity.Category, StringComparison.OrdinalIgnoreCase));
 
                 if (matchingBudgetItem != null)

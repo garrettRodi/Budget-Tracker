@@ -14,7 +14,8 @@ namespace BudgetTracker.Application.Mappers
                 GoalName = command.GoalName,
                 TargetAmount = command.TargetAmount,
                 CurrentAmount = command.CurrentAmount,
-                TargetDate = command.TargetDate
+                TargetDate = command.TargetDate,
+                BudgetContainerId = command.BudgetContainerId
             };
         }
 

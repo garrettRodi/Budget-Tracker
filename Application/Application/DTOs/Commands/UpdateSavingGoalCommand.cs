@@ -4,6 +4,7 @@ namespace BudgetTracker.Application.DTOs.Commands
 {
     public class UpdateSavingGoalCommand
     {
+        public Guid BudgetContainerId { get; set; }
         public Guid Id { get; set; }
         public string GoalName { get; set; } = string.Empty;
         public decimal TargetAmount { get; set; }

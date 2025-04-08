@@ -3,7 +3,6 @@ using System;
 using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,14 +10,12 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace _04__Infrastructure.Migrations
 {
     [DbContext(typeof(BudgetTrackerDbContext))]
-    [Migration("20250401153657_UpdateModelChanges")]
-    partial class UpdateModelChanges
+    partial class BudgetTrackerDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.BudgetContainer", b =>
                 {
@@ -159,6 +156,9 @@ namespace _04__Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("BudgetContainerId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -173,6 +173,8 @@ namespace _04__Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BudgetContainerId");
+
                     b.ToTable("Expenses", (string)null);
                 });
 
@@ -185,6 +187,9 @@ namespace _04__Infrastructure.Migrations
                     b.Property<decimal>("ActualAmount")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("BudgetContainerId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("ReceivedDate")
                         .HasColumnType("TEXT");
 
@@ -193,6 +198,8 @@ namespace _04__Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BudgetContainerId");
 
                     b.ToTable("Incomes");
                 });
@@ -221,6 +228,9 @@ namespace _04__Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("BudgetContainerId")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("CurrentAmount")
                         .HasColumnType("TEXT");
 
@@ -236,13 +246,48 @@ namespace _04__Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BudgetContainerId");
+
                     b.ToTable("SavingGoals");
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.BudgetItem", b =>
                 {
                     b.HasOne("BudgetTracker.Domain.Entities.BudgetContainer", "BudgetContainer")
-                        .WithMany("Items")
+                        .WithMany("BudgetItems")
+                        .HasForeignKey("BudgetContainerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BudgetContainer");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.Expense", b =>
+                {
+                    b.HasOne("BudgetTracker.Domain.Entities.BudgetContainer", "BudgetContainer")
+                        .WithMany("Expenses")
+                        .HasForeignKey("BudgetContainerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BudgetContainer");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.Income", b =>
+                {
+                    b.HasOne("BudgetTracker.Domain.Entities.BudgetContainer", "BudgetContainer")
+                        .WithMany("Incomes")
+                        .HasForeignKey("BudgetContainerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BudgetContainer");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.SavingGoals", b =>
+                {
+                    b.HasOne("BudgetTracker.Domain.Entities.BudgetContainer", "BudgetContainer")
+                        .WithMany("SavingGoals")
                         .HasForeignKey("BudgetContainerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -252,7 +297,13 @@ namespace _04__Infrastructure.Migrations
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.BudgetContainer", b =>
                 {
-                    b.Navigation("Items");
+                    b.Navigation("BudgetItems");
+
+                    b.Navigation("Expenses");
+
+                    b.Navigation("Incomes");
+
+                    b.Navigation("SavingGoals");
                 });
 #pragma warning restore 612, 618
         }

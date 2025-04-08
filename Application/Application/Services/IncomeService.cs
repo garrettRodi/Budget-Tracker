@@ -42,7 +42,7 @@ namespace BudgetTracker.Application.Services
             if (activeBudget != null)
             {
                 // Find the BudgetItem with the category "Income"
-                var matchingBudgetItem = activeBudget.Items.FirstOrDefault(item =>
+                var matchingBudgetItem = activeBudget.BudgetItems.FirstOrDefault(item =>
                     item.Category.Equals("Income", StringComparison.OrdinalIgnoreCase));
 
                 if (matchingBudgetItem != null)

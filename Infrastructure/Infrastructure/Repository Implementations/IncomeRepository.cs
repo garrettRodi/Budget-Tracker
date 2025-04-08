@@ -38,6 +38,13 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
             return await _context.Incomes.FindAsync(id);
         }
 
+        public async Task<IEnumerable<Income>> GetByBudgetContainerIdAsync(Guid budgetContainerId)
+        {
+            return await _context.Incomes
+                .Where(i => i.BudgetContainerId == budgetContainerId)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Income>> GetAllAsync()
         {
             return await _context.Incomes.ToListAsync();

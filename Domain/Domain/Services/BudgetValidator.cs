@@ -21,7 +21,7 @@ namespace BudgetTracker.Domain.Services
             if (budget.EndDate <= budget.StartDate)
                 throw new InvalidBudgetException("Budget end date must be after the start date.");
 
-            if (budget.Items == null || budget.Items.Count == 0)
+            if (budget.BudgetItems == null || budget.BudgetItems.Count == 0)
                 throw new InvalidBudgetException("Budget must contain at least one budget item.");
         }
 

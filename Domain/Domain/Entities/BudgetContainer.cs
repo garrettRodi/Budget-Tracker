@@ -21,6 +21,10 @@ namespace BudgetTracker.Domain.Entities
         public DateTime StartDate { get; set; } // Must not be in the past
         public DateTime EndDate { get; set; }
         public bool AutoRenew { get; set; }
-        public ICollection<BudgetItem> Items { get; set; } = new List<BudgetItem>();
+
+        public ICollection<Expense> Expenses { get; set; } = [];
+        public ICollection<Income> Incomes { get; set; } = [];
+        public ICollection<SavingGoals> SavingGoals { get; set; } = [];
+        public ICollection<BudgetItem> BudgetItems { get; set; } = [];
     }
 }

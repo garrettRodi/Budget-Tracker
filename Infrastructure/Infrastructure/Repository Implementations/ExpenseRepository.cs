@@ -17,6 +17,10 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
             _logger = logger;
         }
 
+        public ExpenseRepository(BudgetTrackerDbContext context) : base(context)
+        {
+        }
+
         public async Task AddAsync(Expense expense)
         {
             try
@@ -34,6 +38,13 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
         public async Task<Expense?> GetByIdAsync(Guid id)
         {
             return await _context.Expenses.FindAsync(id);
+        }
+
+        public async Task<IEnumerable<Expense>> GetByBudgetContainerIdAsync(Guid budgetContainerId)
+        {
+            return await _context.Expenses
+                .Where(e => e.BudgetContainerId == budgetContainerId)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Expense>> GetAllAsync()

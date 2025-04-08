@@ -17,7 +17,10 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
             _context = context;
             _logger = logger;
         }
-        
+
+        public SavingGoalsRepository(BudgetTrackerDbContext context) : base(context)
+        {
+        }
 
         public async Task AddAsync(SavingGoals goal)
         {
@@ -28,6 +31,17 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
         public async Task<SavingGoals?> GetByIdAsync(Guid id)
         {
             return await _context.SavingGoals.FindAsync(id);
+        }
+
+        public async Task<IEnumerable<SavingGoals>> GetByBudgetContainerIdAsync(Guid budgetContainerId)
+        {
+            if (_context == null)
+            {
+                throw new InvalidOperationException("BudgetTrackerDbContext is not initialized.");
+            }
+            return await _context.SavingGoals
+                .Where(g => g.BudgetContainerId == budgetContainerId)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<SavingGoals>> GetAllAsync()

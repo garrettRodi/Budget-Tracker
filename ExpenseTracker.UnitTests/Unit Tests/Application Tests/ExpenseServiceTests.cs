@@ -9,6 +9,7 @@ using BudgetTracker.Application.Services;
 using Microsoft.EntityFrameworkCore;
 using BudgetTracker.Tests.UnitTests.Fakes;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BudgetTracker.Tests.UnitTests.ApplicationTests
 {
@@ -21,7 +22,7 @@ namespace BudgetTracker.Tests.UnitTests.ApplicationTests
         {
             _fakeUnitOfWork = new FakeUnitOfWork();
             var fakeSavingGoalsService = new FakeSavingGoalsService();
-            _expenseService = new ExpenseService(_fakeUnitOfWork, fakeSavingGoalsService);
+            _expenseService = new ExpenseService(_fakeUnitOfWork, fakeSavingGoalsService, NullLogger<ExpenseService>.Instance);
         }
 
         [Fact]
@@ -103,7 +104,7 @@ namespace BudgetTracker.Tests.UnitTests.ApplicationTests
             using var context = new BudgetTrackerDbContext(options);
             var unitOfWork = new UnitOfWork(context);
             var fakeSavingGoalsService = new FakeSavingGoalsService(); // Using the fake saving goals service
-            var expenseService = new ExpenseService(unitOfWork, fakeSavingGoalsService);
+            var expenseService = new ExpenseService(unitOfWork, fakeSavingGoalsService, NullLogger<ExpenseService>.Instance);
 
             var createCommand = new CreateExpenseCommand
             {

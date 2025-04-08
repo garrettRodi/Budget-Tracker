@@ -14,6 +14,7 @@ namespace BudgetTracker.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<BudgetService> _logger;
+        
 
         public BudgetService(IUnitOfWork unitOfWork, ILogger<BudgetService> logger)
         {

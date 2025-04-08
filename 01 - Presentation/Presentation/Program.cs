@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using BudgetTracker.Infrastructure.DataAccess;
 using BudgetTracker.Infrastructure.RepositoryImplementations;
+using _04__Infrastructure.Migrations;
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Infrastructure.ExternalServices;
 using BudgetTracker.Presentation.UIHelpers;
@@ -14,6 +15,18 @@ using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Presentation.ReportingHelpers;
 using Serilog;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
+
+string relativeDirectory = "Database";
+string dbFilePath = "BudgetTracker.db";
+
+// Ensure the directory exists.
+if (!Directory.Exists(relativeDirectory))
+{
+    Directory.CreateDirectory(relativeDirectory);
+    Console.WriteLine("Created directory: " + relativeDirectory);
+}
+
 
 // COnfigures Serilog globally
 Log.Logger = new LoggerConfiguration()
@@ -31,10 +44,12 @@ try
         .UseSerilog() // Using Serilog as the logging provider.
         .ConfigureServices((context, services) =>
         {
-            // Register DbContext with EF Core using SQLite.
+            // Use the created dbFilePath in the connection string.
             services.AddDbContext<BudgetTrackerDbContext>(options =>
-                options.UseSqlite("Data Source=BudgetTracker.db",
+                options.UseSqlite($@"Data Source={dbFilePath}",
                     b => b.MigrationsAssembly("04 - Infrastructure")));
+
+
 
             // Register repository implementations.
             services.AddScoped<IExpenseRepository, ExpenseRepository>();
@@ -66,13 +81,15 @@ try
         })
         .Build();
 
-    // Create a DI scope.
+    // Create a DI scope and force deletion using EnsureDeleted() as well.
     using var scope = host.Services.CreateScope();
     var provider = scope.ServiceProvider;
-
-    // Apply pending migrations.
     var dbContext = provider.GetRequiredService<BudgetTrackerDbContext>();
+    
+    bool wasDeleted = dbContext.Database.EnsureDeleted();
+    Console.WriteLine("EnsureDeleted returned: " + wasDeleted);
     dbContext.Database.Migrate();
+    Console.WriteLine("Database migration complete.");
 
     // Resolve UI Helpers and application services.
     var menu = provider.GetRequiredService<Menu>();
@@ -95,16 +112,16 @@ try
             switch (choice)
             {
                 case "1":
-                    await CreateExpense(expenseService, inputProcessor);
+                    await CreateExpense(expenseService, inputProcessor, budgetService);
                     break;
                 case "2":
-                    await ViewExpenses(expenseService);
+                    await ViewExpenses(expenseService, budgetService);
                     break;
                 case "3":
-                    await UpdateExpense(expenseService, inputProcessor);
+                    await UpdateExpense(expenseService, inputProcessor, budgetService);
                     break;
                 case "4":
-                    await DeleteExpense(expenseService);
+                    await DeleteExpense(expenseService, budgetService);
                     break;
                 case "5":
                     await CreateBudget(budgetService, inputProcessor);
@@ -119,28 +136,28 @@ try
                     await DeleteBudget(budgetService, inputProcessor);
                     break;
                 case "9":
-                    await CreateSavingGoal(savingGoalsService, inputProcessor);
+                    await CreateSavingGoal(savingGoalsService, inputProcessor, budgetService);
                     break;
                 case "10":
-                    await ViewSavingGoals(savingGoalsService);
+                    await ViewSavingGoals(savingGoalsService, budgetService);
                     break;
                 case "11":
-                    await UpdateSavingGoal(savingGoalsService, inputProcessor);
+                    await UpdateSavingGoal(savingGoalsService, inputProcessor, budgetService);
                     break;
                 case "12":
-                    await DeleteSavingGoal(savingGoalsService, inputProcessor);
+                    await DeleteSavingGoal(savingGoalsService, inputProcessor, budgetService);
                     break;
                 case "13":
-                    await CreateIncome(incomeService, inputProcessor);
+                    await CreateIncome(incomeService, inputProcessor, budgetService);
                     break;
                 case "14":
-                    await ViewIncomes(incomeService);
+                    await ViewIncomes(incomeService, budgetService);
                     break;
                 case "15":
-                    await UpdateIncome(incomeService, inputProcessor);
+                    await UpdateIncome(incomeService, inputProcessor, budgetService);
                     break;
                 case "16":
-                    await DeleteIncome(incomeService, inputProcessor);
+                    await DeleteIncome(incomeService, inputProcessor, budgetService);
                     break;
                 // Reporting Options:
                 case "17":
@@ -201,17 +218,27 @@ finally
 
 // ----------------------- Income Helper Methods -----------------------
 
-static async Task CreateIncome(IIncomeService incomeService, InputProcessor inputProcessor)
+static async Task CreateIncome(IIncomeService incomeService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Create Income ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     string source = inputProcessor.GetInput("Enter income source (i.e., Salary, Bonus): ");
      
     decimal amount = inputProcessor.GetValidDecimal("Enter the actual amount recieved: ");
 
     DateTime date = inputProcessor.GetValidDate("Enter recieved date (yyyy-mm-dd): ");
     
-    var command = new BudgetTracker.Application.DTOs.Commands.CreateIncomeCommand
+    var command = new CreateIncomeCommand
     {
         Source = source,
         ActualAmount = amount,
@@ -221,10 +248,20 @@ static async Task CreateIncome(IIncomeService incomeService, InputProcessor inpu
     Console.WriteLine($"Income from '{incomeDto.Source}' created successfully with ID: {incomeDto.Id}");
 }
 
-static async Task ViewIncomes(IIncomeService incomeService)
+static async Task ViewIncomes(IIncomeService incomeService, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== View Incomes ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     var incomes = await incomeService.GetAllIncomesAsync();
     foreach (var income in incomes)
     {
@@ -234,10 +271,20 @@ static async Task ViewIncomes(IIncomeService incomeService)
         Console.WriteLine("No incomes found.");
 }
 
-static async Task UpdateIncome(IIncomeService incomeService, InputProcessor inputProcessor)
+static async Task UpdateIncome(IIncomeService incomeService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Update Income ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     Console.Write("Enter income ID to update: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
@@ -260,10 +307,20 @@ static async Task UpdateIncome(IIncomeService incomeService, InputProcessor inpu
     }
 }
 
-static async Task DeleteIncome(IIncomeService incomeService, InputProcessor inputProcessor)
+static async Task DeleteIncome(IIncomeService incomeService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Delete Income ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     Console.Write("Enter income ID to delete: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
@@ -278,10 +335,19 @@ static async Task DeleteIncome(IIncomeService incomeService, InputProcessor inpu
 
 // ----------------------- Expense Helper Methods -----------------------
 
-static async Task CreateExpense(IExpenseService expenseService, InputProcessor inputProcessor)
+static async Task CreateExpense(IExpenseService expenseService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Create Expense ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
 
     string name = inputProcessor.GetInput("Enter expense name: ");
     decimal amount = inputProcessor.GetValidDecimal("Enter amount: ");
@@ -300,10 +366,20 @@ static async Task CreateExpense(IExpenseService expenseService, InputProcessor i
     Console.WriteLine($"Expense '{expenseDto.Name}' created successfully with ID: {expenseDto.Id}");
 }
 
-static async Task ViewExpenses(IExpenseService expenseService)
+static async Task ViewExpenses(IExpenseService expenseService, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== View Expenses ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     var expenses = await expenseService.GetExpenseAsync();
     foreach (var expense in expenses)
     {
@@ -313,10 +389,20 @@ static async Task ViewExpenses(IExpenseService expenseService)
         Console.WriteLine("No expenses found.");
 }
 
-static async Task UpdateExpense(IExpenseService expenseService, InputProcessor inputProcessor)
+static async Task UpdateExpense(IExpenseService expenseService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Update Expense ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     Console.Write("Enter expense ID to update: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
@@ -343,10 +429,20 @@ static async Task UpdateExpense(IExpenseService expenseService, InputProcessor i
     }
 }
 
-static async Task DeleteExpense(IExpenseService expenseService)
+static async Task DeleteExpense(IExpenseService expenseService, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Delete Expense ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     Console.Write("Enter expense ID to delete: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
@@ -470,10 +566,19 @@ static async Task DeleteBudget(IBudgetService budgetService, InputProcessor inpu
 
 // ----------------------- Saving Goals Helper Methods -----------------------
 
-static async Task CreateSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor)
+static async Task CreateSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Create Saving Goal ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
 
     string goalName = inputProcessor.GetInput("Enter saving goal name: ");
     decimal targetAmount = inputProcessor.GetValidDecimal("Enter target amount: ");
@@ -492,10 +597,20 @@ static async Task CreateSavingGoal(ISavingGoalsService savingGoalsService, Input
     Console.WriteLine($"Saving Goal '{result.GoalName}' created successfully with ID: {result.Id}");
 }
 
-static async Task ViewSavingGoals(ISavingGoalsService savingGoalsService)
+static async Task ViewSavingGoals(ISavingGoalsService savingGoalsService, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== View Saving Goals ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+
+    }
     var goals = await savingGoalsService.GetAllSavingGoalsAsync();
     foreach (var goal in goals)
     {
@@ -506,10 +621,20 @@ static async Task ViewSavingGoals(ISavingGoalsService savingGoalsService)
         Console.WriteLine("No saving goals found.");
 }
 
-static async Task UpdateSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor)
+static async Task UpdateSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Update Saving Goal ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     Console.Write("Enter saving goal ID to update: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {
@@ -536,10 +661,20 @@ static async Task UpdateSavingGoal(ISavingGoalsService savingGoalsService, Input
     }
 }
 
-static async Task DeleteSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor)
+static async Task DeleteSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor, IBudgetService budgetService)
 {
     Console.Clear();
     Console.WriteLine("=== Delete Saving Goal ===");
+
+    var selector = new BudgetSelector(budgetService);
+    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+    if (activeBudgetId == Guid.Empty)
+    {
+        Console.WriteLine("No active budget found. Please create a budget first.");
+        return;
+    }
+
     Console.Write("Enter saving goal ID to delete: ");
     if (Guid.TryParse(Console.ReadLine(), out var id))
     {

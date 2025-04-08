@@ -8,6 +8,7 @@ namespace BudgetTracker.Application.DTOs.Commands
 {
     public class UpdateExpenseCommand
     {
+        public Guid BudgetContainerId { get; set; }
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Amount { get; set; }

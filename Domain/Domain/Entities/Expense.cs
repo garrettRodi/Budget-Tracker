@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,5 +16,8 @@ namespace BudgetTracker.Domain.Entities
         public decimal Amount { get; set; }
         public DateTime ExpenseDate { get; set; }
         public string Category { get; set; }
+
+        public Guid BudgetContainerId { get; set; }
+        public BudgetContainer BudgetContainer { get; set; } = null!;
     }
 }

@@ -28,11 +28,32 @@ namespace BudgetTracker.Infrastructure.DataAccess
             modelBuilder.ApplyConfiguration(new ExpenseConfiguration());
             modelBuilder.Entity<CategoryMapping>().ToTable("CategoryMappings");
 
-            // Configure the one-to-many relationship between BudgetContainer and BudgetItem.
+            // BudgetContainer -> BudgetItem.
             modelBuilder.Entity<BudgetContainer>()
-                .HasMany(b => b.Items)
+                .HasMany(b => b.BudgetItems)
                 .WithOne(i => i.BudgetContainer)
                 .HasForeignKey(i => i.BudgetContainerId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascading delete if a container is removed.
+
+            // BudgetContainer -> Expenses
+            modelBuilder.Entity<BudgetContainer>()
+                .HasMany(b => b.Expenses)
+                .WithOne(e => e.BudgetContainer)
+                .HasForeignKey(e => e.BudgetContainerId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascading delete if a container is removed.
+
+            // BudgetContainer -> Incomes
+            modelBuilder.Entity<BudgetContainer>()
+                .HasMany(b => b.Incomes)
+                .WithOne(i => i.BudgetContainer)
+                .HasForeignKey(i => i.BudgetContainerId)
+                .OnDelete(DeleteBehavior.Cascade); // Cascading delete if a container is removed.
+            
+            // BudgetContainer -> SavingGoals
+            modelBuilder.Entity<BudgetContainer>()
+                .HasMany(b => b.SavingGoals)
+                .WithOne(s => s.BudgetContainer)
+                .HasForeignKey(s => s.BudgetContainerId)
                 .OnDelete(DeleteBehavior.Cascade); // Cascading delete if a container is removed.
 
             // Existing seed data for Categories.

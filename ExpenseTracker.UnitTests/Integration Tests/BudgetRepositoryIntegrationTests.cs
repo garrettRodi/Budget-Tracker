@@ -37,7 +37,7 @@ namespace BudgetTracker.Tests.IntegrationTests
             };
 
             // Add an associated budget item.
-            budgetContainer.Items.Add(new BudgetItem
+            budgetContainer.BudgetItems.Add(new BudgetItem
             {
                 Id = Guid.NewGuid(),
                 BudgetContainerId = budgetContainer.Id,
@@ -53,7 +53,7 @@ namespace BudgetTracker.Tests.IntegrationTests
             // Assert
             Assert.NotNull(retrieved);
             Assert.Equal(budgetContainer.Name, retrieved.Name);
-            Assert.Single(retrieved.Items);
+            Assert.Single(retrieved.BudgetItems);
         }
 
         [Fact]

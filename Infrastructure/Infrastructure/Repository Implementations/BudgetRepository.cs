@@ -18,6 +18,10 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
             _logger = logger;
         }
 
+        public BudgetRepository(BudgetTrackerDbContext context) : base(context)
+        {
+        }
+
         public async Task AddAsync(BudgetContainer budget)
         {
             await _context.BudgetContainers.AddAsync(budget);
@@ -27,7 +31,7 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
         public async Task<BudgetContainer?> GetByIdAsync (Guid id)
         {
             return await _context.BudgetContainers
-                .Include(b => b.Items)
+                .Include(b => b.BudgetItems)
                 .FirstOrDefaultAsync(b => b.Id == id);
         }
 
@@ -40,7 +44,7 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
             }
 
             return await _context.BudgetContainers
-                .Include(b => b.Items)
+                .Include(b => b.BudgetItems)
                 .ToListAsync();
         }
 

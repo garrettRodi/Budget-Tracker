@@ -18,8 +18,14 @@ namespace BudgetTracker.Application.Services
             _logger = logger;
         }
 
-            // Generates an enhanced expense report that includes total expenses,
-            // breakdown per category, and the percentage each category represents.
+        public ReportingService(IUnitOfWork unitOfWork, ICategoryMappingService categoryMappingService)
+        {
+            _unitOfWork = unitOfWork;
+            _categoryMappingService = categoryMappingService;
+        }
+
+        // Generates an enhanced expense report that includes total expenses,
+        // breakdown per category, and the percentage each category represents.
         public async Task<ExpenseReportDTO> GenerateExpenseReportAsync(DateTime startDate, DateTime endDate)
         {
             _logger.LogInformation("Generating expense report from {StartDate} to {EndDate}", startDate, endDate);
@@ -57,7 +63,7 @@ namespace BudgetTracker.Application.Services
                 return new BudgetReportDTO { BudgetedExpenses = 0, ActualExpenses = 0, Difference = 0 };
             }
 
-            decimal plannedBudget = latestBudget.Items.Sum(i => i.PlannedAmount);
+            decimal plannedBudget = latestBudget.BudgetItems.Sum(i => i.PlannedAmount);
             var expenses = await _unitOfWork.ExpenseRepository.FindAsync(e =>
                 e.ExpenseDate >= latestBudget.StartDate && e.ExpenseDate <= latestBudget.EndDate);
             decimal actualExpenses = expenses.Sum(e => e.Amount);
@@ -107,12 +113,12 @@ namespace BudgetTracker.Application.Services
             var mappingDictionary = mappings.ToDictionary(m => m.CategoryName, m => m.GroupName, StringComparer.OrdinalIgnoreCase);
 
             // Planned amounts from the latest budget.
-            decimal necessitiesPlanned = latestBudget.Items
+            decimal necessitiesPlanned = latestBudget.BudgetItems
                 .Where(i => i.Category.Equals("Necessities", StringComparison.OrdinalIgnoreCase))
                 .Sum(i => i.PlannedAmount);
-            decimal savingsPlanned = latestBudget.Items.Where(i => i.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
+            decimal savingsPlanned = latestBudget.BudgetItems.Where(i => i.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
                 .Sum(i => i.PlannedAmount);
-            decimal discretionaryPlanned = latestBudget.Items
+            decimal discretionaryPlanned = latestBudget.BudgetItems
                 .Where(i => i.Category.Equals("Discretionary", StringComparison.OrdinalIgnoreCase)).Sum(i => i.PlannedAmount);
 
             // Actual expenses in the budget period.

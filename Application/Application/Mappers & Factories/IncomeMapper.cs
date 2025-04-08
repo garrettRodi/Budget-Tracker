@@ -15,7 +15,8 @@ namespace BudgetTracker.Application.Mappers
                 Id = Guid.NewGuid(),
                 Source = command.Source,
                 ActualAmount = command.ActualAmount,
-                ReceivedDate = command.ReceivedDate
+                ReceivedDate = command.ReceivedDate,
+                BudgetContainerId = command.BudgetContainerId
             };
         }
 

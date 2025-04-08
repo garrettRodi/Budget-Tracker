@@ -13,5 +13,8 @@ namespace BudgetTracker.Domain.Entities
         public string Source { get; set; } = string.Empty;
         public decimal ActualAmount { get; set; }
         public DateTime ReceivedDate { get; set; }
+    
+        public Guid BudgetContainerId { get; set; }
+        public BudgetContainer BudgetContainer { get; set; } = null!;
     }
 }
