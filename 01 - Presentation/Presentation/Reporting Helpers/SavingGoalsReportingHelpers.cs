@@ -11,7 +11,8 @@ namespace BudgetTracker.Presentation.ReportingHelpers
     {
         public static async Task ViewSavingGoalsReport(IReportingService reportingService)
         {
-            try {
+            try
+            {
                 Console.Clear();
                 Console.WriteLine("=== Saving Goals Report ===");
 
@@ -33,15 +34,11 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 {
                     Console.WriteLine("No saving goals found.");
                 }
-
-                Console.WriteLine("Press any key to return to the menu...");
-                Console.ReadKey();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("An error occurred while generating the budget report.");
                 Console.WriteLine(ex.Message);
-                // If you have a logger available, you might log the exception here.
             }
         }
     }

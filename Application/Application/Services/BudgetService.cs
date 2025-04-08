@@ -29,7 +29,7 @@ namespace BudgetTracker.Application.Services
                 // Convert the command to a BudgetContainer entity using the mapper.
                 var budget = command.ToEntity();
                 var validator = new BudgetValidator();
-                validator.ValidateBudget(budget);
+                validator.ValidateBudget(budget, isNew: true);
 
                 // Persist the new budget.
                 await _unitOfWork.BudgetRepository.AddAsync(budget);
@@ -67,8 +67,6 @@ namespace BudgetTracker.Application.Services
                 var budget = await _unitOfWork.BudgetRepository.GetByIdAsync(command.Id);
                 if (budget == null)
                     return false;
-                var validator = new BudgetValidator();
-                validator.ValidateBudget(budget);
 
                 // Update budget properties from the command.
                 budget.Name = command.Name;
@@ -76,6 +74,9 @@ namespace BudgetTracker.Application.Services
                 budget.StartDate = command.StartDate;
                 budget.EndDate = command.EndDate;
                 budget.AutoRenew = command.AutoRenew;
+
+                var validator = new BudgetValidator();
+                validator.ValidateBudget(budget, isNew: false);
 
                 var result = await _unitOfWork.BudgetRepository.UpdateAsync(budget);
                 await _unitOfWork.CommitAsync();

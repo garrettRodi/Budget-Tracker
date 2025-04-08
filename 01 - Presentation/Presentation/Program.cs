@@ -375,7 +375,7 @@ static async Task CreateBudget(IBudgetService budgetService, InputProcessor inpu
 
     // Collect budget items
     int itemCount = inputProcessor.GetValidInt("Enter number of budget items: ");
-    var budgetItems = new List<BudgetTracker.Application.DTOs.Commands.CreateBudgetItemCommand>();
+    var budgetItems = new List<CreateBudgetItemCommand>();
 
     for (int i = 0; i < itemCount; i++)
     {
@@ -383,7 +383,7 @@ static async Task CreateBudget(IBudgetService budgetService, InputProcessor inpu
         string category = inputProcessor.GetInput("Enter budgetItem category: ");
         decimal plannedAmount = inputProcessor.GetValidDecimal("Enter planned/budgeted amount: ");
 
-        var itemCommand = new BudgetTracker.Application.DTOs.Commands.CreateBudgetItemCommand
+        var itemCommand = new CreateBudgetItemCommand
         {
             Category = category,
             PlannedAmount = plannedAmount
@@ -397,7 +397,8 @@ static async Task CreateBudget(IBudgetService budgetService, InputProcessor inpu
         Frequency = frequency,
         StartDate = startDate,
         EndDate = endDate,
-        AutoRenew = autoRenew
+        AutoRenew = autoRenew,
+        Items = budgetItems
     };
 
     var result = await budgetService.CreateBudgetAsync(createCommand);

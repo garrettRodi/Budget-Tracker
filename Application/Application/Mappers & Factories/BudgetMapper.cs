@@ -18,7 +18,7 @@ namespace BudgetTracker.Application.Mappers
                 StartDate = command.StartDate,
                 EndDate = command.EndDate,
                 AutoRenew = command.AutoRenew,
-                Items = command.Items.Select(item => new BudgetItem
+                Items = command.Items?.Select(item => new BudgetItem
                 {
                     Id = Guid.NewGuid(),
                     Category = item.Category,
