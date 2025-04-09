@@ -7,10 +7,12 @@ namespace BudgetTracker.Application.Interfaces
 {
     public interface IReportingService
     {
-        Task<ExpenseReportDTO> GenerateExpenseReportAsync(DateTime startDate, DateTime endDate);
-        Task<BudgetReportDTO> GenerateBudgetReportAsync();
-        Task<IncomeReportDTO> GenerateIncomeReportAsync(DateTime startDate, DateTime endDate);
-        Task<BudgetRuleReportDTO> GenerateBudgetRuleReportAsync(string rule, DateTime startDate, DateTime endDate);
-        Task<IEnumerable<SavingGoalReportDTO>> GenerateSavingGoalReportAsync();
+        Task<ExpenseReportDTO> GenerateExpenseReportAsync(Guid budgetContainerId, DateTime startDate, DateTime endDate);
+        Task<BudgetReportDTO> GenerateBudgetReportAsync(Guid budgetContainerId);
+        Task<IncomeReportDTO> GenerateIncomeReportAsync(Guid budgetContainerId, DateTime startDate, DateTime endDate);
+        Task<BudgetRuleReportDTO> GenerateBudgetRuleReportAsync(string rule, Guid budgetContainerId, DateTime startDate, DateTime endDate);
+        Task<IEnumerable<SavingGoalReportDTO>> GenerateSavingGoalReportAsync(Guid budgetContainerId);
+        Task<ExpenseReportDTO> GetFilteredExpensesAsync(Guid budgetContainerId, string category, DateTime startDate, DateTime endDate);
+
     }
 }

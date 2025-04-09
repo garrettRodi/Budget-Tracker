@@ -8,6 +8,9 @@ namespace BudgetTracker.Application.Interfaces
     {
         Task<ExpenseDTO> CreateExpenseAsync(CreateExpenseCommand createCommand);
         Task<IEnumerable<ExpenseDTO>> GetExpenseAsync();
+
+        Task<IEnumerable<ExpenseDTO>> GetExpensesByBudgetContainerIdAsync(Guid budgetContainerId);
+        
         Task<ExpenseDTO?> GetExpenseByIdAsync(Guid id);
         Task<bool> UpdateExpenseAsync(UpdateExpenseCommand updateCommand);
         Task<bool> DeleteExpenseAsync(Guid id);

@@ -45,6 +45,16 @@ namespace BudgetTracker.Application.Services
             return goal != null ? goal.ToDto() : null;
         }
 
+        public async Task<IEnumerable<SavingGoalDTO>> GetSavingGoalsByBudgetContainerIdAsync(Guid budgetContainerId)
+        {
+            _logger.LogInformation("Retrieving saving goals for budget container ID: {BudgetContainerId}", budgetContainerId);
+
+            var goals = await _unitOfWork.SavingGoalsRepository.FindAsync(g => g.BudgetContainerId == budgetContainerId);
+
+            _logger.LogInformation("Retrieved {Count} saving goals for budget container ID: {BudgetContainerId}", goals.Count(), budgetContainerId);
+            return goals.Select(g => g.ToDto());
+        }
+
         public async Task<IEnumerable<SavingGoalDTO>> GetAllSavingGoalsAsync()
         {
             _logger.LogInformation("Retrieving all saving goals.");

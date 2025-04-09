@@ -9,11 +9,15 @@ using BudgetTracker.Infrastructure.RepositoryImplementations;
 using _04__Infrastructure.Migrations;
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Infrastructure.ExternalServices;
-using BudgetTracker.Presentation.UIHelpers;
 using BudgetTracker.Application.Services;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Presentation.ReportingHelpers;
+using BudgetTracker.Presentation.IncomeHelpers;
+using BudgetTracker.Presentation.ExpenseHelpers;
+using BudgetTracker.Presentation.SavingGoalsHelpers;
+using BudgetTracker.Presentation.BudgetHelpers;
+using BudgetTracker.Presentation.UIHelpers;
 using Serilog;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
@@ -86,8 +90,8 @@ try
     var provider = scope.ServiceProvider;
     var dbContext = provider.GetRequiredService<BudgetTrackerDbContext>();
     
-    bool wasDeleted = dbContext.Database.EnsureDeleted();
-    Console.WriteLine("EnsureDeleted returned: " + wasDeleted);
+    /* bool wasDeleted = dbContext.Database.EnsureDeleted();
+    Console.WriteLine("EnsureDeleted returned: " + wasDeleted); */
     dbContext.Database.Migrate();
     Console.WriteLine("Database migration complete.");
 
@@ -112,74 +116,74 @@ try
             switch (choice)
             {
                 case "1":
-                    await CreateExpense(expenseService, inputProcessor, budgetService);
+                    await ExpenseHelpers.CreateExpense(expenseService, inputProcessor, budgetService);
                     break;
                 case "2":
-                    await ViewExpenses(expenseService, budgetService);
+                    await ExpenseHelpers.ViewExpenses(expenseService, budgetService);
                     break;
                 case "3":
-                    await UpdateExpense(expenseService, inputProcessor, budgetService);
+                    await ExpenseHelpers.UpdateExpense(expenseService, inputProcessor, budgetService);
                     break;
                 case "4":
-                    await DeleteExpense(expenseService, budgetService);
+                    await ExpenseHelpers.DeleteExpense(expenseService, budgetService);
                     break;
                 case "5":
-                    await CreateBudget(budgetService, inputProcessor);
+                    await BudgetHelpers.CreateBudget(budgetService, inputProcessor);
                     break;
                 case "6":
-                    await ViewBudgets(budgetService);
+                    await BudgetHelpers.ViewBudgets(budgetService);
                     break;
                 case "7":
-                    await UpdateBudget(budgetService, inputProcessor);
+                    await BudgetHelpers.UpdateBudget(budgetService, inputProcessor);
                     break;
                 case "8":
-                    await DeleteBudget(budgetService, inputProcessor);
+                    await BudgetHelpers.DeleteBudget(budgetService, inputProcessor);
                     break;
                 case "9":
-                    await CreateSavingGoal(savingGoalsService, inputProcessor, budgetService);
+                    await SavingGoalsHelpers.CreateSavingGoal(savingGoalsService, inputProcessor, budgetService);
                     break;
                 case "10":
-                    await ViewSavingGoals(savingGoalsService, budgetService);
+                    await SavingGoalsHelpers.ViewSavingGoals(savingGoalsService, budgetService);
                     break;
                 case "11":
-                    await UpdateSavingGoal(savingGoalsService, inputProcessor, budgetService);
+                    await SavingGoalsHelpers.UpdateSavingGoal(savingGoalsService, inputProcessor, budgetService);
                     break;
                 case "12":
-                    await DeleteSavingGoal(savingGoalsService, inputProcessor, budgetService);
+                    await SavingGoalsHelpers.DeleteSavingGoal(savingGoalsService, inputProcessor, budgetService);
                     break;
                 case "13":
-                    await CreateIncome(incomeService, inputProcessor, budgetService);
+                    await IncomeHelpers.CreateIncome(incomeService, inputProcessor, budgetService);
                     break;
                 case "14":
-                    await ViewIncomes(incomeService, budgetService);
+                    await IncomeHelpers.ViewIncomes(incomeService, budgetService);
                     break;
                 case "15":
-                    await UpdateIncome(incomeService, inputProcessor, budgetService);
+                    await IncomeHelpers.UpdateIncome(incomeService, inputProcessor, budgetService);
                     break;
                 case "16":
-                    await DeleteIncome(incomeService, inputProcessor, budgetService);
+                    await IncomeHelpers.DeleteIncome(incomeService, inputProcessor, budgetService);
                     break;
                 // Reporting Options:
                 case "17":
-                    await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor);
+                    await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor, budgetService);
                     break;
                 case "18":
-                    await BudgetReportingHelpers.ViewBudgetReport(reportingService);
+                    await BudgetReportingHelpers.ViewBudgetReport(reportingService, inputProcessor, budgetService);
                     break;
                 case "19":
-                    await ExpenseReportHelpers.ViewExpenseReport(reportingService, inputProcessor);
+                    await ExpenseReportHelpers.ViewExpenseReport(reportingService, inputProcessor, budgetService);
                     break;
                 case "20":
-                    await SavingGoalsReportingHelpers.ViewSavingGoalsReport(reportingService);
+                    await SavingGoalsReportingHelpers.ViewSavingGoalsReport(reportingService, budgetService);
                     break;
                 case "21":
-                    await BudgetReportingHelpers.ViewBudgetRuleReport(reportingService, inputProcessor);
+                    await BudgetReportingHelpers.ViewBudgetRuleReport(reportingService, inputProcessor, budgetService);
                     break;
                 case "22":
-                    await ReportDashboard.ViewDashboard(reportingService);
+                    await ReportDashboard.ViewDashboard(reportingService, inputProcessor, budgetService, expenseService);
                     break;
                 case "23":
-                    await DrillDown.DrillDownReport(reportingService, inputProcessor);
+                    await DrillDown.DrillDownReport(reportingService, inputProcessor, budgetService);
                     break;
                 case "24":
                     exitRequested = true;
@@ -214,475 +218,4 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
-}
-
-// ----------------------- Income Helper Methods -----------------------
-
-static async Task CreateIncome(IIncomeService incomeService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Create Income ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    string source = inputProcessor.GetInput("Enter income source (i.e., Salary, Bonus): ");
-     
-    decimal amount = inputProcessor.GetValidDecimal("Enter the actual amount recieved: ");
-
-    DateTime date = inputProcessor.GetValidDate("Enter recieved date (yyyy-mm-dd): ");
-    
-    var command = new CreateIncomeCommand
-    {
-        Source = source,
-        ActualAmount = amount,
-        ReceivedDate = date
-    };
-    var incomeDto = await incomeService.CreateIncomeAsync(command);
-    Console.WriteLine($"Income from '{incomeDto.Source}' created successfully with ID: {incomeDto.Id}");
-}
-
-static async Task ViewIncomes(IIncomeService incomeService, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== View Incomes ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    var incomes = await incomeService.GetAllIncomesAsync();
-    foreach (var income in incomes)
-    {
-        Console.WriteLine($"ID: {income.Id} | Source: {income.Source} | Amount: {income.ActualAmount} | Date: {income.ReceivedDate:d}");
-    }
-    if (!incomes.Any())
-        Console.WriteLine("No incomes found.");
-}
-
-static async Task UpdateIncome(IIncomeService incomeService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Update Income ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    Console.Write("Enter income ID to update: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        string source = inputProcessor.GetInput("Enter updated income source: ");
-        decimal amount = inputProcessor.GetValidDecimal("Enter updated actual amount recieved: ");
-        DateTime date = inputProcessor.GetValidDate("Enter updated recieved date (yyyy-mm-dd): ");
-        var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateIncomeCommand
-        {
-            Id = id,
-            Source = source,
-            ActualAmount = amount,
-            ReceivedDate = date
-        };
-        bool result = await incomeService.UpdateIncomeAsync(updateCommand);
-        Console.WriteLine(result ? "Income updated successfully." : "Income update failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
-}
-
-static async Task DeleteIncome(IIncomeService incomeService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Delete Income ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    Console.Write("Enter income ID to delete: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        bool result = await incomeService.DeleteIncomeAsync(id);
-        Console.WriteLine(result ? "Income deleted successfully." : "Income deletion failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
-}
-
-// ----------------------- Expense Helper Methods -----------------------
-
-static async Task CreateExpense(IExpenseService expenseService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Create Expense ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    string name = inputProcessor.GetInput("Enter expense name: ");
-    decimal amount = inputProcessor.GetValidDecimal("Enter amount: ");
-    DateTime date = inputProcessor.GetValidDate("Enter expense date (yyyy-mm-dd): ");
-    string category = inputProcessor.GetInput("Enter category (if 'Savings', this expense will update your saving goal progress): ");
-
-    var command = new BudgetTracker.Application.DTOs.Commands.CreateExpenseCommand
-    {
-        Name = name,
-        Amount = amount,
-        Date = date,
-        Category = category
-    };
-
-    var expenseDto = await expenseService.CreateExpenseAsync(command);
-    Console.WriteLine($"Expense '{expenseDto.Name}' created successfully with ID: {expenseDto.Id}");
-}
-
-static async Task ViewExpenses(IExpenseService expenseService, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== View Expenses ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    var expenses = await expenseService.GetExpenseAsync();
-    foreach (var expense in expenses)
-    {
-        Console.WriteLine($"ID: {expense.Id} | Name: {expense.Name} | Amount: {expense.Amount} | Date: {expense.Date:d} | Category: {expense.Category}");
-    }
-    if (!expenses.Any())
-        Console.WriteLine("No expenses found.");
-}
-
-static async Task UpdateExpense(IExpenseService expenseService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Update Expense ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    Console.Write("Enter expense ID to update: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        string name = inputProcessor.GetInput("Enter updated expense name: ");
-        decimal amount = inputProcessor.GetValidDecimal("Enter updated expense amount: ");
-        DateTime date = inputProcessor.GetValidDate("Enter updated expense date (yyyy-mm-dd): ");
-        string category = inputProcessor.GetInput("Enter updated expense category: ");
-
-        var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateExpenseCommand
-        {
-            Id = id,
-            Name = name,
-            Amount = amount,
-            Date = date,
-            Category = category
-        };
-
-        bool result = await expenseService.UpdateExpenseAsync(updateCommand);
-        Console.WriteLine(result ? "Expense updated successfully." : "Expense update failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
-}
-
-static async Task DeleteExpense(IExpenseService expenseService, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Delete Expense ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    Console.Write("Enter expense ID to delete: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        bool result = await expenseService.DeleteExpenseAsync(id);
-        Console.WriteLine(result ? "Expense deleted successfully." : "Expense deletion failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
-}
-
-
-// ----------------------- Budget Helper Methods -----------------------
-
-static async Task CreateBudget(IBudgetService budgetService, InputProcessor inputProcessor)
-{
-    Console.Clear();
-    Console.WriteLine("=== Create Budget ===");
-
-    string name = inputProcessor.GetInput("Enter budget name: ");
-    var frequency = inputProcessor.GetEnum("Enter frequency (Weekly/Monthly/Yearly): ", BudgetTracker.Domain.Entities.BudgetFrequency.Monthly);
-    DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
-    DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
-    bool autoRenew = inputProcessor.GetBool("Auto renew? (y/n): ");
-
-    // Collect budget items
-    int itemCount = inputProcessor.GetValidInt("Enter number of budget items: ");
-    var budgetItems = new List<CreateBudgetItemCommand>();
-
-    for (int i = 0; i < itemCount; i++)
-    {
-        Console.WriteLine($"--- Budget Item {i + 1} ---");
-        string category = inputProcessor.GetInput("Enter budgetItem category: ");
-        decimal plannedAmount = inputProcessor.GetValidDecimal("Enter planned/budgeted amount: ");
-
-        var itemCommand = new CreateBudgetItemCommand
-        {
-            Category = category,
-            PlannedAmount = plannedAmount
-        };
-        budgetItems.Add(itemCommand);
-    }
-
-    var createCommand = new CreateBudgetCommand
-    {
-        Name = name,
-        Frequency = frequency,
-        StartDate = startDate,
-        EndDate = endDate,
-        AutoRenew = autoRenew,
-        Items = budgetItems
-    };
-
-    var result = await budgetService.CreateBudgetAsync(createCommand);
-    Console.WriteLine($"Budget '{result.Name}' created successfully with ID: {result.Id}");
-}
-
-static async Task ViewBudgets(IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== View Budgets ===");
-    var budgets = await budgetService.GetAllBudgetsAsync();
-    foreach (var budget in budgets)
-    {
-        Console.WriteLine($"ID: {budget.Id} | Name: {budget.Name} | Frequency: {budget.Frequency} | " +
-            $"Start: {budget.StartDate:d} | End: {budget.EndDate:d} | AutoRenew: {budget.AutoRenew}");
-    }
-    if (!budgets.Any())
-        Console.WriteLine("No budgets found.");
-}
-
-static async Task UpdateBudget(IBudgetService budgetService, InputProcessor inputProcessor)
-{
-    Console.Clear();
-    Console.WriteLine("=== Update Budget ===");
-    Console.Write("Enter budget ID to update: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        string name = inputProcessor.GetInput("Enter updated budget name: ");
-        var frequency = inputProcessor.GetEnum("Enter updated frequency (Weekly/Monthly/Yearly): ", BudgetTracker.Domain.Entities.BudgetFrequency.Monthly);
-        DateTime startDate = inputProcessor.GetValidDate("Enter updated start date (yyyy-mm-dd): ");
-        DateTime endDate = inputProcessor.GetValidDate("Enter updated end date (yyyy-mm-dd): ");
-        bool autoRenew = inputProcessor.GetBool("Auto renew? (y/n): ");
-
-        var updateCommand = new UpdateBudgetCommand
-        {
-            Id = id,
-            Name = name,
-            Frequency = frequency,
-            StartDate = startDate,
-            EndDate = endDate,
-            AutoRenew = autoRenew
-        };
-
-        bool result = await budgetService.UpdateBudgetAsync(updateCommand);
-        Console.WriteLine(result ? "Budget updated successfully." : "Budget update failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
-}
-
-static async Task DeleteBudget(IBudgetService budgetService, InputProcessor inputProcessor)
-{
-    Console.Clear();
-    Console.WriteLine("=== Delete Budget ===");
-    Console.Write("Enter budget ID to delete: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        bool result = await budgetService.DeleteBudgetAsync(id);
-        Console.WriteLine(result ? "Budget deleted successfully." : "Budget deletion failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
-}
-
-
-// ----------------------- Saving Goals Helper Methods -----------------------
-
-static async Task CreateSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Create Saving Goal ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    string goalName = inputProcessor.GetInput("Enter saving goal name: ");
-    decimal targetAmount = inputProcessor.GetValidDecimal("Enter target amount: ");
-    decimal currentAmount = inputProcessor.GetValidDecimal("Enter current amount: ");
-    DateTime? targetDate = inputProcessor.GetValidDate("Enter target date (yyyy-mm-dd): ");
-
-    var command = new CreateSavingGoalCommand
-    {
-        GoalName = goalName,
-        TargetAmount = targetAmount,
-        CurrentAmount = currentAmount,
-        TargetDate = targetDate
-    };
-
-    var result = await savingGoalsService.CreateSavingGoalAsync(command);
-    Console.WriteLine($"Saving Goal '{result.GoalName}' created successfully with ID: {result.Id}");
-}
-
-static async Task ViewSavingGoals(ISavingGoalsService savingGoalsService, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== View Saving Goals ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-
-    }
-    var goals = await savingGoalsService.GetAllSavingGoalsAsync();
-    foreach (var goal in goals)
-    {
-        Console.WriteLine($"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount} | " +
-            $"Current: {goal.CurrentAmount} | Target Date: {(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToShortDateString() : "N/A")}");
-    }
-    if (!goals.Any())
-        Console.WriteLine("No saving goals found.");
-}
-
-static async Task UpdateSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Update Saving Goal ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    Console.Write("Enter saving goal ID to update: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        string goalName = inputProcessor.GetInput("Enter updated saving goal name: ");
-        decimal targetAmount = inputProcessor.GetValidDecimal("Enter updated target amount: ");
-        decimal currentAmount = inputProcessor.GetValidDecimal("Enter updated current amount: ");
-        DateTime? targetDate = inputProcessor.GetValidDate("Enter updated target date (yyyy-mm-dd): ");
-
-        var command = new UpdateSavingGoalCommand
-        {
-            Id = id,
-            GoalName = goalName,
-            TargetAmount = targetAmount,
-            CurrentAmount = currentAmount,
-            TargetDate = targetDate
-        };
-
-        bool result = await savingGoalsService.UpdateSavingGoalAsync(command);
-        Console.WriteLine(result ? "Saving goal updated successfully." : "Saving goal update failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
-}
-
-static async Task DeleteSavingGoal(ISavingGoalsService savingGoalsService, InputProcessor inputProcessor, IBudgetService budgetService)
-{
-    Console.Clear();
-    Console.WriteLine("=== Delete Saving Goal ===");
-
-    var selector = new BudgetSelector(budgetService);
-    Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-    if (activeBudgetId == Guid.Empty)
-    {
-        Console.WriteLine("No active budget found. Please create a budget first.");
-        return;
-    }
-
-    Console.Write("Enter saving goal ID to delete: ");
-    if (Guid.TryParse(Console.ReadLine(), out var id))
-    {
-        bool result = await savingGoalsService.DeleteSavingGoalAsync(id);
-        Console.WriteLine(result ? "Saving goal deleted successfully." : "Saving goal deletion failed.");
-    }
-    else
-    {
-        Console.WriteLine("Invalid ID format.");
-    }
 }

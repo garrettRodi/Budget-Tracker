@@ -4,23 +4,33 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Services;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
     public static class ExpenseReportHelpers
     {
-        public static async Task ViewExpenseReport(IReportingService reportingService, InputProcessor inputProcessor)
+        public static async Task ViewExpenseReport(IReportingService reportingService, InputProcessor inputProcessor, IBudgetService budgetService)
         {
             try
             {
                 Console.Clear();
                 Console.WriteLine("=== Detailed Expense Report ===");
 
+                var selector = new BudgetSelector(budgetService);
+                Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+                if (activeBudgetId == Guid.Empty)
+                {
+                    Console.WriteLine("No active budget found. Please create a budget first.");
+                    return;
+                }
+
                 DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
                 DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
 
-                var report = await reportingService.GenerateExpenseReportAsync(startDate, endDate);
+                var report = await reportingService.GenerateExpenseReportAsync(activeBudgetId, startDate, endDate);
 
                 Console.WriteLine($"Expense Report ({startDate:d} - {endDate:d})");
                 Console.WriteLine($"Total Expenses: {report.TotalExpenses:C}");

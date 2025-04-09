@@ -129,6 +129,16 @@ namespace BudgetTracker.Application.Services
             return expense.ToDto();
         }
 
+        public async Task<IEnumerable<ExpenseDTO>> GetExpensesByBudgetContainerIdAsync(Guid budgetContainerId)
+        {
+            _logger.LogInformation("Retrieving expenses for budget with ID: {BudgetId}", budgetContainerId);
+
+            var expenses = await _unitOfWork.ExpenseRepository.FindAsync(e => e.BudgetContainerId == budgetContainerId);
+
+            _logger.LogInformation("Retrieved {Count} expenses for budget with ID: {BudgetId}", expenses.Count(), budgetContainerId);
+            return expenses.Select(e => e.ToDto());
+        }
+
         public async Task<bool> UpdateExpenseAsync(UpdateExpenseCommand updateCommand)
         {
             _logger.LogInformation("Updating expense with ID: {Id}", updateCommand.Id);

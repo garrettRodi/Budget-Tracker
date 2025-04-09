@@ -11,6 +11,7 @@ namespace BudgetTracker.Application.Interfaces
         Task<IncomeDTO> CreateIncomeAsync(CreateIncomeCommand createCommand);
         Task<IEnumerable<IncomeDTO>> GetAllIncomesAsync();
         Task<IncomeDTO?> GetIncomeByIdAsync(Guid id);
+        Task<IEnumerable<IncomeDTO>> GetIncomesByBudgetContainerIdAsync(Guid budgetContainerId);
         Task<bool> UpdateIncomeAsync(UpdateIncomeCommand updateCommand);
         Task<bool> DeleteIncomeAsync(Guid id);
     }

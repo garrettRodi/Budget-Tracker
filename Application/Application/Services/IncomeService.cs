@@ -33,6 +33,7 @@ namespace BudgetTracker.Application.Services
             // Add to repository via UnitOfWork
             await _unitOfWork.IncomeRepository.AddAsync(income);
             await _unitOfWork.CommitAsync();
+            return income.ToDto();
 
             // Update the active budgets "Income" BudgetItems
             // Retrieve all budgets and select the active one (current date is within the budget's start and end date)
@@ -57,7 +58,6 @@ namespace BudgetTracker.Application.Services
             _logger.LogInformation("Income created successfully with ID {IncomeId}", income.Id);
             return income.ToDto();
         }
-
         public async Task<IEnumerable<IncomeDTO>> GetAllIncomesAsync()
         {
             _logger.LogInformation("Retrieving all incomes.");
@@ -72,7 +72,6 @@ namespace BudgetTracker.Application.Services
             _logger.LogInformation("Retrieved {Count} incomes.", incomes.Count());
             return incomes.Select(i => i.ToDto());
         }
-
         public async Task<IncomeDTO?> GetIncomeByIdAsync(Guid id)
         {
             _logger.LogInformation("Retrieving income with ID {IncomeId}", id);
@@ -87,7 +86,13 @@ namespace BudgetTracker.Application.Services
             _logger.LogInformation("Retrieved income with ID {IncomeId}", id);
             return income.ToDto();
         }
-
+        public async Task<IEnumerable<IncomeDTO>> GetIncomesByBudgetContainerIdAsync(Guid budgetContainerId)
+        {
+            _logger.LogInformation("Retrieving incomes for budget with ID {BudgetId}", budgetContainerId);
+            var incomes = await _unitOfWork.IncomeRepository.FindAsync(i => i.BudgetContainerId == budgetContainerId);
+            _logger.LogInformation("Retrieved {Count} incomes for budget with ID {BudgetId}.", incomes.Count(), budgetContainerId);
+            return incomes.Select(i => i.ToDto());
+        }
         public async Task<bool> UpdateIncomeAsync(UpdateIncomeCommand updateCommand)
         {
             _logger.LogInformation("Updating income with ID {IncomeId}", updateCommand.Id);
@@ -115,7 +120,6 @@ namespace BudgetTracker.Application.Services
             return updated;
 
         }
-
         public async Task<bool> DeleteIncomeAsync(Guid id)
         {
             _logger.LogInformation("Deleting income with ID {IncomeId}", id);

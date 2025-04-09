@@ -4,19 +4,29 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
     public static class SavingGoalsReportingHelpers
     {
-        public static async Task ViewSavingGoalsReport(IReportingService reportingService)
+        public static async Task ViewSavingGoalsReport(IReportingService reportingService,IBudgetService budgetService)
         {
             try
             {
                 Console.Clear();
                 Console.WriteLine("=== Saving Goals Report ===");
 
-                var goals = await reportingService.GenerateSavingGoalReportAsync();
+                var selector = new BudgetSelector(budgetService);
+                Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
+
+                if (activeBudgetId == Guid.Empty)
+                {
+                    Console.WriteLine("No active budget found. Please create a budget first.");
+                    return;
+                }
+
+                var goals = await reportingService.GenerateSavingGoalReportAsync(activeBudgetId);
                 if (goals.Any())
                 {
                     foreach (var goal in goals)

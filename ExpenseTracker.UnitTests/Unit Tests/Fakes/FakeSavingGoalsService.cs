@@ -1,7 +1,6 @@
 ﻿using BudgetTracker.Application.DTOs;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +19,8 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
                 GoalName = command.GoalName,
                 TargetAmount = command.TargetAmount,
                 CurrentAmount = command.CurrentAmount,
-                TargetDate = command.TargetDate
+                TargetDate = command.TargetDate,
+                BudgetContainerId = command.BudgetContainerId
             };
             _goals.Add(goal);
             return Task.FromResult(goal);
@@ -40,6 +40,13 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
         public Task<IEnumerable<SavingGoalDTO>> GetAllSavingGoalsAsync()
         {
             return Task.FromResult<IEnumerable<SavingGoalDTO>>(_goals);
+        }
+
+        public Task<IEnumerable<SavingGoalDTO>> GetSavingGoalsByBudgetContainerIdAsync(Guid budgetContainerId)
+        {
+            // Ensure your DTO has a BudgetContainerId property
+            var filteredGoals = _goals.Where(g => g.BudgetContainerId == budgetContainerId);
+            return Task.FromResult(filteredGoals);
         }
 
         public Task<SavingGoalDTO?> GetSavingGoalByIdAsync(Guid id)
