@@ -168,22 +168,22 @@ try
                     await IncomeReportingHelpers.ViewIncomeReport(reportingService, inputProcessor, budgetService);
                     break;
                 case "18":
-                    await BudgetReportingHelpers.ViewBudgetReport(reportingService, inputProcessor, budgetService);
-                    break;
-                case "19":
                     await ExpenseReportHelpers.ViewExpenseReport(reportingService, inputProcessor, budgetService);
                     break;
-                case "20":
+                case "19":
                     await SavingGoalsReportingHelpers.ViewSavingGoalsReport(reportingService, budgetService);
                     break;
-                case "21":
+                case "20":
                     await BudgetReportingHelpers.ViewBudgetRuleReport(reportingService, inputProcessor, budgetService);
-                    break;
-                case "22":
+                    break;  
+                case "21":
                     await ReportDashboard.ViewDashboard(reportingService, inputProcessor, budgetService, expenseService);
                     break;
-                case "23":
+                case "22":
                     await DrillDown.DrillDownReport(reportingService, inputProcessor, budgetService);
+                    break;
+                case "23":
+                    await BudgetReportingHelpers.ViewBudgetMatrixReportAsync(reportingService, inputProcessor, budgetService);
                     break;
                 case "24":
                     exitRequested = true;
@@ -200,8 +200,9 @@ try
         }
         catch (Exception ex)
         {
-            Console.WriteLine("An error occurred. Please check the log file for details.");
-            Log.Warning(ex, "An unexpected error occurred.");
+            Console.WriteLine("❌ Exception: " + ex.GetType().Name + " – " + ex.Message);
+            Console.WriteLine(ex.StackTrace);
+            Log.Warning(ex, "Unexpected error in main loop");
         }
 
         if (!exitRequested)

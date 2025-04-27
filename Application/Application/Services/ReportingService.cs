@@ -1,6 +1,9 @@
-﻿using BudgetTracker.Application.DTOs;
+﻿using System.Linq;
+using BudgetTracker.Application.DTOs;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Interfaces;
+using BudgetTrackers.Application.DTOs;
 using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Application.Services
@@ -228,6 +231,77 @@ namespace BudgetTracker.Application.Services
             };
         }
 
+        public async Task<BudgetMatrixReportDTO> GenerateBudgetMatrixReportAsync(Guid budgetContainerId)
+        {
+            _logger.LogInformation("Generating budget matrix report for Budget {BudgetId}", budgetContainerId);
 
+            var budget = await _unitOfWork.BudgetRepository.GetByIdAsync(budgetContainerId)
+                         ?? throw new ApplicationException($"Budget {budgetContainerId} not found.");
+
+            var start = budget.StartDate.Date;
+            var end = budget.EndDate.Date;
+
+            // 1) build the list of column‐periods
+            List<DateTime> periods = budget.Frequency switch
+            {
+                BudgetFrequency.Weekly or BudgetFrequency.Monthly => Enumerable
+                    .Range(0, (end - start).Days + 1)
+                    .Select(d => start.AddDays(d))
+                    .ToList(),
+
+                BudgetFrequency.Yearly => Enumerable
+                    .Range(0, ((end.Year - start.Year) * 12 + end.Month - start.Month) + 1)
+                    .Select(m => new DateTime(start.Year, start.Month, 1).AddMonths(m))
+                    .ToList(),
+
+                _ => throw new NotSupportedException($"Frequency {budget.Frequency} not supported.")
+            };
+
+            // 2) init DTO
+            var dto = new BudgetMatrixReportDTO
+            {
+                StartDate = start,
+                EndDate = end,
+                ReportingPeriods = periods,
+                Categories = budget.BudgetItems.Select(i => i.Category).Distinct().ToList()
+            };
+
+            // 3) zero‐fill every cell
+            foreach (var cat in dto.Categories)
+                foreach (var p in periods)
+                {
+                    dto.PlannedByCategoryAndDate[(cat, p)] = 0m;
+                    dto.ActualByCategoryAndDate[(cat, p)] = 0m;
+                }
+
+            // 4) distribute planned evenly
+            foreach (var item in budget.BudgetItems)
+            {
+                var perPeriod = item.PlannedAmount / periods.Count;
+                foreach (var p in periods)
+                    dto.PlannedByCategoryAndDate[(item.Category, p)] += perPeriod;
+            }
+
+            // 5) tally actuals
+            var expenses = await _unitOfWork.ExpenseRepository.FindAsync(e =>
+                e.BudgetContainerId == budgetContainerId
+             && e.ExpenseDate >= start
+             && e.ExpenseDate <= end);
+
+            foreach (var exp in expenses)
+            {
+                var key = budget.Frequency == BudgetFrequency.Yearly
+                    ? new DateTime(exp.ExpenseDate.Year, exp.ExpenseDate.Month, 1)
+                    : exp.ExpenseDate.Date;
+
+                dto.ActualByCategoryAndDate[(exp.Category, key)] += exp.Amount;
+            }
+
+            _logger.LogInformation(
+                "Budget matrix report ready: {Cats} categories over {Cols} columns",
+                dto.Categories.Count, periods.Count);
+
+            return dto;
+        }
     }
 }
