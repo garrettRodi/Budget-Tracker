@@ -1,54 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// File: Presentation/ReportingHelpers/SavingGoalsReportingHelpers.cs
+using System;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
-    public static class SavingGoalsReportingHelpers
+    public class SavingGoalsReportingHelpers
     {
-        public static async Task ViewSavingGoalsReport(IReportingService reportingService,IBudgetService budgetService)
+        private readonly IReportingService _reportingService;
+        private readonly SelectBudgetContainer _selector;
+        private readonly IConsole _console;
+
+        public SavingGoalsReportingHelpers(
+            IReportingService reportingService,
+            SelectBudgetContainer selector,
+            IConsole console)
         {
-            try
+            _reportingService = reportingService
+                ?? throw new ArgumentNullException(nameof(reportingService));
+            _selector = selector
+                ?? throw new ArgumentNullException(nameof(selector));
+            _console = console
+                ?? throw new ArgumentNullException(nameof(console));
+        }
+
+        public async Task ViewSavingGoalsReportAsync()
+        {
+            _console.WriteLine("=== Saving Goals Report ===");
+
+            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            if (budgetId == Guid.Empty) return;
+
+            var goals = await _reportingService.GenerateSavingGoalReportAsync(budgetId);
+            if (!goals.Any())
             {
-                Console.Clear();
-                Console.WriteLine("=== Saving Goals Report ===");
-
-                var selector = new BudgetSelector(budgetService);
-                Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-                if (activeBudgetId == Guid.Empty)
-                {
-                    Console.WriteLine("No active budget found. Please create a budget first.");
-                    return;
-                }
-
-                var goals = await reportingService.GenerateSavingGoalReportAsync(activeBudgetId);
-                if (goals.Any())
-                {
-                    foreach (var goal in goals)
-                    {
-                        Console.WriteLine($"Goal: {goal.GoalName}");
-                        Console.WriteLine($"Target Amount: {goal.TargetAmount:C}");
-                        Console.WriteLine($"Current Saved: {goal.CurrentAmount:C}");
-                        // Calculate progress percentage
-                        decimal progress = goal.TargetAmount > 0 ? (goal.CurrentAmount / goal.TargetAmount * 100) : 0;
-                        Console.WriteLine($"Progress: {progress:F2}%");
-                        Console.WriteLine(new string('-', 40));
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No saving goals found.");
-                }
+                _console.WriteLine("No saving goals found for the active budget.");
+                return;
             }
-            catch (Exception ex)
+
+            foreach (var g in goals)
             {
-                Console.WriteLine("An error occurred while generating the budget report.");
-                Console.WriteLine(ex.Message);
+                _console.WriteLine($"Goal: {g.GoalName}");
+                _console.WriteLine($"  Target Amount: {g.TargetAmount:C}");
+                _console.WriteLine($"  Current Saved: {g.CurrentAmount:C}");
+                var progress = g.TargetAmount > 0
+                    ? g.CurrentAmount / g.TargetAmount * 100
+                    : 0;
+                _console.WriteLine($"  Progress: {progress:F2}%");
+                _console.WriteLine(new string('-', 40));
             }
         }
     }

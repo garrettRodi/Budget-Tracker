@@ -1,36 +1,69 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// File: Presentation/ReportingHelpers/BudgetReportingHelpers.cs
+using System;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
-using BudgetTracker.Application.Services;
-using BudgetTracker.Domain.Entities;
 using BudgetTracker.Presentation.UIHelpers;
-using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
-    public static class BudgetReportingHelpers
+    public class BudgetReportingHelpers
     {
-        public static async Task ViewBudgetMatrixReportAsync(
-    IReportingService reportingService,
-    InputProcessor inputProcessor,
-    IBudgetService budgetService)
+        private readonly IReportingService _reportingService;
+        private readonly SelectBudgetContainer _selector;
+        private readonly InputProcessor _input;
+        private readonly IConsole _console;
+
+        public BudgetReportingHelpers(
+            IReportingService reportingService,
+            SelectBudgetContainer selector,
+            InputProcessor input,
+            IConsole console)
         {
-            // 1) Get the active budget and its matrix
-            var selector = new BudgetSelector(budgetService);
-            var budgetId = await selector.GetActiveBudgetContainerIdAsync();
-            var matrix = await reportingService.GenerateBudgetMatrixReportAsync(budgetId);
+            _reportingService = reportingService
+                ?? throw new ArgumentNullException(nameof(reportingService));
+            _selector = selector
+                ?? throw new ArgumentNullException(nameof(selector));
+            _input = input
+                ?? throw new ArgumentNullException(nameof(input));
+            _console = console
+                ?? throw new ArgumentNullException(nameof(console));
+        }
 
-            // 2) Build the list of dates in the period
-            var dates = Enumerable
-                .Range(0, (matrix.EndDate - matrix.StartDate).Days + 1)
-                .Select(offset => matrix.StartDate.AddDays(offset))
-                .ToList();
+        /// <summary>
+        ///  View a 50/20/30 or other budget rule report.
+        /// </summary>
+        public async Task ViewBudgetRuleReportAsync()
+        {
+            _console.WriteLine("=== Budget Rule Report ===");
+            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            if (budgetId == Guid.Empty) return;
 
-            // 3) Page size (days per page)
+            var rule = _input.GetInput("Enter budget rule (e.g., 50/20/30): ");
+            var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
+            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
+
+            var report = await _reportingService.GenerateBudgetRuleReportAsync(rule, budgetId, start, end);
+
+            _console.WriteLine($"Rule: {report.Rule}");
+            _console.WriteLine($"  Necessities - Planned: {report.NecessitiesPlanned:C}, Actual: {report.NecessitiesActual:C}, Variance: {report.NecessitiesPercentageVariance:F2}%");
+            _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {report.SavingsActual:C}, Variance: {report.SavingsPercentageVariance:F2}%");
+            _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
+        }
+
+        /// <summary>
+        ///  View the detailed budget matrix over the budget period.
+        /// </summary>
+        public async Task ViewBudgetMatrixReportAsync()
+        {
+            _console.WriteLine("=== Budget Matrix Report ===");
+            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            if (budgetId == Guid.Empty) return;
+
+            var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
+
+            // Build pages of up to 7 columns
+            var dates = matrix.ReportingPeriods.ToList();
             const int PageSize = 7;
             var pages = dates
                 .Select((date, idx) => new { date, idx })
@@ -38,98 +71,40 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 .Select(g => g.Select(x => x.date).ToList())
                 .ToList();
 
-            // 4) For each page, render a little table
             for (int p = 0; p < pages.Count; p++)
             {
                 var pageDates = pages[p];
+                _console.WriteLine($"\nPage {p + 1}/{pages.Count}: {pageDates.First():MM/dd/yyyy} – {pageDates.Last():MM/dd/yyyy}");
 
-                Console.Clear();
-                Console.WriteLine(
-                    $"=== Budget Matrix: “{matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy}” " +
-                    $"(Page {p + 1}/{pages.Count}) ===\n");
-
-                // --- HEADER LINE ---
-                // corner +---+ and one cell per date plus three total columns
-                string sep = "+" + new string('-', 15) + "+";
-                foreach (var _ in pageDates) sep += new string('-', 13) + "+";
-                sep += new string('-', 11) + "+" + new string('-', 11) + "+" + new string('-', 9) + "+";
-                Console.WriteLine(sep);
-
-                // title row
-                Console.Write("| Category".PadRight(15) + "|");
+                // Header row
+                var header = "Category".PadRight(15) + "|";
                 foreach (var d in pageDates)
-                    Console.Write(d.ToString("MM/dd").PadLeft(12) + "|");
-                Console.Write(" TotPln".PadLeft(11) + "|" + " TotAct".PadLeft(11) + "|" + " Diff".PadLeft(9) + "|\n");
+                    header += d.ToString("MM/dd").PadLeft(13) + "|";
+                header += " TotPln".PadLeft(11) + "|" + " TotAct".PadLeft(11) + "|" + " Diff".PadLeft(9);
+                _console.WriteLine(header);
 
-                // separator under header
-                Console.WriteLine(sep.Replace('-', '='));
-
-                // --- DATA ROWS ---
+                // Rows
                 foreach (var cat in matrix.Categories)
                 {
-                    Console.Write("| " + cat.PadRight(13) + "|");
-
                     decimal rowPln = 0, rowAct = 0;
+                    var line = cat.PadRight(15) + "|";
                     foreach (var d in pageDates)
                     {
                         matrix.PlannedByCategoryAndDate.TryGetValue((cat, d), out var pln);
                         matrix.ActualByCategoryAndDate.TryGetValue((cat, d), out var act);
-                        rowPln += pln;
-                        rowAct += act;
-                        Console.Write($"{pln,6:C}/{act,-6:C}|");
+                        rowPln += pln; rowAct += act;
+                        line += $"{pln,6:C}/{act,-6:C}|";
                     }
-
                     var diff = rowPln - rowAct;
-                    Console.Write($"{rowPln,9:C}|{rowAct,11:C}|{diff,9:C}|\n");
-
-                    // row separator
-                    Console.WriteLine(sep);
+                    line += $"{rowPln,9:C}|{rowAct,11:C}|{diff,9:C}";
+                    _console.WriteLine(line);
                 }
 
-                // 5) Pause between pages
                 if (pages.Count > 1 && p < pages.Count - 1)
                 {
-                    Console.Write("Press any key for next page...");
-                    Console.ReadKey(true);
+                    _console.Write("Press Enter for next page...");
+                    _console.ReadLine();
                 }
-            }
-
-            Console.WriteLine("Press any key to return to menu...");
-            Console.ReadKey(true);
-        }
-
-
-        public static async Task ViewBudgetRuleReport(IReportingService reportingService, InputProcessor inputProcessor, IBudgetService budgetService)
-        {
-            try
-            {
-                Console.Clear();
-                Console.WriteLine("=== Budget Rule Report ===");
-
-                var selector = new BudgetSelector(budgetService);
-                Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-                if (activeBudgetId == Guid.Empty)
-                {
-                    Console.WriteLine("No active budget found. Please create a budget first.");
-                    return;
-                }
-
-                string rule = inputProcessor.GetInput("Enter budget rule (e.g., 50/20/30): ");
-
-                DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
-                DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
-
-                var report = await reportingService.GenerateBudgetRuleReportAsync(rule, activeBudgetId, startDate, endDate);
-
-                Console.WriteLine($"Budget Rule: {report.Rule}");
-                Console.WriteLine($"Necessities - Planned: {report.NecessitiesPlanned:C}, Actual: {report.NecessitiesActual:C}, Variance: {report.NecessitiesPercentageVariance:F2}%");
-                Console.WriteLine($"Savings - Planned: {report.SavingsPlanned:C}, Actual: {report.SavingsActual:C}, Variance: {report.SavingsPercentageVariance:F2}%");
-                Console.WriteLine($"Discretionary - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred while generating the budget report.");
-                Console.WriteLine(ex.Message);
             }
         }
     }

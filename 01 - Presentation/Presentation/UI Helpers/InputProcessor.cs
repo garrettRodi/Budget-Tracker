@@ -1,14 +1,21 @@
-﻿using System;
-using System.Xml;
+﻿// File: Presentation/UIHelpers/InputProcessor.cs
+using System;
 
 namespace BudgetTracker.Presentation.UIHelpers
 {
     public class InputProcessor
     {
+        private readonly IConsole _console;
+
+        public InputProcessor(IConsole console)
+        {
+            _console = console ?? throw new ArgumentNullException(nameof(console));
+        }
+
         public string GetInput(string prompt)
         {
-            Console.Write(prompt);
-            return Console.ReadLine();
+            _console.Write(prompt);
+            return _console.ReadLine() ?? string.Empty;
         }
 
         public DateTime GetValidDate(string prompt)
@@ -16,10 +23,10 @@ namespace BudgetTracker.Presentation.UIHelpers
             DateTime date;
             while (true)
             {
-                Console.WriteLine(prompt);
-                if (DateTime.TryParse(Console.ReadLine(), out date))
+                _console.Write(prompt);
+                if (DateTime.TryParse(_console.ReadLine(), out date))
                     return date;
-                Console.WriteLine("Invalid date format. Please use yyyy-mm-dd.");
+                _console.WriteLine("Invalid date format. Please use yyyy-mm-dd.");
             }
         }
 
@@ -28,43 +35,10 @@ namespace BudgetTracker.Presentation.UIHelpers
             decimal result;
             while (true)
             {
-                Console.Write(prompt);
-                if (decimal.TryParse(Console.ReadLine(), out result))
+                _console.Write(prompt);
+                if (decimal.TryParse(_console.ReadLine(), out result))
                     return result;
-                Console.WriteLine("Invalid numeric format. Please enter a valid decimal number.");
-            }
-        }
-
-        public T GetEnum<T>(string prompt, T defaultValue) where T : struct, Enum
-        {
-            while (true)
-            {
-                Console.Write(prompt);
-                string input = Console.ReadLine() ?? "";
-                if (Enum.TryParse<T>(input, true, out T result))
-                {
-                    return result;
-                }
-                else
-                {
-                    Console.WriteLine($"Invalid value. Please enter one of the following: {string.Join(", ", Enum.GetNames(typeof(T)))}");
-                    // Optionally, you can return defaultValue after a few attempts.
-                }
-            }
-        }
-
-        public bool GetBool(string prompt)
-        {
-            while (true)
-            {
-                Console.Write(prompt);
-                string input = Console.ReadLine()?.Trim().ToLower() ?? "";
-                if (input == "y" || input == "yes" || input == "true")
-                    return true;
-                if (input == "n" || input == "no" || input == "false")
-                    return false;
-
-                Console.WriteLine("Invalid input. Please enter 'yes' or 'no' (or true/false).");
+                _console.WriteLine("Invalid numeric format. Please enter a valid decimal number.");
             }
         }
 
@@ -73,14 +47,37 @@ namespace BudgetTracker.Presentation.UIHelpers
             int result;
             while (true)
             {
-                Console.Write(prompt);
-                if (int.TryParse(Console.ReadLine(), out result))
+                _console.Write(prompt);
+                if (int.TryParse(_console.ReadLine(), out result))
                     return result;
-                Console.WriteLine("Invalid numeric format. Please enter a valid decimal number.");
-                
+                _console.WriteLine("Invalid numeric format. Please enter a valid number.");
             }
         }
 
-    // You can add more methods here to process different types of input (e.g., dates, decimals).
+        public T GetEnum<T>(string prompt, T defaultValue) where T : struct, Enum
+        {
+            while (true)
+            {
+                _console.Write($"{prompt} [{defaultValue}]: ");
+                var input = _console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                    return defaultValue;
+                if (Enum.TryParse<T>(input, true, out var result))
+                    return result;
+                _console.WriteLine($"Invalid. Choose from: {string.Join(", ", Enum.GetNames(typeof(T)))}");
+            }
+        }
+
+        public bool GetBool(string prompt)
+        {
+            while (true)
+            {
+                _console.Write($"{prompt} (y/n): ");
+                var input = _console.ReadLine().Trim().ToLower();
+                if (input is "y" or "yes" or "true") return true;
+                if (input is "n" or "no" or "false") return false;
+                _console.WriteLine("Invalid input. Please enter 'y' or 'n'.");
+            }
+        }
     }
 }

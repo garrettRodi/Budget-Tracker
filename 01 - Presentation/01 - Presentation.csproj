@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>_01___Presentation</RootNamespace>
+    <RootNamespace>BudgetTracker.Presentation</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
@@ -27,5 +27,5 @@
     <ProjectReference Include="..\Domain\03 - Domain.csproj" />
     <ProjectReference Include="..\Infrastructure\04 - Infrastructure.csproj" />
   </ItemGroup>
-
+	
 </Project>

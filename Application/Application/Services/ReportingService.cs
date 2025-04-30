@@ -244,7 +244,12 @@ namespace BudgetTracker.Application.Services
             // 1) build the list of column‐periods
             List<DateTime> periods = budget.Frequency switch
             {
-                BudgetFrequency.Weekly or BudgetFrequency.Monthly => Enumerable
+                BudgetFrequency.Weekly => Enumerable
+                    .Range(0, 7)
+                    .Select(d => start.AddDays(d))
+                    .ToList(),
+
+                BudgetFrequency.Monthly => Enumerable
                     .Range(0, (end - start).Days + 1)
                     .Select(d => start.AddDays(d))
                     .ToList(),

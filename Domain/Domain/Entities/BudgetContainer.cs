@@ -22,9 +22,9 @@ namespace BudgetTracker.Domain.Entities
         public DateTime EndDate { get; set; }
         public bool AutoRenew { get; set; }
 
-        public ICollection<Expense> Expenses { get; set; } = [];
-        public ICollection<Income> Incomes { get; set; } = [];
-        public ICollection<SavingGoals> SavingGoals { get; set; } = [];
-        public ICollection<BudgetItem> BudgetItems { get; set; } = [];
+        public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+        public ICollection<Income> Incomes { get; set; } = new List<Income>();
+        public ICollection<SavingGoals> SavingGoals { get; set; } = new List<SavingGoals>();
+        public ICollection<BudgetItem> BudgetItems { get; set; } = new List<BudgetItem>();
     }
 }

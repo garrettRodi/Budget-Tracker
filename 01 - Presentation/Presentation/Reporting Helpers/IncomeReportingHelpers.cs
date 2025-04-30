@@ -1,45 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// File: Presentation/ReportingHelpers/IncomeReportingHelpers.cs
+using System;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
-using BudgetTracker.Application.Services;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
-    public static class IncomeReportingHelpers
+    public class IncomeReportingHelpers
     {
-        public static async Task ViewIncomeReport(IReportingService reportingService, InputProcessor inputProcessor, IBudgetService budgetService)
+        private readonly IReportingService _reportingService;
+        private readonly SelectBudgetContainer _selector;
+        private readonly InputProcessor _input;
+        private readonly IConsole _console;
+
+        public IncomeReportingHelpers(
+            IReportingService reportingService,
+            SelectBudgetContainer selector,
+            InputProcessor input,
+            IConsole console)
         {
-            try
-            {
-                Console.Clear();
-                Console.WriteLine("=== Income Report ===");
+            _reportingService = reportingService
+                ?? throw new ArgumentNullException(nameof(reportingService));
+            _selector = selector
+                ?? throw new ArgumentNullException(nameof(selector));
+            _input = input
+                ?? throw new ArgumentNullException(nameof(input));
+            _console = console
+                ?? throw new ArgumentNullException(nameof(console));
+        }
 
-                var selector = new BudgetSelector(budgetService);
-                Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-                if (activeBudgetId == Guid.Empty)
-                {
-                    Console.WriteLine("No active budget found. Please create a budget first.");
-                    return;
-                }
+        public async Task ViewIncomeReportAsync()
+        {
+            _console.WriteLine("=== Income Report ===");
 
-                DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
-                DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
+            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            if (budgetId == Guid.Empty) return;
 
-                var report = await reportingService.GenerateIncomeReportAsync(activeBudgetId, startDate, endDate);
+            var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
+            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
 
-                Console.WriteLine($"Income Report ({startDate:d} - {endDate:d})");
-                Console.WriteLine($"Total Income: {report.TotalIncome:C}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred while generating the budget report.");
-                Console.WriteLine(ex.Message);
-                // If you have a logger available, you might log the exception here.
-            }
+            var report = await _reportingService.GenerateIncomeReportAsync(budgetId, start, end);
+
+            _console.WriteLine($"Income Report ({start:yyyy-MM-dd} – {end:yyyy-MM-dd})");
+            _console.WriteLine($"Total Income: {report.TotalIncome:C}");
         }
     }
 }

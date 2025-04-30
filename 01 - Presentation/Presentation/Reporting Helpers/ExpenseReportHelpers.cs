@@ -1,52 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// File: Presentation/ReportingHelpers/ExpenseReportHelpers.cs
+using System;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
-using BudgetTracker.Application.Services;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
-    public static class ExpenseReportHelpers
+    public class ExpenseReportHelpers
     {
-        public static async Task ViewExpenseReport(IReportingService reportingService, InputProcessor inputProcessor, IBudgetService budgetService)
+        private readonly IReportingService _reportingService;
+        private readonly SelectBudgetContainer _selector;
+        private readonly InputProcessor _input;
+        private readonly IConsole _console;
+
+        public ExpenseReportHelpers(
+            IReportingService reportingService,
+            SelectBudgetContainer selector,
+            InputProcessor input,
+            IConsole console)
         {
-            try
+            _reportingService = reportingService
+                ?? throw new ArgumentNullException(nameof(reportingService));
+            _selector = selector
+                ?? throw new ArgumentNullException(nameof(selector));
+            _input = input
+                ?? throw new ArgumentNullException(nameof(input));
+            _console = console
+                ?? throw new ArgumentNullException(nameof(console));
+        }
+
+        public async Task ViewExpenseReportAsync()
+        {
+            _console.WriteLine("=== Detailed Expense Report ===");
+
+            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            if (budgetId == Guid.Empty) return;
+
+            var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
+            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
+
+            var report = await _reportingService.GenerateExpenseReportAsync(budgetId, start, end);
+
+            _console.WriteLine($"Expense Report ({start:yyyy-MM-dd} – {end:yyyy-MM-dd})");
+            _console.WriteLine($"Total Expenses: {report.TotalExpenses:C}");
+            _console.WriteLine("Category Breakdown:");
+            foreach (var kvp in report.CategoryTotals)
             {
-                Console.Clear();
-                Console.WriteLine("=== Detailed Expense Report ===");
-
-                var selector = new BudgetSelector(budgetService);
-                Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-
-                if (activeBudgetId == Guid.Empty)
-                {
-                    Console.WriteLine("No active budget found. Please create a budget first.");
-                    return;
-                }
-
-                DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
-                DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
-
-                var report = await reportingService.GenerateExpenseReportAsync(activeBudgetId, startDate, endDate);
-
-                Console.WriteLine($"Expense Report ({startDate:d} - {endDate:d})");
-                Console.WriteLine($"Total Expenses: {report.TotalExpenses:C}");
-                Console.WriteLine("Category Breakdown:");
-                foreach (var category in report.CategoryTotals.Keys)
-                {
-                    decimal total = report.CategoryTotals[category];
-                    decimal percentage = report.CategoryPercentages[category];
-                    Console.WriteLine($"{category}: {total:C} ({percentage:F2}%)");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred while generating the budget report.");
-                Console.WriteLine(ex.Message);
-                // If you have a logger available, you might log the exception here.
+                var category = kvp.Key;
+                var total = kvp.Value;
+                var percent = report.CategoryPercentages[category];
+                _console.WriteLine($"  {category}: {total:C} ({percent:F2}%)");
             }
         }
     }

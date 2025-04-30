@@ -1,54 +1,57 @@
-﻿using System;
+﻿// File: Presentation/ReportingHelpers/DrillDownReport.cs
+using System;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
-    public static class DrillDown
+    public class DrillDownReport
     {
-        public static async Task DrillDownReport(IReportingService reportingService, InputProcessor inputProcessor, IBudgetService budgetService)
+        private readonly IReportingService _reportingService;
+        private readonly SelectBudgetContainer _selector;
+        private readonly InputProcessor _input;
+        private readonly IConsole _console;
+
+        public DrillDownReport(
+            IReportingService reportingService,
+            SelectBudgetContainer selector,
+            InputProcessor input,
+            IConsole console)
         {
-            try
+            _reportingService = reportingService
+                ?? throw new ArgumentNullException(nameof(reportingService));
+            _selector = selector
+                ?? throw new ArgumentNullException(nameof(selector));
+            _input = input
+                ?? throw new ArgumentNullException(nameof(input));
+            _console = console
+                ?? throw new ArgumentNullException(nameof(console));
+        }
+
+        public async Task ExecuteAsync()
+        {
+            _console.WriteLine("=== Drill-Down Expense Report ===");
+
+            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            if (budgetId == Guid.Empty) return;
+
+            var category = _input.GetInput("Enter the expense category to drill down (e.g., Food): ");
+            var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
+            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
+
+            var report = await _reportingService.GetFilteredExpensesAsync(budgetId, category, start, end);
+
+            if (!report.CategoryTotals.TryGetValue(category, out var total))
             {
-                Console.Clear();
-                Console.WriteLine("=== Drill-Down Expense Report ===");
-
-                // Get the active budget container.
-                var selector = new BudgetSelector(budgetService);
-                Guid activeBudgetId = await selector.GetActiveBudgetContainerIdAsync();
-                if (activeBudgetId == Guid.Empty)
-                {
-                    Console.WriteLine("No active budget found. Please create a budget first.");
-                    return;
-                }
-
-                string category = inputProcessor.GetInput("Enter the expense category to drill down (e.g., Food): ");
-                DateTime startDate = inputProcessor.GetValidDate("Enter start date (yyyy-mm-dd): ");
-                DateTime endDate = inputProcessor.GetValidDate("Enter end date (yyyy-mm-dd): ");
-
-                // Call the new ReportingService method.
-                var report = await reportingService.GetFilteredExpensesAsync(activeBudgetId, category, startDate, endDate);
-                if (report.CategoryTotals.TryGetValue(category, out decimal categoryTotal))
-                {
-                    decimal percentage = report.CategoryPercentages[category];
-                    Console.WriteLine($"Drill-Down Report for Category: {category}");
-                    Console.WriteLine($"Total Expenses: {categoryTotal:C}");
-                    Console.WriteLine($"Percentage of total expenses: {percentage:F2}%");
-                }
-                else
-                {
-                    Console.WriteLine($"No expenses found for category '{category}' in the given period.");
-                }
+                _console.WriteLine($"No expenses found for category '{category}' in the given period.");
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine("An error occurred while generating the drill-down report: " + ex.Message);
-            }
-            finally
-            {
-                Console.WriteLine("Press any key to return to the menu...");
-                Console.ReadKey();
+                var percent = report.CategoryPercentages[category];
+                _console.WriteLine($"Drill-Down Report for Category: {category}");
+                _console.WriteLine($"  Total Expenses: {total:C}");
+                _console.WriteLine($"  Percentage of Total: {percent:F2}%");
             }
         }
     }

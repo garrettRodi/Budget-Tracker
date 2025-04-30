@@ -10,23 +10,31 @@ namespace BudgetTracker.Application.Mappers
     {
         public static BudgetContainer ToEntity(this CreateBudgetCommand command)
         {
-            return new BudgetContainer
+            // 1) Create the parent and generate its ID
+            var budget = new BudgetContainer
             {
                 Id = Guid.NewGuid(),
                 Name = command.Name,
                 Frequency = command.Frequency,
                 StartDate = command.StartDate,
                 EndDate = command.EndDate,
-                AutoRenew = command.AutoRenew,
-                BudgetItems = command.Items?.Select(item => new BudgetItem
+                AutoRenew = command.AutoRenew
+            };
+
+            // 2) Now map each item, using the parent’s ID
+            if (command.Items != null)
+            {
+                budget.BudgetItems = command.Items.Select(item => new BudgetItem
                 {
                     Id = Guid.NewGuid(),
                     Category = item.Category,
                     PlannedAmount = item.PlannedAmount,
                     ActualAmount = 0m,
-                    BudgetContainerId = Guid.Empty
-                }).ToList()
-            };
+                    BudgetContainerId = budget.Id   // ← use budget.Id here
+                }).ToList();
+            }
+
+            return budget;
         }
 
         public static BudgetDTO ToDto(this BudgetContainer budget)

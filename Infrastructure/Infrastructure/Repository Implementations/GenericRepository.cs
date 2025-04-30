@@ -26,38 +26,41 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
         }
 
 
-        public async Task<T> GetByIdAsync(Guid id)
+        public virtual async Task<T> GetByIdAsync(Guid id)
         {
             return await _dbSet.FindAsync(id);
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
             return await _dbSet.ToListAsync();
         }
 
-        public async Task AddAsync(T entity)
+        public virtual async Task AddAsync(T entity)
         {
-            await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            _dbSet.Add(entity);
+            await Task.CompletedTask;
         }
 
-        public async Task<bool> UpdateAsync(T entity)
+        public virtual async Task<bool> UpdateAsync(T entity)
         {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
             _dbSet.Update(entity);
-            return await _context.SaveChangesAsync() > 0;
+            await Task.CompletedTask;
+            return true;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public virtual async Task<bool> DeleteAsync(Guid id)
         {
             var entity = await _dbSet.FindAsync(id);
-            if (entity == null)
-                return false;
+            if (entity == null) return false;
             _dbSet.Remove(entity);
-            return await _context.SaveChangesAsync() > 0;
+            await Task.CompletedTask;
+            return true;
         }
 
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.Where(predicate).ToListAsync();
         }
