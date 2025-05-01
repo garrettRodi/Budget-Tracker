@@ -33,6 +33,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task CreateSavingGoalAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Create Saving Goal ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
@@ -58,6 +59,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task ViewSavingGoalsAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== View Saving Goals ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
@@ -76,6 +78,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task UpdateSavingGoalAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Update Saving Goal ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
@@ -111,6 +114,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task DeleteSavingGoalAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Delete Saving Goal ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();

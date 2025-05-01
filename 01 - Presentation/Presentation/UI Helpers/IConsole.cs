@@ -13,5 +13,6 @@ namespace BudgetTracker.Presentation.UIHelpers
         void WriteLine(string message = "");
         string ReadLine();
         ConsoleKeyInfo ReadKey(bool intercept = false);
+        void Clear();
     }
 }

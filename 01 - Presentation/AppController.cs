@@ -87,7 +87,7 @@ namespace BudgetTracker.Presentation
                     case "19": await _savingGoalsReportingHelpers.ViewSavingGoalsReportAsync(); break;
                     case "20": await _budgetReportingHelpers.ViewBudgetRuleReportAsync(); break;
                     case "21": await _reportDashboard.ViewDashboardAsync(); break;
-                    case "22": await _drillDownReport.ExecuteAsync(); break;
+                    case "22": await _drillDownReport.ViewDrillDownReportAsync(); break;
                     case "23": await _budgetReportingHelpers.ViewBudgetMatrixReportAsync(); break;
                     case "24": exitRequested = true; break;
 

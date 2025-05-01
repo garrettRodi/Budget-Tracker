@@ -11,5 +11,6 @@ namespace BudgetTracker.Presentation.UIHelpers
         public string ReadLine() => Console.ReadLine() ?? "";
         public ConsoleKeyInfo ReadKey(bool intercept = false)
             => Console.ReadKey(intercept);
+        public void Clear() => Console.Clear();
     }
 }

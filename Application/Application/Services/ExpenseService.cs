@@ -167,7 +167,18 @@ namespace BudgetTracker.Application.Services
                 return false;
             }
 
-            return await _unitOfWork.ExpenseRepository.DeleteAsync(id);
+            bool result = await _unitOfWork.ExpenseRepository.DeleteAsync(id);
+            if (result)
+            {
+                // Persist changes to the database.
+                await _unitOfWork.CommitAsync();
+                _logger.LogInformation("Expense deleted successfully with ID: {Id}", id);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to delete expense with ID: {Id}", id);
+            }
+            return result;
         }
 
         public async Task<decimal> GetTotalExpensesAsync()

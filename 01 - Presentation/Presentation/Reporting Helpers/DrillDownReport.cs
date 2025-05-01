@@ -29,8 +29,9 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 ?? throw new ArgumentNullException(nameof(console));
         }
 
-        public async Task ExecuteAsync()
+        public async Task ViewDrillDownReportAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Drill-Down Expense Report ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();

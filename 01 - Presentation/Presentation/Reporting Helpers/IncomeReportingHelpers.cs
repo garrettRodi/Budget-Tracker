@@ -31,6 +31,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
         public async Task ViewIncomeReportAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Income Report ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();

@@ -32,6 +32,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
         public async Task ViewDashboardAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Dashboard Summary ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();

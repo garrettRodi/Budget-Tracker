@@ -37,6 +37,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task CreateExpenseAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Create Expense ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
@@ -62,6 +63,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task ViewExpensesAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== View Expenses ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
@@ -79,6 +81,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task UpdateExpenseAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Update Expense ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
@@ -114,6 +117,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task DeleteExpenseAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Delete Expense ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();

@@ -35,6 +35,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
         /// </summary>
         public async Task ViewBudgetRuleReportAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Budget Rule Report ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
@@ -56,6 +57,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
         /// </summary>
         public async Task ViewBudgetMatrixReportAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Budget Matrix Report ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;

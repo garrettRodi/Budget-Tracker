@@ -12,7 +12,7 @@ namespace BudgetTracker.Presentation.UIHelpers
         }
         public void DisplayMainMenu()
         {
-            Console.Clear(); // Implement this console command??
+            _console.Clear();
             _console.WriteLine("=== Budget Tracker ===");
             _console.WriteLine("1. Create Expense");
             _console.WriteLine("2. View Expenses");

@@ -33,6 +33,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task CreateBudgetAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Create Budget ===");
 
             string name = _input.GetInput("Enter budget name: ");
@@ -73,6 +74,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task ViewBudgetsAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== View Budgets ===");
             var budgets = await _budgetService.GetAllBudgetsAsync();
             foreach (var b in budgets)
@@ -87,6 +89,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task UpdateBudgetAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Update Budget ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
@@ -116,6 +119,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task DeleteBudgetAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Delete Budget ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;

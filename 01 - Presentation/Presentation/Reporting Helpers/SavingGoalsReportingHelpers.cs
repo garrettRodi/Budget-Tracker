@@ -28,6 +28,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
         public async Task ViewSavingGoalsReportAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Saving Goals Report ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();

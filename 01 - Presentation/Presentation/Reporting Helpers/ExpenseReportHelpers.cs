@@ -31,6 +31,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
         public async Task ViewExpenseReportAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Detailed Expense Report ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();

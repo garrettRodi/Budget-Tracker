@@ -33,6 +33,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task CreateIncomeAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Create Income ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
@@ -55,6 +56,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task ViewIncomesAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== View Incomes ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
@@ -71,6 +73,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task UpdateIncomeAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Update Income ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
@@ -103,6 +106,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task DeleteIncomeAsync()
         {
+            _console.Clear();
             _console.WriteLine("=== Delete Income ===");
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
