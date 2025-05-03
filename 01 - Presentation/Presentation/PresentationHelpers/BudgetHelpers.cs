@@ -14,12 +14,14 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
+        private readonly ICategoryMappingService _categoryMappingService;
 
         public BudgetHelpers(
             IBudgetService budgetService,
             SelectBudgetContainer selector,
             InputProcessor input,
-            IConsole console)
+            IConsole console,
+            ICategoryMappingService categoryMappingService)
         {
             _budgetService = budgetService
                 ?? throw new ArgumentNullException(nameof(budgetService));
@@ -29,48 +31,101 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 ?? throw new ArgumentNullException(nameof(input));
             _console = console
                 ?? throw new ArgumentNullException(nameof(console));
+            _categoryMappingService = categoryMappingService;
         }
 
         public async Task CreateBudgetAsync()
         {
-            _console.Clear();
-            _console.WriteLine("=== Create Budget ===");
-
-            string name = _input.GetInput("Enter budget name: ");
-            var frequency = _input.GetEnum("Enter frequency (Weekly/Monthly/Yearly): ",
-                Domain.Entities.BudgetFrequency.Monthly);
-            DateTime startDate = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
-            DateTime endDate = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
-            bool autoRenew = _input.GetBool("Auto renew? (y/n): ");
-
-            int itemCount = _input.GetValidInt("Enter number of budget items: ");
-            var items = new List<CreateBudgetItemCommand>();
-            for (int i = 0; i < itemCount; i++)
+            try
             {
-                _console.WriteLine($"--- Budget Item {i + 1} ---");
-                string category = _input.GetInput("Enter category: ");
-                decimal plannedAmount = _input.GetValidDecimal("Enter planned amount: ");
+                _console.Clear();
+                _console.WriteLine("=== Create Budget ===");
 
-                items.Add(new CreateBudgetItemCommand
+                string name = _input.GetInput("Enter budget name: ");
+                var frequency = _input.GetEnum(
+                    "Enter frequency (Weekly/Monthly/Yearly): ",
+                    Domain.Entities.BudgetFrequency.Monthly);
+                DateTime startDate = _input.GetValidDate(
+                    "Enter start date (yyyy-MM-dd): ");
+                DateTime endDate = _input.GetValidDate(
+                    "Enter end date (yyyy-MM-dd): ");
+                bool autoRenew = _input.GetBool("Auto renew? (y/n): ");
+
+                // 1) Fetch all category names from the injected service
+                var allCategories = (await _categoryMappingService
+                                         .GetAllCategoryNamesAsync())
+                                    .ToList();
+
+                // 2) Let the user pick categories until they type 'done'
+                var items = new List<CreateBudgetItemCommand>();
+                while (true)
                 {
-                    Category = category,
-                    PlannedAmount = plannedAmount
-                });
+                    _console.WriteLine("--- Select a category or type 'done' ---");
+                    for (int idx = 0; idx < allCategories.Count; idx++)
+                    {
+                        _console.WriteLine($"{idx + 1}. {allCategories[idx]}");
+                    }
+                    _console.WriteLine($"{allCategories.Count + 1}. Other (enter custom)");
+
+                    string input = _input.GetInput("Choice or 'done': ").Trim();
+                    if (input.Equals("done", StringComparison.OrdinalIgnoreCase))
+                        break;
+
+                    string category;
+                    if (int.TryParse(input, out int choice)
+                        && choice >= 1
+                        && choice <= allCategories.Count)
+                    {
+                        category = allCategories[choice - 1];
+                    }
+                    else if (choice == allCategories.Count + 1
+                             || !int.TryParse(input, out _))
+                    {
+                        category = _input.GetInput("Enter custom category name: ");
+                    }
+                    else
+                    {
+                        _console.WriteLine("Invalid selection. Try again.");
+                        continue;
+                    }
+
+                    decimal plannedAmount = _input.GetValidDecimal(
+                        "Enter planned amount: ");
+                    items.Add(new CreateBudgetItemCommand
+                    {
+                        Category = category,
+                        PlannedAmount = plannedAmount
+                    });
+                }
+
+                if (items.Count == 0)
+                {
+                    _console.WriteLine(
+                        "You must enter at least one budget item.");
+                    return;
+                }
+
+                var cmd = new CreateBudgetCommand
+                {
+                    Name = name,
+                    Frequency = frequency,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    AutoRenew = autoRenew,
+                    Items = items
+                };
+
+                var dto = await _budgetService.CreateBudgetAsync(cmd);
+                _console.WriteLine(
+                    $"Budget '{dto.Name}' created with ID: {dto.Id}");
             }
-
-            var cmd = new CreateBudgetCommand
+            catch (Exception ex)
             {
-                Name = name,
-                Frequency = frequency,
-                StartDate = startDate,
-                EndDate = endDate,
-                AutoRenew = autoRenew,
-                Items = items
-            };
-
-            var dto = await _budgetService.CreateBudgetAsync(cmd);
-            _console.WriteLine($"Budget '{dto.Name}' created with ID: {dto.Id}");
+                _console.WriteLine($"Error creating budget: {ex.Message}");
+                _console.WriteLine(ex.StackTrace);
+            }
         }
+
 
         public async Task ViewBudgetsAsync()
         {

@@ -31,5 +31,12 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
             var mapping = _mappings.Find(m => m.CategoryName.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
             return Task.FromResult(mapping != null ? mapping.GroupName : "Unmapped");
         }
+
+        public Task<IEnumerable<string>> GetAllCategoryNamesAsync()
+        {
+            // Return the CategoryName of every mapping in our in-memory list
+            var names = _mappings.Select(m => m.CategoryName);
+            return Task.FromResult<IEnumerable<string>>(names);
+        }
     }
 }

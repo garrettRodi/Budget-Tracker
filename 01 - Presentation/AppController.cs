@@ -55,6 +55,8 @@ namespace BudgetTracker.Presentation
         {
             bool exitRequested = false;
 
+            Console.WriteLine("DEBUG: Entering RunAsync");
+
             while (!exitRequested)
             {
                 _menu.DisplayMainMenu();
@@ -89,7 +91,10 @@ namespace BudgetTracker.Presentation
                     case "21": await _reportDashboard.ViewDashboardAsync(); break;
                     case "22": await _drillDownReport.ViewDrillDownReportAsync(); break;
                     case "23": await _budgetReportingHelpers.ViewBudgetMatrixReportAsync(); break;
-                    case "24": exitRequested = true; break;
+                    case "24": 
+                        exitRequested = true;
+                        Console.WriteLine("DEBUG: Exit requested");
+                        break;
 
                     default:
                         _console.WriteLine("Invalid choice. Please select a valid menu option.");

@@ -48,7 +48,7 @@ namespace BudgetTracker.Infrastructure.DataAccess
                 .WithOne(i => i.BudgetContainer)
                 .HasForeignKey(i => i.BudgetContainerId)
                 .OnDelete(DeleteBehavior.Cascade); // Cascading delete if a container is removed.
-            
+
             // BudgetContainer -> SavingGoals
             modelBuilder.Entity<BudgetContainer>()
                 .HasMany(b => b.SavingGoals)
@@ -88,6 +88,42 @@ namespace BudgetTracker.Infrastructure.DataAccess
         Id = new Guid("00000000-0000-0000-0000-000000000004"),
         CategoryName = "Investments",
         GroupName = "Savings"
+    },
+    new CategoryMapping
+    {
+        Id = new Guid("00000000-0000-0000-0000-000000000005"),
+        CategoryName = "Utilities",
+        GroupName = "Necessities"
+    },
+    new CategoryMapping
+    {
+        Id = new Guid("00000000-0000-0000-0000-000000000006"),
+        CategoryName = "Transportation",
+        GroupName = "Necessities"
+    },
+    new CategoryMapping
+    {
+        Id = new Guid("00000000-0000-0000-0000-000000000007"),
+        CategoryName = "Healthcare",
+        GroupName = "Necessities"
+    },
+    new CategoryMapping
+    {
+        Id = new Guid("00000000-0000-0000-0000-000000000008"),
+        CategoryName = "Clothing",
+        GroupName = "Discretionary",
+    },
+    new CategoryMapping
+    {
+        Id = new Guid("00000000-0000-0000-0000-000000000009"),
+        CategoryName = "Education",
+        GroupName = "Discretionary",
+    },
+    new CategoryMapping
+    {
+        Id = new Guid("00000000-0000-0000-0000-000000000010"),
+        CategoryName = "Miscellaneous",
+        GroupName = "Discretionary",
     }
             );
         }

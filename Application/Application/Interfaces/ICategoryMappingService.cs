@@ -9,5 +9,6 @@ namespace BudgetTracker.Application.Interfaces
         Task AddMappingAsync(string categoryName, string groupName);
         Task<string> GetGroupForCategoryAsync(string categoryName);
         Task<IEnumerable<CategoryMappingDTO>> GetAllMappingsAsync();
+        Task<IEnumerable<string>> GetAllCategoryNamesAsync();
     }
 }

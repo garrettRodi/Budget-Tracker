@@ -15,8 +15,9 @@ namespace BudgetTracker.Domain.Services
        
         public void ValidateBudget(BudgetContainer budget, bool isNew = true)
         {
-            if (isNew && budget.StartDate < DateTime.Today)
-                throw new InvalidBudgetException("Budget start date cannot be in the past.");
+            // Disables StartDates in the past
+            // if (isNew && budget.StartDate < DateTime.Today)
+            //   throw new InvalidBudgetException("Budget start date cannot be in the past.");
 
             if (budget.EndDate <= budget.StartDate)
                 throw new InvalidBudgetException("Budget end date must be after the start date.");

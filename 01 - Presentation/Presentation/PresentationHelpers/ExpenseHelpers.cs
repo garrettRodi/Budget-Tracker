@@ -70,6 +70,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             if (budgetId == Guid.Empty) return;
 
             var list = await _expenseService.GetExpensesByBudgetContainerIdAsync(budgetId);
+
+            _console.Clear();
             foreach (var exp in list)
             {
                 _console.WriteLine(

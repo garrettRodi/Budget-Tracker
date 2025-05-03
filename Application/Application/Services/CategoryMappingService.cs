@@ -60,5 +60,11 @@ namespace BudgetTracker.Application.Services
             _logger.LogInformation("Retrieved {Count} mappings.", dtos.Count);
             return dtos;
         }
+
+        public async Task<IEnumerable<string>> GetAllCategoryNamesAsync()
+        {
+            var mappings = await _unitOfWork.CategoryMappingRepository.GetAllAsync();
+            return mappings.Select(m => m.CategoryName);
+        }
     }
 }
