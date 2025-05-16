@@ -14,6 +14,7 @@ namespace BudgetTracker.Infrastructure.DataAccess
         public DbSet<BudgetItem> BudgetItems { get; set; } = null!;
         public DbSet<SavingGoals> SavingGoals { get; set; } = null!;
         public DbSet<CategoryMapping> CategoryMappings { get; set; } = null!;
+        public DbSet<PlannedIncome> PlannedIncomes { get; set; } = null!;
 
         public BudgetTrackerDbContext(DbContextOptions<BudgetTrackerDbContext> options)
             : base(options)
@@ -48,6 +49,18 @@ namespace BudgetTracker.Infrastructure.DataAccess
                 .WithOne(i => i.BudgetContainer)
                 .HasForeignKey(i => i.BudgetContainerId)
                 .OnDelete(DeleteBehavior.Cascade); // Cascading delete if a container is removed.
+
+            // Configure PlannedIncome → BudgetContainer (1:N)
+            // BudgetContainer -> PlannedIncomes
+            modelBuilder.Entity<PlannedIncome>()
+                .ToTable("PlannedIncomes")
+                .HasKey(pi => pi.Id);
+
+            modelBuilder.Entity<PlannedIncome>()
+                .HasOne(pi => pi.BudgetContainer)
+                .WithMany(b => b.PlannedIncomes)
+                .HasForeignKey(pi => pi.BudgetContainerId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // BudgetContainer -> SavingGoals
             modelBuilder.Entity<BudgetContainer>()

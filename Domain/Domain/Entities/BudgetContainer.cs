@@ -24,6 +24,7 @@ namespace BudgetTracker.Domain.Entities
 
         public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
         public ICollection<Income> Incomes { get; set; } = new List<Income>();
+        public ICollection<PlannedIncome> PlannedIncomes { get; set; } = new List<PlannedIncome>();
         public ICollection<SavingGoals> SavingGoals { get; set; } = new List<SavingGoals>();
         public ICollection<BudgetItem> BudgetItems { get; set; } = new List<BudgetItem>();
     }

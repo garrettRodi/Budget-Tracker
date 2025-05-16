@@ -10,7 +10,8 @@ namespace BudgetTracker.Presentation
     public class AppController
     {
         private readonly IConsole _console;
-        private readonly Menu _menu;
+        private readonly MainMenu _mainMenu;
+        private readonly IncomeMenu _incomeMenu;
         private readonly ExpenseHelpers _expenseHelpers;
         private readonly BudgetHelpers _budgetHelpers;
         private readonly SavingGoalsHelpers _savingGoalsHelpers;
@@ -24,7 +25,8 @@ namespace BudgetTracker.Presentation
 
         public AppController(
             IConsole console,
-            Menu menu,
+            MainMenu menu,
+            IncomeMenu incomeMenu,
             ExpenseHelpers expenseHelpers,
             BudgetHelpers budgetHelpers,
             SavingGoalsHelpers savingGoalsHelpers,
@@ -38,7 +40,8 @@ namespace BudgetTracker.Presentation
         )
         {
             _console = console ?? throw new ArgumentNullException(nameof(console));
-            _menu = menu ?? throw new ArgumentNullException(nameof(menu));
+            _mainMenu = menu ?? throw new ArgumentNullException(nameof(menu));
+            _incomeMenu = incomeMenu ?? throw new ArgumentNullException(nameof(incomeMenu));
             _expenseHelpers = expenseHelpers ?? throw new ArgumentNullException(nameof(expenseHelpers));
             _budgetHelpers = budgetHelpers ?? throw new ArgumentNullException(nameof(budgetHelpers));
             _savingGoalsHelpers = savingGoalsHelpers ?? throw new ArgumentNullException(nameof(savingGoalsHelpers));
@@ -59,7 +62,7 @@ namespace BudgetTracker.Presentation
 
             while (!exitRequested)
             {
-                _menu.DisplayMainMenu();
+                _mainMenu.DisplayMainMenu();
                 var choice = (_console.ReadLine() ?? string.Empty).Trim();
 
                 switch (choice)
@@ -79,10 +82,9 @@ namespace BudgetTracker.Presentation
                     case "11": await _savingGoalsHelpers.UpdateSavingGoalAsync(); break;
                     case "12": await _savingGoalsHelpers.DeleteSavingGoalAsync(); break;
 
-                    case "13": await _incomeHelpers.CreateIncomeAsync(); break;
-                    case "14": await _incomeHelpers.ViewIncomesAsync(); break;
-                    case "15": await _incomeHelpers.UpdateIncomeAsync(); break;
-                    case "16": await _incomeHelpers.DeleteIncomeAsync(); break;
+                    case "13":
+                        await _incomeMenu.ShowAsync();
+                        break;
 
                     case "17": await _incomeReportingHelpers.ViewIncomeReportAsync(); break;
                     case "18": await _expenseReportHelpers.ViewExpenseReportAsync(); break;
