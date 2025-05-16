@@ -64,7 +64,7 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<IncomeReportingHelpers>();
                         services.AddScoped<ReportDashboard>();
                         services.AddScoped<SavingGoalsReportingHelpers>();
-
+                        
                         // Application services and repositories
                         services.AddScoped<IUnitOfWork, UnitOfWork>();
                         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -79,6 +79,8 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<CategoryMappingRepository>();
                         services.AddScoped<ICategoryMappingService, CategoryMappingService>();
                         services.AddScoped<IReportingService, ReportingService>();
+                        
+
 
                         // Currency conversion
                         services.AddHttpClient<CurrencyConversionService>();

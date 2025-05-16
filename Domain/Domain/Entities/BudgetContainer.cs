@@ -18,7 +18,7 @@ namespace BudgetTracker.Domain.Entities
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public BudgetFrequency Frequency { get; set; }
-        public DateTime StartDate { get; set; } // Must not be in the past
+        public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool AutoRenew { get; set; }
 

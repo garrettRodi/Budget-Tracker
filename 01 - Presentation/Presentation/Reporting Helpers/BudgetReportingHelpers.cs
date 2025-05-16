@@ -3,6 +3,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Services;
+using BudgetTracker.Domain.Entities;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
@@ -11,12 +13,14 @@ namespace BudgetTracker.Presentation.ReportingHelpers
     {
         private readonly IReportingService _reportingService;
         private readonly SelectBudgetContainer _selector;
+        private readonly IBudgetService _budgetService;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
 
         public BudgetReportingHelpers(
             IReportingService reportingService,
             SelectBudgetContainer selector,
+            IBudgetService budgetService,
             InputProcessor input,
             IConsole console)
         {
@@ -24,6 +28,8 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 ?? throw new ArgumentNullException(nameof(reportingService));
             _selector = selector
                 ?? throw new ArgumentNullException(nameof(selector));
+            _budgetService = budgetService
+            ?? throw new ArgumentNullException(nameof(budgetService));
             _input = input
                 ?? throw new ArgumentNullException(nameof(input));
             _console = console
@@ -37,7 +43,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
         {
             _console.Clear();
             _console.WriteLine("=== Budget Rule Report ===");
-            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
             var rule = _input.GetInput("Enter budget rule (e.g., 50/20/30): ");
@@ -51,69 +57,147 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {report.SavingsActual:C}, Variance: {report.SavingsPercentageVariance:F2}%");
             _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
         }
-
-        /// <summary>
-        ///  View the detailed budget matrix over the budget period.
-        /// </summary>
         public async Task ViewBudgetMatrixReportAsync()
         {
-            try {
-                _console.Clear();
-                _console.WriteLine("=== Budget Matrix Report ===");
-                var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-                if (budgetId == Guid.Empty) return;
+            // 1) Get the active budget and its matrix
+            Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+            var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
 
-                var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
+            // 2) Use exactly the periods your service populated
+            var periods = matrix.ReportingPeriods;
+            var categories = matrix.Categories;
 
-                // Build pages of up to 7 columns
-                var dates = matrix.ReportingPeriods.ToList();
-                const int PageSize = 7;
-                var pages = dates
-                    .Select((date, idx) => new { date, idx })
-                    .GroupBy(x => x.idx / PageSize)
-                    .Select(g => g.Select(x => x.date).ToList())
-                    .ToList();
+            // 3) Build pages (7 days per page for daily frequencies)
+            const int PageSize = 7;
+            var pages = periods
+                .Select((date, idx) => new { date, idx })
+                .GroupBy(x => x.idx / PageSize)
+                .Select(g => g.Select(x => x.date).ToList())
+                .ToList();
 
-                for (int p = 0; p < pages.Count; p++)
+            // Save original console color to restore later
+            var prevColor = Console.ForegroundColor;
+
+            // 4) Render each page
+            for (int p = 0; p < pages.Count; p++)
+            {
+                var pageDates = pages[p];
+
+                Console.Clear();
+                Console.WriteLine(
+                    $"=== Budget Matrix: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} " +
+                    $"(Page {p + 1}/{pages.Count}) ===\n");
+
+                // --- Build separator line dynamically ---
+                string sep = "+" + new string('-', 15) + "+";
+                foreach (var _ in pageDates) sep += new string('-', 13) + "+";
+                sep += new string('-', 11) + "+";
+                Console.WriteLine(sep);
+
+                // --- Header row ---
+                Console.Write("| Category".PadRight(15) + "|");
+                foreach (var d in pageDates)
+                    Console.Write(d.ToString("MM/dd").PadLeft(12) + "|");
+                Console.Write(" TotPln".PadLeft(11) + "|\n");
+
+                Console.WriteLine(sep.Replace('-', '='));
+
+                // --- Data rows per category ---
+                foreach (var cat in categories)
                 {
-                    var pageDates = pages[p];
-                    _console.WriteLine($"\nPage {p + 1}/{pages.Count}: {pageDates.First():MM/dd/yyyy} – {pageDates.Last():MM/dd/yyyy}");
+                    Console.Write("| " + cat.PadRight(13) + "|");
 
-                    // Header row
-                    var header = "Category".PadRight(15) + "|";
+                    decimal rowPln = 0, rowAct = 0;
                     foreach (var d in pageDates)
-                        header += d.ToString("MM/dd").PadLeft(13) + "|";
-                    header += " TotPln".PadLeft(11) + "|" + " TotAct".PadLeft(11) + "|" + " Diff".PadLeft(9);
-                    _console.WriteLine(header);
-
-                    // Rows
-                    foreach (var cat in matrix.Categories)
                     {
-                        decimal rowPln = 0, rowAct = 0;
-                        var line = cat.PadRight(15) + "|";
-                        foreach (var d in pageDates)
-                        {
-                            matrix.PlannedByCategoryAndDate.TryGetValue((cat, d), out var pln);
-                            matrix.ActualByCategoryAndDate.TryGetValue((cat, d), out var act);
-                            rowPln += pln; rowAct += act;
-                            line += $"{pln,6:C}/{act,-6:C}|";
-                        }
-                        var diff = rowPln - rowAct;
-                        line += $"{rowPln,9:C}|{rowAct,11:C}|{diff,9:C}";
-                        _console.WriteLine(line);
+                        var pln = matrix.PlannedByCategoryAndDate[(cat, d)];
+                        var act = matrix.ActualByCategoryAndDate[(cat, d)];
+                        rowPln += pln;
+                        rowAct += act;
+                        Console.Write($"{pln,6:C}/{act,-6:C}|");
                     }
 
-                    if (pages.Count > 1 && p < pages.Count - 1)
-                    {
-                        _console.Write("Press Enter for next page...");
-                        _console.ReadLine();
-                    }
+                    Console.Write($"{rowPln,9:C}|\n");
+                    Console.WriteLine(sep);
+                }
+
+                // --- Differences Row for this page ---
+                Console.Write("| " + "Diff".PadRight(13) + "|");
+                decimal pageTotalDiff = 0;
+                foreach (var d in pageDates)
+                {
+                    decimal periodPln = categories.Sum(cat => matrix.PlannedByCategoryAndDate[(cat, d)]);
+                    decimal periodAct = categories.Sum(cat => matrix.ActualByCategoryAndDate[(cat, d)]);
+                    decimal periodDiff = periodPln - periodAct;
+                    pageTotalDiff += periodDiff;
+
+                    Console.ForegroundColor = periodDiff >= 0
+                        ? ConsoleColor.Green
+                        : ConsoleColor.Red;
+                    Console.Write($"{periodDiff,12:C}|");
+                    Console.ForegroundColor = prevColor;
+                }
+
+                // Page total difference column
+                Console.ForegroundColor = pageTotalDiff >= 0
+                    ? ConsoleColor.Green
+                    : ConsoleColor.Red;
+                Console.Write($"{pageTotalDiff,11:C}|\n");
+                Console.ForegroundColor = prevColor;
+
+                Console.WriteLine(sep);
+
+                // Pause between pages
+                if (pages.Count > 1 && p < pages.Count - 1)
+                {
+                    Console.Write("Press any key for next page...");
+                    Console.ReadKey(true);
                 }
             }
-            catch (Exception ex)
+
+            // 5) Final totals & averages for Yearly budgets
+            _console.WriteLine($"DEBUG: _budgetService is {(_budgetService == null ? "NULL" : "OK")}");
+            _console.WriteLine($"DEBUG: _reportingService is {(_reportingService == null ? "NULL" : "OK")}");
+            _console.WriteLine($"DEBUG: matrix is {(matrix == null ? "NULL" : "OK")}");
+            _console.WriteLine($"DEBUG: matrix.ReportingPeriods is {(matrix?.ReportingPeriods == null ? "NULL" : "OK")}");
+            _console.WriteLine($"DEBUG: matrix.Categories is {(matrix?.Categories == null ? "NULL" : "OK")}");
+            var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+            if (budget != null && budget.Frequency == BudgetFrequency.Yearly)
             {
-                _console.WriteLine($"Error generating report: {ex.Message}");
+                int divisor = budget.Frequency switch
+                {
+                    BudgetFrequency.Weekly  => 7,
+                    BudgetFrequency.Monthly => (matrix.EndDate - matrix.StartDate).Days + 1,
+                    BudgetFrequency.Yearly  => periods.Count,
+                    _                       => periods.Count
+                };
+
+                _console.WriteLine("\n=== Yearly Category Totals ===");
+                foreach (var cat in categories)
+                {
+                    decimal totPln  = periods.Sum(d => matrix.PlannedByCategoryAndDate[(cat, d)]);
+                    decimal totAct  = periods.Sum(d => matrix.ActualByCategoryAndDate[(cat, d)]);
+                    decimal totDiff = totPln - totAct;
+                    bool isSavings  = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
+
+                    Console.ForegroundColor = (totDiff >= 0) ^ isSavings
+                        ? ConsoleColor.Green
+                        : ConsoleColor.Red;
+                    _console.WriteLine($"{cat.PadRight(15)} {totDiff,12:C}");
+                    Console.ForegroundColor = prevColor;
+                }
+
+                decimal grandTotalDiff = categories
+                    .Sum(cat => periods.Sum(d =>
+                        matrix.PlannedByCategoryAndDate[(cat, d)]
+                      - matrix.ActualByCategoryAndDate[(cat, d)]));
+                decimal avgDiff = grandTotalDiff / divisor;
+
+                _console.WriteLine($"\nAverage Difference ({divisor} periods): {avgDiff,12:C}");
             }
+
+            _console.WriteLine("\nPress any key to return to menu...");
+            Console.ReadKey(true);
         }
     }
 }
