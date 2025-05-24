@@ -13,6 +13,7 @@ namespace BudgetTracker.Domain.Interfaces
         IBudgetRepository BudgetRepository { get; }
         ISavingGoalsRepository SavingGoalsRepository { get; }
         ICategoryMappingRepository CategoryMappingRepository { get; }
+        IPlannedExpenseRepository PlannedExpenseRepository { get; }
         Task<int> CommitAsync();
     }
 }

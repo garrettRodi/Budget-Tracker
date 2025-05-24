@@ -51,10 +51,12 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<InputProcessor>();
                         services.AddScoped<MainMenu>();
                         services.AddScoped<IncomeMenu>();
+                        services.AddScoped<ExpenseMenu>();
                         services.AddScoped<SelectBudgetContainer>();
 
                         // Presentation-level helpers
                         services.AddScoped<ExpenseHelpers>();
+                        services.AddScoped<PlannedExpenseHelpers>();
                         services.AddScoped<IncomeHelpers>();
                         services.AddScoped<PlannedIncomeHelpers>();
                         services.AddScoped<BudgetHelpers>();
@@ -67,6 +69,7 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<IncomeReportingHelpers>();
                         services.AddScoped<ReportDashboard>();
                         services.AddScoped<SavingGoalsReportingHelpers>();
+
                         
                         // Application services and repositories
                         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -84,6 +87,8 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<IReportingService, ReportingService>();
                         services.AddScoped<IPlannedIncomeRepository, PlannedIncomeRepository>();
                         services.AddScoped<IPlannedIncomeService, PlannedIncomeService>();
+                        services.AddScoped<IPlannedExpenseRepository, PlannedExpenseRepository>();
+                        services.AddScoped<IPlannedExpenseService, PlannedExpenseService>();
 
                         // Currency conversion
                         services.AddHttpClient<CurrencyConversionService>();

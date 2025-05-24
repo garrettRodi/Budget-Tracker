@@ -18,6 +18,7 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
         public IBudgetRepository BudgetRepository { get; }
         public ISavingGoalsRepository SavingGoalsRepository { get; }
         public ICategoryMappingRepository CategoryMappingRepository { get; }
+        public IPlannedExpenseRepository PlannedExpenseRepository { get; }
 
         public FakeUnitOfWork()
         {

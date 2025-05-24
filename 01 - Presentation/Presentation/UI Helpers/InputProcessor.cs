@@ -79,5 +79,18 @@ namespace BudgetTracker.Presentation.UIHelpers
                 _console.WriteLine("Invalid input. Please enter 'y' or 'n'.");
             }
         }
+
+        public Guid GetValidGuid(string prompt)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                var input = Console.ReadLine()?.Trim();
+                if (Guid.TryParse(input, out var guid))
+                    return guid;
+
+                Console.WriteLine("Invalid ID format. Please enter a valid GUID.");
+            }
+        }
     }
 }

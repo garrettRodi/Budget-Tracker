@@ -12,6 +12,7 @@ namespace BudgetTracker.Presentation
         private readonly IConsole _console;
         private readonly MainMenu _mainMenu;
         private readonly IncomeMenu _incomeMenu;
+        private readonly ExpenseMenu _expenseMenu;
         private readonly ExpenseHelpers _expenseHelpers;
         private readonly BudgetHelpers _budgetHelpers;
         private readonly SavingGoalsHelpers _savingGoalsHelpers;
@@ -27,6 +28,7 @@ namespace BudgetTracker.Presentation
             IConsole console,
             MainMenu menu,
             IncomeMenu incomeMenu,
+            ExpenseMenu expenseMenu,
             ExpenseHelpers expenseHelpers,
             BudgetHelpers budgetHelpers,
             SavingGoalsHelpers savingGoalsHelpers,
@@ -42,6 +44,7 @@ namespace BudgetTracker.Presentation
             _console = console ?? throw new ArgumentNullException(nameof(console));
             _mainMenu = menu ?? throw new ArgumentNullException(nameof(menu));
             _incomeMenu = incomeMenu ?? throw new ArgumentNullException(nameof(incomeMenu));
+            _expenseMenu = expenseMenu ?? throw new ArgumentNullException(nameof(expenseMenu));
             _expenseHelpers = expenseHelpers ?? throw new ArgumentNullException(nameof(expenseHelpers));
             _budgetHelpers = budgetHelpers ?? throw new ArgumentNullException(nameof(budgetHelpers));
             _savingGoalsHelpers = savingGoalsHelpers ?? throw new ArgumentNullException(nameof(savingGoalsHelpers));
@@ -67,10 +70,12 @@ namespace BudgetTracker.Presentation
 
                 switch (choice)
                 {
-                    case "1": await _expenseHelpers.CreateExpenseAsync(); break;
-                    case "2": await _expenseHelpers.ViewExpensesAsync(); break;
-                    case "3": await _expenseHelpers.UpdateExpenseAsync(); break;
-                    case "4": await _expenseHelpers.DeleteExpenseAsync(); break;
+                    // case "1": await _budgetMenu.ShowAsync(); break; // Budget Menu
+                    case "2": await _incomeMenu.ShowAsync(); break; // Income Menu
+                    case "3": await _expenseMenu.ShowAsync(); break; // Expense Menu
+                    // case "4": await _savingGoalsMenu.ShowAsync(); break; // Saving Goals Menu
+                    // case "5": await _reportMenu.ShowAsync(); break; // Report Menu
+                    
 
                     case "5": await _budgetHelpers.CreateBudgetAsync(); break;
                     case "6": await _budgetHelpers.ViewBudgetsAsync(); break;

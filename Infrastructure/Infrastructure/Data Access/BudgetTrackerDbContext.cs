@@ -15,6 +15,7 @@ namespace BudgetTracker.Infrastructure.DataAccess
         public DbSet<SavingGoals> SavingGoals { get; set; } = null!;
         public DbSet<CategoryMapping> CategoryMappings { get; set; } = null!;
         public DbSet<PlannedIncome> PlannedIncomes { get; set; } = null!;
+        public DbSet<PlannedExpense> PlannedExpenses { get; set; } = null!;
 
         public BudgetTrackerDbContext(DbContextOptions<BudgetTrackerDbContext> options)
             : base(options)
