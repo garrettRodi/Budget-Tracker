@@ -13,6 +13,9 @@ namespace BudgetTracker.Presentation
         private readonly MainMenu _mainMenu;
         private readonly IncomeMenu _incomeMenu;
         private readonly ExpenseMenu _expenseMenu;
+        private readonly BudgetMenu _budgetMenu;
+        private readonly ReportingMenu _reportingMenu;
+        private readonly SavingGoalsMenu _savingGoalsMenu;
         private readonly ExpenseHelpers _expenseHelpers;
         private readonly BudgetHelpers _budgetHelpers;
         private readonly SavingGoalsHelpers _savingGoalsHelpers;
@@ -29,6 +32,9 @@ namespace BudgetTracker.Presentation
             MainMenu menu,
             IncomeMenu incomeMenu,
             ExpenseMenu expenseMenu,
+            BudgetMenu budgetMenu,
+            ReportingMenu reportingMenu,
+            SavingGoalsMenu savingGoalsMenu,
             ExpenseHelpers expenseHelpers,
             BudgetHelpers budgetHelpers,
             SavingGoalsHelpers savingGoalsHelpers,
@@ -45,6 +51,9 @@ namespace BudgetTracker.Presentation
             _mainMenu = menu ?? throw new ArgumentNullException(nameof(menu));
             _incomeMenu = incomeMenu ?? throw new ArgumentNullException(nameof(incomeMenu));
             _expenseMenu = expenseMenu ?? throw new ArgumentNullException(nameof(expenseMenu));
+            _budgetMenu = budgetMenu ?? throw new ArgumentNullException(nameof(budgetMenu));
+            _reportingMenu = reportingMenu ?? throw new ArgumentNullException(nameof(reportingMenu));
+            _savingGoalsMenu = savingGoalsMenu ?? throw new ArgumentNullException(nameof(savingGoalsMenu));
             _expenseHelpers = expenseHelpers ?? throw new ArgumentNullException(nameof(expenseHelpers));
             _budgetHelpers = budgetHelpers ?? throw new ArgumentNullException(nameof(budgetHelpers));
             _savingGoalsHelpers = savingGoalsHelpers ?? throw new ArgumentNullException(nameof(savingGoalsHelpers));
@@ -70,35 +79,12 @@ namespace BudgetTracker.Presentation
 
                 switch (choice)
                 {
-                    // case "1": await _budgetMenu.ShowAsync(); break; // Budget Menu
+                    case "1": await _budgetMenu.ShowAsync(); break; // Budget Menu
                     case "2": await _incomeMenu.ShowAsync(); break; // Income Menu
                     case "3": await _expenseMenu.ShowAsync(); break; // Expense Menu
-                    // case "4": await _savingGoalsMenu.ShowAsync(); break; // Saving Goals Menu
-                    // case "5": await _reportMenu.ShowAsync(); break; // Report Menu
-                    
-
-                    case "5": await _budgetHelpers.CreateBudgetAsync(); break;
-                    case "6": await _budgetHelpers.ViewBudgetsAsync(); break;
-                    case "7": await _budgetHelpers.UpdateBudgetAsync(); break;
-                    case "8": await _budgetHelpers.DeleteBudgetAsync(); break;
-
-                    case "9": await _savingGoalsHelpers.CreateSavingGoalAsync(); break;
-                    case "10": await _savingGoalsHelpers.ViewSavingGoalsAsync(); break;
-                    case "11": await _savingGoalsHelpers.UpdateSavingGoalAsync(); break;
-                    case "12": await _savingGoalsHelpers.DeleteSavingGoalAsync(); break;
-
-                    case "13":
-                        await _incomeMenu.ShowAsync();
-                        break;
-
-                    case "17": await _incomeReportingHelpers.ViewIncomeReportAsync(); break;
-                    case "18": await _expenseReportHelpers.ViewExpenseReportAsync(); break;
-                    case "19": await _savingGoalsReportingHelpers.ViewSavingGoalsReportAsync(); break;
-                    case "20": await _budgetReportingHelpers.ViewBudgetRuleReportAsync(); break;
-                    case "21": await _reportDashboard.ViewDashboardAsync(); break;
-                    case "22": await _drillDownReport.ViewDrillDownReportAsync(); break;
-                    case "23": await _budgetReportingHelpers.ViewBudgetMatrixReportAsync(); break;
-                    case "24": 
+                    case "4": await _savingGoalsMenu.ShowAsync(); break; // Saving Goals Menu
+                    case "5": await _reportingMenu.ShowAsync(); break; // Report Menu
+                    case "6": 
                         exitRequested = true;
                         Console.WriteLine("DEBUG: Exit requested");
                         break;

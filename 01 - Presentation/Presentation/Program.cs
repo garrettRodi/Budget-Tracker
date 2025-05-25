@@ -52,6 +52,9 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<MainMenu>();
                         services.AddScoped<IncomeMenu>();
                         services.AddScoped<ExpenseMenu>();
+                        services.AddScoped<BudgetMenu>();
+                        services.AddScoped<ReportingMenu>();
+                        services.AddScoped<SavingGoalsMenu>();
                         services.AddScoped<SelectBudgetContainer>();
 
                         // Presentation-level helpers
