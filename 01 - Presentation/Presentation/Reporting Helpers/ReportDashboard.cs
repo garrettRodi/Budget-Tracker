@@ -87,6 +87,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             {
                 _console.WriteLine("\nNo saving expenses found.");
             }
+            _console.ReadKey();
         }
     }
 }

@@ -52,6 +52,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _incomeService.CreateIncomeAsync(cmd);
             _console.WriteLine($"Income from '{dto.Source}' created successfully with ID: {dto.Id}");
+            _console.ReadKey();
         }
 
         public async Task ViewIncomesAsync()
@@ -69,6 +70,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             if (!list.Any())
                 _console.WriteLine("No incomes found for the active budget.");
+            _console.ReadKey();
         }
 
         public async Task UpdateIncomeAsync()
@@ -102,6 +104,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Income updated successfully."
                 : "Income update failed.");
+            _console.ReadKey();
         }
 
         public async Task DeleteIncomeAsync()
@@ -122,6 +125,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Income deleted successfully."
                 : "Income deletion failed.");
+            _console.ReadKey();
         }
     }
 }

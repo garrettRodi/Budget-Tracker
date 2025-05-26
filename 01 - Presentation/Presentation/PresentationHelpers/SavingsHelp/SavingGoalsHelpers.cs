@@ -55,6 +55,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _savingGoalsService.CreateSavingGoalAsync(cmd);
             _console.WriteLine($"Saving goal '{dto.GoalName}' created with ID: {dto.Id}");
+            _console.ReadKey();
         }
 
         public async Task ViewSavingGoalsAsync()
@@ -74,6 +75,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             if (!list.Any())
                 _console.WriteLine("No saving goals found for the active budget.");
+            _console.ReadKey();
         }
 
         public async Task UpdateSavingGoalAsync()
@@ -110,6 +112,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Saving goal updated successfully."
                 : "Saving goal update failed.");
+            _console.ReadKey();
         }
 
         public async Task DeleteSavingGoalAsync()
@@ -131,6 +134,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Saving goal deleted successfully."
                 : "Saving goal deletion failed.");
+            _console.ReadKey();
         }
     }
 }

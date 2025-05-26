@@ -56,6 +56,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             _console.WriteLine($"  Necessities - Planned: {report.NecessitiesPlanned:C}, Actual: {report.NecessitiesActual:C}, Variance: {report.NecessitiesPercentageVariance:F2}%");
             _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {report.SavingsActual:C}, Variance: {report.SavingsPercentageVariance:F2}%");
             _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
+            _console.ReadKey();
         }
         public async Task ViewBudgetMatrixReportAsync()
         {

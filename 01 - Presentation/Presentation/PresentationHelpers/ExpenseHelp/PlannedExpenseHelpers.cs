@@ -57,6 +57,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _plannedExpenseService.CreatePlannedExpenseAsync(cmd);
             _console.WriteLine($"Planned expense '{dto.Category}' on {dto.Period:yyyy-MM-dd} for {dto.Amount:C} created with ID: {dto.Id}");
+            _console.ReadKey();
         }
 
         public async Task ViewPlannedExpensesAsync()
@@ -85,6 +86,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     _console.WriteLine($"{pe.Id}\t{pe.Period:yyyy-MM-dd}\t{pe.Category}\t{pe.Amount:C}");
                 }
             }
+            _console.ReadKey();
         }
 
         public async Task UpdatePlannedExpenseAsync()
@@ -134,6 +136,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             bool ok = await _plannedExpenseService.UpdatePlannedExpenseAsync(cmd);
             _console.WriteLine(ok ? "Planned expense updated successfully." : "Failed to update planned expense.");
+            _console.ReadKey();
         }
 
         public async Task DeletePlannedExpenseAsync()
@@ -168,6 +171,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             bool ok = await _plannedExpenseService.DeletePlannedExpenseAsync(id);
             _console.WriteLine(ok ? "Planned expense deleted." : "Failed to delete planned expense.");
+            _console.ReadKey();
         }
     }
 }

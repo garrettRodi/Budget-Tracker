@@ -54,6 +54,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 _console.WriteLine($"  Total Expenses: {total:C}");
                 _console.WriteLine($"  Percentage of Total: {percent:F2}%");
             }
+            _console.ReadKey();
         }
     }
 }

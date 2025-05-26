@@ -46,6 +46,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _plannedService.CreatePlannedIncomeAsync(cmd);
             _console.WriteLine($"Planned income for {dto.PeriodStart:d} created (ID: {dto.Id})");
+            _console.ReadKey();
         }
 
         public async Task ViewPlannedIncomesAsync()
@@ -63,6 +64,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             if (!list.Any())
                 _console.WriteLine("No planned incomes found.");
+            _console.ReadKey();
         }
 
         public async Task UpdatePlannedIncomeAsync()
@@ -91,6 +93,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             bool ok = await _plannedService.UpdatePlannedIncomeAsync(cmd);
             _console.WriteLine(ok ? "Updated successfully." : "Update failed.");
+            _console.ReadKey();
         }
 
         public async Task DeletePlannedIncomeAsync()
@@ -109,6 +112,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             bool ok = await _plannedService.DeletePlannedIncomeAsync(id);
             _console.WriteLine(ok ? "Deleted successfully." : "Delete failed.");
+            _console.ReadKey();
         }
     }
 }

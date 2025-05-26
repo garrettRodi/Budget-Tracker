@@ -52,6 +52,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 var percent = report.CategoryPercentages[category];
                 _console.WriteLine($"  {category}: {total:C} ({percent:F2}%)");
             }
+            _console.ReadKey();
         }
     }
 }

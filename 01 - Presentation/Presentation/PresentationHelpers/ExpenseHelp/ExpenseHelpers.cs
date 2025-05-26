@@ -59,6 +59,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _expenseService.CreateExpenseAsync(cmd);
             _console.WriteLine($"Expense '{dto.Name}' created with ID: {dto.Id}");
+            _console.ReadKey();
         }
 
         public async Task ViewExpensesAsync()
@@ -79,6 +80,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             if (!list.Any())
                 _console.WriteLine("No expenses found.");
+            _console.ReadKey();
         }
 
         public async Task UpdateExpenseAsync()
@@ -115,6 +117,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Expense updated successfully."
                 : "Expense update failed.");
+            _console.ReadKey();
         }
 
         public async Task DeleteExpenseAsync()
@@ -136,6 +139,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Expense deleted successfully."
                 : "Expense deletion failed.");
+            _console.ReadKey();
         }
     }
 }

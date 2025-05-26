@@ -14,9 +14,20 @@ namespace BudgetTracker.Presentation.UIHelpers
 
         public string GetInput(string prompt)
         {
-            _console.Write(prompt);
-            return _console.ReadLine() ?? string.Empty;
+            string input;
+            do
+            {
+                _console.Write(prompt);
+                input = _console.ReadLine()?.Trim();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    _console.WriteLine("Input cannot be empty. Please try again.");
+                }
+            } while (string.IsNullOrWhiteSpace(input));
+
+            return input;
         }
+
 
         public DateTime GetValidDate(string prompt)
         {
@@ -54,19 +65,28 @@ namespace BudgetTracker.Presentation.UIHelpers
             }
         }
 
-        public T GetEnum<T>(string prompt, T defaultValue) where T : struct, Enum
+        public TEnum GetEnum<TEnum>(string prompt) where TEnum : struct, Enum
         {
+            var enumType = typeof(TEnum);
+            var validValues = Enum.GetNames(enumType);
+
             while (true)
             {
-                _console.Write($"{prompt} [{defaultValue}]: ");
-                var input = _console.ReadLine();
-                if (string.IsNullOrWhiteSpace(input))
-                    return defaultValue;
-                if (Enum.TryParse<T>(input, true, out var result))
+                Console.WriteLine(prompt);
+                Console.WriteLine($"Options: {string.Join(", ", validValues)}");
+
+                string input = GetInput("> ").Trim();
+
+                if (Enum.TryParse<TEnum>(input, ignoreCase: true, out var result) &&
+                    Enum.IsDefined(enumType, result))
+                {
                     return result;
-                _console.WriteLine($"Invalid. Choose from: {string.Join(", ", Enum.GetNames(typeof(T)))}");
+                }
+
+                Console.WriteLine("Invalid selection. Please enter one of the listed options.");
             }
         }
+
 
         public bool GetBool(string prompt)
         {

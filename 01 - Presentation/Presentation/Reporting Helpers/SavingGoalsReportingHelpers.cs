@@ -52,6 +52,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 _console.WriteLine($"  Progress: {progress:F2}%");
                 _console.WriteLine(new string('-', 40));
             }
+            _console.ReadKey();
         }
     }
 }
