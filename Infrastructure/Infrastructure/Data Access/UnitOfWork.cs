@@ -19,11 +19,6 @@ namespace BudgetTracker.Infrastructure.DataAccess
         private ICategoryMappingRepository? _categoryMappingRepository;
         private IPlannedExpenseRepository? _plannedExpenseRepository;
 
-        public UnitOfWork(BudgetTrackerDbContext context)
-        {
-            _context = context;
-        }
-
         public UnitOfWork(BudgetTrackerDbContext context, ILoggerFactory loggerFactory)
         {
             _context = context;

@@ -9,7 +9,7 @@ namespace BudgetTracker.Application.Interfaces
     public interface IPlannedExpenseService
     {
         Task<PlannedExpenseDTO> CreatePlannedExpenseAsync(CreatePlannedExpenseCommand cmd);
-        Task<IEnumerable<PlannedExpenseDTO>> GetPlannedExpensesAsync(Guid budgetContainerId);
+        Task<IEnumerable<PlannedExpenseDTO>> ViewPlannedExpensesAsync(Guid budgetContainerId);
         Task<bool> UpdatePlannedExpenseAsync(UpdatePlannedExpenseCommand cmd);
         Task<bool> DeletePlannedExpenseAsync(Guid id);
     }

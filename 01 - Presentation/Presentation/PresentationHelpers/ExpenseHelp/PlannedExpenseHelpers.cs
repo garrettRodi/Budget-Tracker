@@ -72,7 +72,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var list = await _plannedExpenseService.GetPlannedExpensesAsync(budgetId);
+            var list = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
             if (!list.Any())
             {
                 _console.WriteLine("No planned expenses found.");
@@ -101,7 +101,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var all = await _plannedExpenseService.GetPlannedExpensesAsync(budgetId);
+            var all = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
             if (!all.Any())
             {
                 _console.WriteLine("No planned expenses to update.");
@@ -151,7 +151,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var all = await _plannedExpenseService.GetPlannedExpensesAsync(budgetId);
+            var all = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
             if (!all.Any())
             {
                 _console.WriteLine("No planned expenses to delete.");

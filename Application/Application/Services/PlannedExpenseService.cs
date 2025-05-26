@@ -27,9 +27,9 @@ namespace BudgetTracker.Application.Services
             return entity.ToDto();
         }
 
-        public async Task<IEnumerable<PlannedExpenseDTO>> GetPlannedExpensesAsync(Guid budgetContainerId)
+        public async Task<IEnumerable<PlannedExpenseDTO>> ViewPlannedExpensesAsync(Guid budgetContainerId)
         {
-            var list = await _unitOfWork.PlannedExpenseRepository.GetPlannedExpensesByBudgetAsync(budgetContainerId);
+            var list = await _unitOfWork.PlannedExpenseRepository.ViewPlannedExpensesByBudgetAsync(budgetContainerId);
             return list.Select(pe => pe.ToDto());
         }
 

@@ -13,7 +13,6 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
     public class PlannedExpenseRepository
         : GenericRepository<PlannedExpense>, IPlannedExpenseRepository
     {
-        private readonly BudgetTrackerDbContext _context;
         private readonly ILogger<PlannedExpenseRepository> _logger;
         public PlannedExpenseRepository(
            BudgetTrackerDbContext context,
@@ -23,7 +22,7 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
             _logger = logger;
         }
 
-        public async Task<IEnumerable<PlannedExpense>> GetPlannedExpensesByBudgetAsync(Guid budgetContainerId)
+        public async Task<IEnumerable<PlannedExpense>> ViewPlannedExpensesByBudgetAsync(Guid budgetContainerId)
         {
             return await _context.PlannedExpenses
                 .Where(pe => pe.BudgetContainerId == budgetContainerId)
