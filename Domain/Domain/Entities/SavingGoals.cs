@@ -16,5 +16,7 @@ namespace BudgetTracker.Domain.Entities
     
         public Guid BudgetContainerId { get; set; }
         public BudgetContainer BudgetContainer { get; set; } = null!;
+        public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+
     }
 }

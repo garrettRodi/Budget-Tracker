@@ -14,5 +14,7 @@ namespace BudgetTracker.Domain.Interfaces
         Task<IEnumerable<SavingGoals>> GetAllAsync();
         Task<bool> UpdateAsync(SavingGoals goal);
         Task<bool> DeleteAsync(Guid id);
+        Task<SavingGoals?> GetGoalWithExpensesAsync(Guid id);
+
     }
 }

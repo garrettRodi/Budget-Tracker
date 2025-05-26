@@ -6,8 +6,9 @@ namespace BudgetTracker.Domain.Entities
     public class PlannedExpense
     {
         public Guid Id { get; set; }
+        public SavingGoals? SavingGoal { get; set; }
         public Guid BudgetContainerId { get; set; }
-        public BudgetContainer BudgetContainer { get; set; } = null!;
+        public BudgetContainer? BudgetContainer { get; set; }
 
         public string Category { get; set; } = string.Empty;
         public decimal Amount { get; set; }

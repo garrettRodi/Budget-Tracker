@@ -32,5 +32,12 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
                 .Where(g => g.BudgetContainerId == budgetContainerId)
                 .ToListAsync();
         }
+
+        public async Task<SavingGoals?> GetGoalWithExpensesAsync(Guid id)
+        {
+            return await _dbSet
+                .Include(g => g.Expenses)
+                .FirstOrDefaultAsync(g => g.Id == id);
+        }
     }
 }

@@ -207,9 +207,14 @@ namespace _04__Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("SavingGoalId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BudgetContainerId");
+
+                    b.HasIndex("SavingGoalId");
 
                     b.ToTable("Expenses", (string)null);
                 });
@@ -277,9 +282,14 @@ namespace _04__Infrastructure.Migrations
                     b.Property<DateTime>("Period")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("SavingGoalId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BudgetContainerId");
+
+                    b.HasIndex("SavingGoalId");
 
                     b.ToTable("PlannedExpenses");
                 });
@@ -354,7 +364,13 @@ namespace _04__Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BudgetTracker.Domain.Entities.SavingGoals", "SavingGoal")
+                        .WithMany("Expenses")
+                        .HasForeignKey("SavingGoalId");
+
                     b.Navigation("BudgetContainer");
+
+                    b.Navigation("SavingGoal");
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.Income", b =>
@@ -376,7 +392,13 @@ namespace _04__Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BudgetTracker.Domain.Entities.SavingGoals", "SavingGoal")
+                        .WithMany()
+                        .HasForeignKey("SavingGoalId");
+
                     b.Navigation("BudgetContainer");
+
+                    b.Navigation("SavingGoal");
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.PlannedIncome", b =>
@@ -412,6 +434,11 @@ namespace _04__Infrastructure.Migrations
                     b.Navigation("PlannedIncomes");
 
                     b.Navigation("SavingGoals");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.SavingGoals", b =>
+                {
+                    b.Navigation("Expenses");
                 });
 #pragma warning restore 612, 618
         }

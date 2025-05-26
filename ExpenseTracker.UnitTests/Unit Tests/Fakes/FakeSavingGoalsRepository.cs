@@ -11,6 +11,8 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
     public class FakeSavingGoalsRepository : ISavingGoalsRepository
     {
         private readonly List<SavingGoals> _goals = new List<SavingGoals>();
+        private readonly List<SavingGoals> _fakeSavingGoals = new();
+
 
         public Task AddAsync(SavingGoals goal)
         {
@@ -56,5 +58,12 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
             }
             return Task.FromResult(false);
         }
+
+        public Task<SavingGoals?> GetGoalWithExpensesAsync(Guid id)
+        {
+            var goal = _fakeSavingGoals.FirstOrDefault(g => g.Id == id);
+            return Task.FromResult(goal);
+        }
+
     }
 }

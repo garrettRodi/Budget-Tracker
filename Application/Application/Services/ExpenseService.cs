@@ -6,6 +6,7 @@ using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Services;
 using BudgetTracker.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
+using SQLitePCL;
 namespace BudgetTracker.Application.Services
 {
     public class ExpenseService : IExpenseService
