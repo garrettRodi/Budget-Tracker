@@ -25,7 +25,7 @@ namespace BudgetTracker.Application.Services
 
         public async Task<ExpenseDTO> CreateExpenseAsync(CreateExpenseCommand createCommand)
         {
-           _logger.LogInformation("Creating a new expense with the following details: {Details}", createCommand);
+            _logger.LogInformation("Creating a new expense with the following details: {Details}", createCommand);
 
             Expense entity = createCommand.ToEntity();
 
@@ -62,35 +62,15 @@ namespace BudgetTracker.Application.Services
                     _logger.LogInformation("BudgetItem updated successfully with new actual amount: {ActualAmount}", matchingBudgetItem.ActualAmount);
                 }
             }
-           
+
             // Update a Saving Goal if the expense category is 'Savings'.
-            if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
+            if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase)
+                && entity.SavingGoalId.HasValue)
             {
-                // Get all saving goals using SavingGoalsService.
-                var savingGoals = await _savingGoalsService.GetAllSavingGoalsAsync();
-
-                // Choose the first active saving goal (the one that hasn't met its target).
-                var activeGoal = savingGoals.FirstOrDefault(g => g.CurrentAmount < g.TargetAmount);
-                if (activeGoal != null)
-                {
-                    // Add the expense amount to the saving goal's current amount.
-                    activeGoal.CurrentAmount += entity.Amount;
-                    // Prepare an update command.
-                    var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateSavingGoalCommand
-                    {
-                        Id = activeGoal.Id,
-                        GoalName = activeGoal.GoalName,
-                        TargetAmount = activeGoal.TargetAmount,
-                        CurrentAmount = activeGoal.CurrentAmount,
-                        TargetDate = activeGoal.TargetDate
-                    };
-
-                    // Update the saving goal in the repository.
-                    await _savingGoalsService.UpdateSavingGoalAsync(updateCommand);
-
-                    _logger.LogInformation("Saving goal updated successfully with new current amount: {CurrentAmount}", activeGoal.CurrentAmount);
-                }
+                await _savingGoalsService.RecalculateCurrentAmountAsync(entity.SavingGoalId.Value);
+                _logger.LogInformation("Saving goal updated successfully with new current amount: {CurrentAmount}");
             }
+
             _logger.LogInformation("Expense created successfully with ID: {Id}", entity.Id);
 
             return entity.ToDto();

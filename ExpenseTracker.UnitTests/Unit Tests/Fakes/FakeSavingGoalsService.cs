@@ -68,5 +68,11 @@ namespace BudgetTracker.Tests.UnitTests.Fakes
             }
             return Task.FromResult(false);
         }
+        public Task RecalculateCurrentAmountAsync(Guid savingGoalId)
+        {
+            // No real recalculation needed in fake — just simulate success
+            return Task.CompletedTask;
+        }
+
     }
 }
