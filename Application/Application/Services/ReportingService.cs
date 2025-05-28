@@ -327,14 +327,20 @@ namespace BudgetTracker.Application.Services
 
                 var normCat = CategoryHelper.NormalizeCategory(exp.Category);
 
-                dto.ActualByCategoryAndDate[(exp.Category, key)] += exp.Amount;
-
-                // Only tally if the key exists (avoid crash)
-                if (dto.ActualByCategoryAndDate.ContainsKey((normCat, key)))
+                // If this category wasn't in planned, add it to categories and zero-fill
+                if (!dto.Categories.Contains(normCat))
                 {
-                    dto.ActualByCategoryAndDate[(normCat, key)] += exp.Amount;
+                    dto.Categories.Add(normCat); // So it shows up in the matrix output
+
+                    foreach (var p in periods)
+                    {
+                        dto.PlannedByCategoryAndDate[(normCat, p)] = 0m;
+                        dto.ActualByCategoryAndDate[(normCat, p)] = 0m;
+                    }
                 }
-                // else ignore or log warning
+
+                // Now it's safe to increment
+                dto.ActualByCategoryAndDate[(normCat, key)] += exp.Amount;
             }
 
             _logger.LogInformation(

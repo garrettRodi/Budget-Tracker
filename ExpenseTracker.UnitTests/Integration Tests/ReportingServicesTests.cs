@@ -10,6 +10,7 @@ using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Tests.UnitTests.Fakes; // For FakeUnitOfWork, FakeCategoryMappingService, etc.
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Tests.IntegrationTests
 {
@@ -18,7 +19,7 @@ namespace BudgetTracker.Tests.IntegrationTests
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICategoryMappingService _categoryMappingService;
         private readonly IReportingService _reportingService;
-
+        private readonly ILogger<ReportingService> _logger;
         public ReportingServicesTests()
         {
             // Uses in-memory database and fake services for testing.
@@ -28,7 +29,7 @@ namespace BudgetTracker.Tests.IntegrationTests
             var context = new BudgetTracker.Infrastructure.DataAccess.BudgetTrackerDbContext(options);
             _unitOfWork = new FakeUnitOfWork(context);
             _categoryMappingService = new FakeCategoryMappingService();
-            _reportingService = new ReportingService(_unitOfWork, _categoryMappingService);
+            _reportingService = new ReportingService(_unitOfWork, _categoryMappingService, _logger);
         }
 
         [Fact]
