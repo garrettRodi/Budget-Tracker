@@ -15,5 +15,6 @@ namespace BudgetTracker.Application.DTOs.Commands
         public DateTime Date { get; set; }
         public string Category { get; set; } = string.Empty;
         public Guid? SavingGoalId { get; set; }
+        
     }
 }

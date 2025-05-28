@@ -1,5 +1,6 @@
 ﻿using BudgetTracker.Application.DTOs;
 using BudgetTracker.Application.DTOs.Commands;
+using BudgetTracker.Application.Helpers;
 using BudgetTracker.Domain.Entities;
 
 namespace BudgetTracker.Application.Mappers
@@ -14,7 +15,7 @@ namespace BudgetTracker.Application.Mappers
                 Name = dto.Name,
                 Amount = dto.Amount,
                 ExpenseDate = dto.Date,
-                Category = dto.Category,
+                Category = CategoryHelper.NormalizeCategory(dto.Category),
                 BudgetContainerId = dto.BudgetContainerId,
                 SavingGoalId = dto.SavingGoalId
             };
@@ -25,7 +26,8 @@ namespace BudgetTracker.Application.Mappers
             existingExpense.Name = dto.Name;
             existingExpense.Amount = dto.Amount;
             existingExpense.ExpenseDate = dto.Date;
-            existingExpense.Category = dto.Category;
+            existingExpense.Category = CategoryHelper.NormalizeCategory(dto.Category);
+            existingExpense.SavingGoalId = dto.SavingGoalId;
             return existingExpense;
         }
 

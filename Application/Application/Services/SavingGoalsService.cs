@@ -96,18 +96,30 @@ namespace BudgetTracker.Application.Services
         public async Task RecalculateCurrentAmountAsync(Guid savingGoalId)
         {
             _logger.LogInformation("Recalculating current amount for saving goal with ID: {Id}", savingGoalId);
-            
-            var goal = await _unitOfWork.SavingGoalsRepository
-                .GetGoalWithExpensesAsync(savingGoalId);
 
+            // 1. Fetch the saving goal
+            var goal = await _unitOfWork.SavingGoalsRepository.GetByIdAsync(savingGoalId);
             if (goal == null)
             {
                 _logger.LogWarning("Saving goal with ID {Id} not found.", savingGoalId);
                 return;
             }
 
-                _logger.LogInformation("Current amount for saving goal with ID {Id} recalculated successfully.", savingGoalId);
+            // 2. Fetch all "Savings" expenses linked to this goal
+            var expenses = await _unitOfWork.ExpenseRepository.FindAsync(
+                e => e.SavingGoalId == savingGoalId && e.Category == "Savings");
+
+            // 3. Sum all their amounts
+            decimal total = expenses.Sum(e => e.Amount);
+
+            // 4. Update and save
+            goal.CurrentAmount = total;
+            await _unitOfWork.SavingGoalsRepository.UpdateAsync(goal);
+            await _unitOfWork.CommitAsync();
+
+            _logger.LogInformation("Current amount for saving goal with ID {Id} recalculated successfully. New total: {Total}", savingGoalId, total);
         }
+
         public async Task<bool> DeleteSavingGoalAsync(Guid id)
         {
             _logger.LogInformation("Deleting saving goal with ID: {Id}", id);

@@ -52,6 +52,23 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 var percent = report.CategoryPercentages[category];
                 _console.WriteLine($"  {category}: {total:C} ({percent:F2}%)");
             }
+
+            // If "Savings" is present, show savings breakdown
+            if (report.CategoryTotals.ContainsKey("Savings"))
+            {
+                _console.WriteLine("\nSavings Breakdown:");
+                var goals = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
+                var bulk = goals.FirstOrDefault(g => g.Id == Guid.Empty);
+                var goalTotal = goals.Where(g => g.Id != Guid.Empty).Sum(g => g.CurrentAmount);
+
+                foreach (var g in goals.Where(g => g.Id != Guid.Empty))
+                    _console.WriteLine($"  {g.GoalName}: {g.CurrentAmount:C}");
+
+                if (bulk != null && bulk.CurrentAmount > 0)
+                    _console.WriteLine($"  Bulk/Uncategorized: {bulk.CurrentAmount:C}");
+
+                _console.WriteLine($"  === Total Savings: {(goalTotal + (bulk?.CurrentAmount ?? 0)):C}");
+            }
             _console.ReadKey();
         }
     }

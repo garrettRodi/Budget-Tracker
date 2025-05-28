@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Helpers;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
@@ -12,6 +13,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
     {
         private readonly IExpenseService _expenseService;
         private readonly IBudgetService _budgetService;
+        private readonly ISavingGoalsService _savingGoalsService;
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
@@ -19,6 +21,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         public ExpenseHelpers(
             IExpenseService expenseService,
             IBudgetService budgetService,
+            ISavingGoalsService savingGoalsService,
             SelectBudgetContainer selector,
             InputProcessor input,
             IConsole console)
@@ -27,6 +30,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 ?? throw new ArgumentNullException(nameof(expenseService));
             _budgetService = budgetService
                 ?? throw new ArgumentNullException(nameof(budgetService));
+            _savingGoalsService = savingGoalsService
+                ?? throw new ArgumentNullException(nameof(savingGoalsService));
             _selector = selector
                 ?? throw new ArgumentNullException(nameof(selector));
             _input = input
@@ -46,16 +51,46 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             string name = _input.GetInput("Enter expense name: ");
             decimal amount = _input.GetValidDecimal("Enter amount: ");
             DateTime date = _input.GetValidDate("Enter expense date (yyyy-MM-dd): ");
-            string category = _input.GetInput("Enter category: ");
+            string rawCategory = _input.GetInput("Enter category: ");
+            string category = CategoryHelper.NormalizeCategory(rawCategory);
 
+            Guid? savingGoalId = null;
+            if (category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
+            {
+                // Fetch all saving goals for this budget
+                var savingGoals = (await _savingGoalsService.GetSavingGoalsByBudgetContainerIdAsync(budgetId)).ToList();
+
+                if (savingGoals.Any())
+                {
+                    _console.WriteLine("Select the Saving Goal to allocate this savings expense to:");
+                    for (int i = 0; i < savingGoals.Count; i++)
+                    {
+                        var g = savingGoals[i];
+                        _console.WriteLine($"{i + 1}. {g.GoalName} (IDictionary: {g.Id})");
+                    }
+                    int selected = -1;
+                    while (selected < 1 || selected > savingGoals.Count)
+                    {
+                        selected = _input.GetValidInt("Enter the number of the saving goal: ");
+                    }
+                    savingGoalId = savingGoals[selected - 1].Id;
+                }
+                else
+                {
+                    _console.WriteLine("No saving goals found. This savings expense will not be allocated to a goal (Bulk Savings).");
+                }
+                _console.WriteLine($"[DEBUG] SavingGoalId selected: {savingGoalId}");
+            }
             var cmd = new CreateExpenseCommand
             {
                 BudgetContainerId = budgetId,
                 Name = name,
                 Amount = amount,
                 Date = date,
-                Category = category
+                Category = category,
+                SavingGoalId = savingGoalId
             };
+            _console.WriteLine($"[DEBUG] About to call ExpenseService.CreateExpenseAsync with SavingGoalId: {cmd.SavingGoalId}");
 
             var dto = await _expenseService.CreateExpenseAsync(cmd);
             _console.WriteLine($"Expense '{dto.Name}' created with ID: {dto.Id}");
@@ -98,11 +133,53 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
+            // 1. Prompt for new values.
             string name = _input.GetInput("Enter updated expense name: ");
             decimal amount = _input.GetValidDecimal("Enter updated amount: ");
             DateTime date = _input.GetValidDate("Enter updated date (yyyy-MM-dd): ");
-            string category = _input.GetInput("Enter updated category: ");
+            string rawCategory = _input.GetInput("Enter updated category: ");
+            string category = CategoryHelper.NormalizeCategory(rawCategory);
 
+
+            // 2. If amount is zero, treat as delete (per your requirement).
+            if (amount == 0)
+            {
+                bool deleted = await _expenseService.DeleteExpenseAsync(id);
+                _console.WriteLine(deleted
+                    ? "Expense deleted successfully (amount set to zero)."
+                    : "Expense deletion failed.");
+                _console.ReadKey();
+                return;
+            }
+
+            // 3. SavingGoalId logic: only ask if category == "Savings".
+            Guid? savingGoalId = null;
+            if (category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
+            {
+                // Fetch saving goals for this budget.
+                var savingGoals = (await _savingGoalsService.GetSavingGoalsByBudgetContainerIdAsync(budgetId)).ToList();
+                if (savingGoals.Any())
+                {
+                    _console.WriteLine("Select the Saving Goal for this expense (by number):");
+                    for (int i = 0; i < savingGoals.Count; i++)
+                    {
+                        var g = savingGoals[i];
+                        _console.WriteLine($"{i + 1}. {g.GoalName} (ID: {g.Id})");
+                    }
+                    int selected = -1;
+                    while (selected < 1 || selected > savingGoals.Count)
+                    {
+                        selected = _input.GetValidInt("Enter the number of the saving goal: ");
+                    }
+                    savingGoalId = savingGoals[selected - 1].Id;
+                }
+                else
+                {
+                    _console.WriteLine("No saving goals found. This savings expense will not be allocated to a goal (Bulk Savings).");
+                }
+            }
+
+            // 4. Build update command, including SavingGoalId.
             var cmd = new UpdateExpenseCommand
             {
                 BudgetContainerId = budgetId,
@@ -110,15 +187,19 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 Name = name,
                 Amount = amount,
                 Date = date,
-                Category = category
+                Category = category,
+                SavingGoalId = savingGoalId
             };
 
+            // 5. Call update and report result.
+            _console.WriteLine($"DEBUG: Update - id={id}, name={name}, amount={amount}, date={date}, category={category}, savingGoalId={savingGoalId}");
             bool success = await _expenseService.UpdateExpenseAsync(cmd);
             _console.WriteLine(success
                 ? "Expense updated successfully."
                 : "Expense update failed.");
             _console.ReadKey();
         }
+
 
         public async Task DeleteExpenseAsync()
         {
@@ -135,7 +216,29 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
+            // 1. Fetch the expense so we can access its properties before deleting
+            var expense = await _expenseService.GetExpenseByIdAsync(id);
+            if (expense == null)
+            {
+                _console.WriteLine("Expense not found.");
+                return;
+            }
+
+
+            // 2. Delete the expense
             bool success = await _expenseService.DeleteExpenseAsync(id);
+
+            // 3. If this was a savings expense linked to a goal, recalculate the goal
+            if (success && expense.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
+            {
+                if (expense.SavingGoalId.HasValue)
+                {
+                    await _savingGoalsService.RecalculateCurrentAmountAsync(expense.SavingGoalId.Value);
+                }
+                // For bulk savings: nothing needed, since report just sums all unlinked savings
+            }
+
+            // Notify user
             _console.WriteLine(success
                 ? "Expense deleted successfully."
                 : "Expense deletion failed.");
