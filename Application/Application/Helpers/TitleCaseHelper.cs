@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace BudgetTracker.Application.Helpers
 {
-    public static class CategoryHelper
+    public static class TitleCaseHelper
     {
         /// <summary>
         /// Normalizes a category string to Title Case (first letter uppercase, rest lowercase).
         /// </summary>
-        public static string NormalizeCategory(string category)
+        public static string TitleCase(string input)
         {
-            if (string.IsNullOrWhiteSpace(category)) return string.Empty;
-            category = category.Trim();
-            return char.ToUpper(category[0]) + category.Substring(1).ToLower();
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            input = input.Trim();
+            return char.ToUpper(input[0]) + input.Substring(1).ToLower();
         }
     }
 }

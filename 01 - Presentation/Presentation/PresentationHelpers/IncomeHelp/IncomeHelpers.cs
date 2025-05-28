@@ -38,7 +38,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            string source = _input.GetInput("Enter income source (e.g., Salary, Bonus): ");
+            string source = _input.GetTitleInput("Enter income source (e.g., Salary, Bonus): ");
             decimal amount = _input.GetValidDecimal("Enter the actual amount received: ");
             DateTime date = _input.GetValidDate("Enter received date (yyyy-MM-dd): ");
 
@@ -87,7 +87,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            string source = _input.GetInput("Enter updated income source: ");
+            string source = _input.GetTitleInput("Enter updated income source: ");
             decimal amount = _input.GetValidDecimal("Enter updated amount received: ");
             DateTime date = _input.GetValidDate("Enter updated received date (yyyy-MM-dd): ");
 

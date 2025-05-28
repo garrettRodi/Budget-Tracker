@@ -39,7 +39,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            var goalName = _input.GetInput("Enter saving goal name: ");
+            var goalName = _input.GetTitleInput("Enter saving goal name: ");
             var targetAmount = _input.GetValidDecimal("Enter target amount: ");
             var currentAmount = _input.GetValidDecimal("Enter current amount: ");
             var targetDate = _input.GetValidDate("Enter target date (yyyy-MM-dd): ");
@@ -93,7 +93,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var goalName = _input.GetInput("Enter updated goal name: ");
+            var goalName = _input.GetTitleInput("Enter updated goal name: ");
             var targetAmount = _input.GetValidDecimal("Enter updated target amount: ");
             var currentAmount = _input.GetValidDecimal("Enter updated current amount: ");
             var targetDate = _input.GetValidDate("Enter updated target date (yyyy-MM-dd): ");

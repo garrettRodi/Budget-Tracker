@@ -43,7 +43,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            string category = _input.GetInput("Enter category: ");
+            string category = _input.GetTitleInput("Enter category: ");
             decimal amount = _input.GetValidDecimal("Enter planned amount: ");
             DateTime period = _input.GetValidDate("Enter period (yyyy-MM-dd): ");
 
@@ -121,7 +121,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var existing = all.First(pe => pe.Id == id);
 
-            string category = _input.GetInput($"Category ({existing.Category}): ");
+            string category = _input.GetTitleInput($"Category ({existing.Category}): ");
             decimal amount = _input.GetValidDecimal($"Amount ({existing.Amount:C}): ");
             DateTime period = _input.GetValidDate($"Period ({existing.Period:yyyy-MM-dd}): ");
 

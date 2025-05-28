@@ -51,9 +51,8 @@ namespace BudgetTracker.Application.Services
             if (activeBudget != null)
             {
                 // Find a matching BudgetItem by comparing the category.
-                var normalizedEntityCategory = CategoryHelper.NormalizeCategory(entity.Category);
                 var matchingBudgetItem = activeBudget.BudgetItems.FirstOrDefault(item =>
-                    CategoryHelper.NormalizeCategory(item.Category) == normalizedEntityCategory);
+                    item.Category == entity.Category);
 
                 if (matchingBudgetItem != null)
                 {
@@ -137,7 +136,7 @@ namespace BudgetTracker.Application.Services
             existing.Name = cmd.Name;
             existing.Amount = cmd.Amount;
             existing.ExpenseDate = cmd.Date;
-            existing.Category = CategoryHelper.NormalizeCategory(cmd.Category);
+            existing.Category = cmd.Category;
             existing.SavingGoalId = cmd.SavingGoalId;
 
             await _unitOfWork.ExpenseRepository.UpdateAsync(existing);

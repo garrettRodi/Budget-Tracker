@@ -42,7 +42,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 _console.Clear();
                 _console.WriteLine("=== Create Budget ===");
 
-                string name = _input.GetInput("Enter budget name: ");
+                string name = _input.GetTitleInput("Enter budget name: ");
                 var frequency = _input.GetEnum<BudgetFrequency>("Enter frequency (Weekly, Monthly, Yearly): ");
                 DateTime startDate = _input.GetValidDate(
                     "Enter start date (yyyy-MM-dd): ");
@@ -67,7 +67,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     }
                     _console.WriteLine($"{allCategories.Count + 1}. Other (enter custom)");
 
-                    string input = _input.GetInput("Choice or 'done': ").Trim();
+                    string input = _input.GetTitleInput("Choice or 'done': ").Trim();
 
                     if (input.Equals("done", StringComparison.OrdinalIgnoreCase))
                     {
@@ -89,7 +89,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     }
                     else if (choice == allCategories.Count + 1 || !int.TryParse(input, out _))
                     {
-                        category = _input.GetInput("Enter custom category name: ");
+                        category = _input.GetTitleInput("Enter custom category name: ");
                     }
                     else
                     {
@@ -159,7 +159,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            string name = _input.GetInput("Enter new budget name: ");
+            string name = _input.GetTitleInput("Enter new budget name: ");
             var frequency = _input.GetEnum<BudgetFrequency>("Enter new frequency (Weekly/Monthly/Yearly): ");
             DateTime startDate = _input.GetValidDate("Enter new start date (yyyy-MM-dd): ");
             DateTime endDate = _input.GetValidDate("Enter new end date (yyyy-MM-dd): ");

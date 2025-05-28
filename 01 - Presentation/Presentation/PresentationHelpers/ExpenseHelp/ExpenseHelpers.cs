@@ -51,8 +51,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             string name = _input.GetInput("Enter expense name: ");
             decimal amount = _input.GetValidDecimal("Enter amount: ");
             DateTime date = _input.GetValidDate("Enter expense date (yyyy-MM-dd): ");
-            string rawCategory = _input.GetInput("Enter category: ");
-            string category = CategoryHelper.NormalizeCategory(rawCategory);
+            string category = _input.GetTitleInput("Enter category: ");
 
             Guid? savingGoalId = null;
             if (category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
@@ -137,8 +136,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             string name = _input.GetInput("Enter updated expense name: ");
             decimal amount = _input.GetValidDecimal("Enter updated amount: ");
             DateTime date = _input.GetValidDate("Enter updated date (yyyy-MM-dd): ");
-            string rawCategory = _input.GetInput("Enter updated category: ");
-            string category = CategoryHelper.NormalizeCategory(rawCategory);
+            string category = _input.GetTitleInput("Enter updated category: ");
 
 
             // 2. If amount is zero, treat as delete (per your requirement).

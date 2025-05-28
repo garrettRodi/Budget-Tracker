@@ -37,7 +37,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            var category = _input.GetInput("Enter the expense category to drill down (e.g., Food): ");
+            var category = _input.GetTitleInput("Enter the expense category to drill down (e.g., Food): ");
             var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
             var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
 

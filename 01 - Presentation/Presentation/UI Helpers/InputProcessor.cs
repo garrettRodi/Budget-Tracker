@@ -1,5 +1,6 @@
 ﻿// File: Presentation/UIHelpers/InputProcessor.cs
 using System;
+using BudgetTracker.Application.Helpers;
 
 namespace BudgetTracker.Presentation.UIHelpers
 {
@@ -26,6 +27,21 @@ namespace BudgetTracker.Presentation.UIHelpers
             } while (string.IsNullOrWhiteSpace(input));
 
             return input;
+        }
+
+        public string GetTitleInput(string prompt)
+        {
+            string input;
+            do
+            {
+                _console.Write(prompt);
+                input = _console.ReadLine()?.Trim();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    _console.WriteLine("Input cannot be empty. Please try again.");
+                }
+            } while (string.IsNullOrWhiteSpace(input));
+            return TitleCaseHelper.TitleCase(input);
         }
 
 

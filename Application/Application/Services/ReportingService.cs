@@ -34,7 +34,7 @@ namespace BudgetTracker.Application.Services
             decimal totalExpenses = expenses.Sum(e => e.Amount);
 
             var categoryTotals = expenses
-     .GroupBy(e => CategoryHelper.NormalizeCategory(e.Category))
+     .GroupBy(e => e.Category)
      .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
 
             var categoryPercentages = categoryTotals.ToDictionary(
@@ -291,7 +291,7 @@ namespace BudgetTracker.Application.Services
                 EndDate = end,
                 ReportingPeriods = periods,
                 Categories = budget.BudgetItems
-                    .Select(i => CategoryHelper.NormalizeCategory(i.Category))
+                    .Select(i => i.Category)
                     .Distinct()
                     .ToList()
             };
@@ -307,7 +307,7 @@ namespace BudgetTracker.Application.Services
             // 4) distribute planned evenly
             foreach (var item in budget.BudgetItems)
             {
-                var normCat = CategoryHelper.NormalizeCategory(item.Category);
+                var normCat = item.Category;
                 var perPeriod = item.PlannedAmount / periods.Count;
                 foreach (var p in periods)
                     dto.PlannedByCategoryAndDate[(item.Category, p)] += perPeriod;
@@ -325,7 +325,7 @@ namespace BudgetTracker.Application.Services
                     ? new DateTime(exp.ExpenseDate.Year, exp.ExpenseDate.Month, 1)
                     : exp.ExpenseDate.Date;
 
-                var normCat = CategoryHelper.NormalizeCategory(exp.Category);
+                var normCat = exp.Category;
 
                 // If this category wasn't in planned, add it to categories and zero-fill
                 if (!dto.Categories.Contains(normCat))
