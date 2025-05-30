@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Domain.Entities
 {
@@ -12,7 +13,7 @@ namespace BudgetTracker.Domain.Entities
         public Guid BudgetContainerId { get; set; }
         public BudgetContainer BudgetContainer { get; set; }
         public string Category { get; set; } = string.Empty; // e.g., Food, Rent, Utilities, etc.
-        public decimal PlannedAmount { get; set; }
-        public decimal ActualAmount { get; set; }
+        public Money PlannedAmount { get; set; }
+        public Money ActualAmount { get; set; }
     }
 }

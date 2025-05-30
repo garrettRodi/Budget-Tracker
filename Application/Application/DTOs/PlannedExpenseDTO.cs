@@ -1,4 +1,5 @@
 ﻿using System;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Application.DTOs
 {
@@ -6,7 +7,8 @@ namespace BudgetTracker.Application.DTOs
     {
         public Guid Id { get; set; }
         public string Category { get; set; } = string.Empty;
-        public decimal Amount { get; set; }
+        public Money Amount { get; set; }
+        public string Currency {  get; set; }
         public DateTime Period { get; set; }
     }
 }

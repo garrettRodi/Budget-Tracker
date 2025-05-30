@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Application.DTOs
 {
     public class BudgetMatrixReportDTO
     {
+        public string Currency {  get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
 
@@ -17,10 +19,10 @@ namespace BudgetTracker.Application.DTOs
 
         public List<string> Categories { get; set; } = new();
 
-        public Dictionary<(string Category, DateTime PeriodStart), decimal> PlannedByCategoryAndDate
+        public Dictionary<(string Category, DateTime PeriodStart), Money> PlannedByCategoryAndDate
         { get; set; } = new();
 
-        public Dictionary<(string Category, DateTime PeriodStart), decimal> ActualByCategoryAndDate
+        public Dictionary<(string Category, DateTime PeriodStart), Money> ActualByCategoryAndDate
         { get; set; } = new();
     }
 }

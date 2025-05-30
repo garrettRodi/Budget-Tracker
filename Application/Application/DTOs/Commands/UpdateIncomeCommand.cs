@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Application.DTOs.Commands
 {
@@ -11,7 +12,7 @@ namespace BudgetTracker.Application.DTOs.Commands
         public Guid BudgetContainerId { get; set; }
         public Guid Id { get; set; }
         public string Source { get; set; } = string.Empty;
-        public decimal ActualAmount { get; set; }
+        public Money ActualAmount { get; set; }
         public DateTime ReceivedDate { get; set; }
     }
 }

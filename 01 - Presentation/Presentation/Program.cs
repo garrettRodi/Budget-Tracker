@@ -95,6 +95,7 @@ namespace BudgetTracker.Presentation
 
                         // Currency conversion
                         services.AddHttpClient<CurrencyConversionService>();
+                        services.AddSingleton<ICurrencyService, CurrencyService>();
 
                         // App Controller
                         services.AddScoped<AppController>();

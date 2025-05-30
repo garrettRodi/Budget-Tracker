@@ -191,8 +191,8 @@ namespace BudgetTracker.Application.Services
                 return 0;
             }
 
-            _logger.LogInformation("Total expenses calculated: {Total}", expenses.Sum(e => e.Amount));
-            return expenses.Sum(e => e.Amount);
+            _logger.LogInformation("Total expenses calculated: {Total}", expenses.Sum(e => e.Amount.Amount));
+            return expenses.Sum(e => e.Amount.Amount);
         }
     }
 }

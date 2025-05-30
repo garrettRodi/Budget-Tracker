@@ -3,6 +3,7 @@ using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Mappers;
 using BudgetTracker.Domain.Interfaces;
+using BudgetTracker.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Application.Services
@@ -11,11 +12,13 @@ namespace BudgetTracker.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<SavingGoalsService> _logger;
+        private readonly ICurrencyService _currencyService;
 
-        public SavingGoalsService(IUnitOfWork unitOfWork, ILogger<SavingGoalsService> logger)
+        public SavingGoalsService(IUnitOfWork unitOfWork, ILogger<SavingGoalsService> logger, ICurrencyService currencyService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _currencyService = currencyService;
         }
 
         public async Task<SavingGoalDTO> CreateSavingGoalAsync(CreateSavingGoalCommand command)
@@ -110,7 +113,7 @@ namespace BudgetTracker.Application.Services
                 e => e.SavingGoalId == savingGoalId && e.Category == "Savings");
 
             // 3. Sum all their amounts
-            decimal total = expenses.Sum(e => e.Amount);
+            Money total = expenses.Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, e) => sum +e.Amount);
 
             // 4. Update and save
             goal.CurrentAmount = total;

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// ... existing using statements ...
 
 namespace BudgetTracker.Domain.ValueObjects
 {
@@ -22,12 +18,28 @@ namespace BudgetTracker.Domain.ValueObjects
             Currency = currency;
         }
 
-       public Money Add(Money other)
+        public Money Add(Money other)
         {
             if (other.Currency != Currency)
                 throw new InvalidOperationException("Cannot add amounts in different currency.");
 
             return new Money(Amount + other.Amount, Currency);
+        }
+
+        // Operator overload for +
+        public static Money operator +(Money a, Money b)
+        {
+            if (a.Currency != b.Currency)
+                throw new InvalidOperationException("Cannot add amounts in different currencies.");
+            return new Money(a.Amount + b.Amount, a.Currency);
+        }
+
+        // Operator overload for -
+        public static Money operator -(Money a, Money b)
+        {
+            if (a.Currency != b.Currency)
+                throw new InvalidOperationException("Cannot subtract amounts in different currencies.");
+            return new Money(a.Amount - b.Amount, a.Currency);
         }
     }
 }

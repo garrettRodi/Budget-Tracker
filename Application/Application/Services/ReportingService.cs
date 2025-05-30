@@ -4,8 +4,11 @@ using BudgetTracker.Application.Helpers;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Interfaces;
+using BudgetTracker.Domain.ValueObjects;
 using BudgetTrackers.Application.DTOs;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Logging;
+using BudgetTracker.Application.Services;
 
 namespace BudgetTracker.Application.Services
 {
@@ -14,12 +17,14 @@ namespace BudgetTracker.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICategoryMappingService _categoryMappingService;
         private readonly ILogger<ReportingService> _logger;
+        private readonly ICurrencyService _currencyService;
 
-        public ReportingService(IUnitOfWork unitOfWork, ICategoryMappingService categoryMappingService, ILogger<ReportingService> logger)
+        public ReportingService(IUnitOfWork unitOfWork, ICategoryMappingService categoryMappingService, ILogger<ReportingService> logger, ICurrencyService currencyService)
         {
             _unitOfWork = unitOfWork;
             _categoryMappingService = categoryMappingService;
             _logger = logger;
+            _currencyService = currencyService;
         }
 
         public async Task<ExpenseReportDTO> GenerateExpenseReportAsync(Guid budgetContainerId, DateTime startDate, DateTime endDate)
@@ -31,15 +36,15 @@ namespace BudgetTracker.Application.Services
                  e.BudgetContainerId == budgetContainerId &&
                  e.ExpenseDate >= startDate && e.ExpenseDate <= endDate);
 
-            decimal totalExpenses = expenses.Sum(e => e.Amount);
+            Money totalExpenses = expenses.Aggregate(new Money(0,_currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
 
             var categoryTotals = expenses
      .GroupBy(e => e.Category)
-     .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
+     .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount.Amount));
 
             var categoryPercentages = categoryTotals.ToDictionary(
                  ct => ct.Key,
-                 ct => totalExpenses > 0 ? (ct.Value / totalExpenses) * 100 : 0);
+                 ct => totalExpenses.Amount > 0 ? (ct.Value / totalExpenses.Amount) * 100 : 0);
 
             _logger.LogInformation("Expense report generated successfully with total expenses: {TotalExpenses}", totalExpenses);
 
@@ -63,11 +68,11 @@ namespace BudgetTracker.Application.Services
             if (budget == null)
             {
                 _logger.LogWarning("No budget container found with ID {BudgetContainerId}", budgetContainerId);
-                return new BudgetReportDTO { BudgetedExpenses = 0, ActualExpenses = 0, Difference = 0 };
+                return new BudgetReportDTO { BudgetedExpenses = new Money(0m, _currencyService.CurrentCurrency), ActualExpenses = new Money(0m, _currencyService.CurrentCurrency), Difference = new Money(0m, _currencyService.CurrentCurrency) };
             }
 
             // Calculate the planned budget from the budget items.
-            decimal plannedBudget = budget.BudgetItems.Sum(i => i.PlannedAmount);
+            Money plannedBudget = budget.BudgetItems.Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, i) => sum + i.PlannedAmount);
 
             // Query expenses for this container using the container’s period.
             var expenses = await _unitOfWork.ExpenseRepository.FindAsync(e =>
@@ -75,7 +80,7 @@ namespace BudgetTracker.Application.Services
                 e.ExpenseDate >= budget.StartDate &&
                 e.ExpenseDate <= budget.EndDate);
 
-            decimal actualExpenses = expenses.Sum(e => e.Amount);
+            Money actualExpenses = expenses.Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
 
             _logger.LogInformation("Budget report for container {BudgetContainerId}: Planned={PlannedBudget}, Actual={ActualExpenses}",
                                      budgetContainerId, plannedBudget, actualExpenses);
@@ -98,7 +103,7 @@ namespace BudgetTracker.Application.Services
                 i.BudgetContainerId == budgetContainerId &&
                 i.ReceivedDate >= startDate && i.ReceivedDate <= endDate);
 
-            decimal totalIncome = incomes.Sum(i => i.ActualAmount);
+            Money totalIncome = incomes.Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, i) => sum + i.ActualAmount);
 
             _logger.LogInformation("Income report generated successfully for budget {BudgetId} with total income: {TotalIncome}", budgetContainerId, totalIncome);
 
@@ -124,33 +129,33 @@ namespace BudgetTracker.Application.Services
 
             // Assume budget items are stored in budgetContainer.Items.
             // Calculate planned amounts for each category.
-            decimal necessitiesPlanned = budgetContainer.BudgetItems
+            Money necessitiesPlanned = budgetContainer.BudgetItems
                 .Where(i => i.Category.Equals("Necessities", StringComparison.OrdinalIgnoreCase))
-                .Sum(i => i.PlannedAmount);
-            decimal savingsPlanned = budgetContainer.BudgetItems
+                .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, i) => sum + i.PlannedAmount);
+            Money savingsPlanned = budgetContainer.BudgetItems
                 .Where(i => i.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
-                .Sum(i => i.PlannedAmount);
-            decimal discretionaryPlanned = budgetContainer.BudgetItems
+                .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, i) => sum + i.PlannedAmount);
+            Money discretionaryPlanned = budgetContainer.BudgetItems
                 .Where(i => i.Category.Equals("Discretionary", StringComparison.OrdinalIgnoreCase))
-                .Sum(i => i.PlannedAmount);
+                .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, i) => sum + i.PlannedAmount);
 
             // Query expenses for this container within the specified date range.
             var expenses = await _unitOfWork.ExpenseRepository.FindAsync(e =>
                 e.BudgetContainerId == budgetContainerId &&
                 e.ExpenseDate >= startDate && e.ExpenseDate <= endDate);
-            decimal necessitiesActual = expenses
+            Money necessitiesActual = expenses
                 .Where(e => e.Category.Equals("Necessities", StringComparison.OrdinalIgnoreCase))
-                .Sum(e => e.Amount);
-            decimal savingsActual = expenses
+                .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
+            Money savingsActual = expenses
                 .Where(e => e.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
-                .Sum(e => e.Amount);
-            decimal discretionaryActual = expenses
+                .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
+            Money discretionaryActual = expenses
                 .Where(e => e.Category.Equals("Discretionary", StringComparison.OrdinalIgnoreCase))
-                .Sum(e => e.Amount);
+                .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
 
-            decimal necessitiesPercentageVariance = necessitiesPlanned > 0 ? ((necessitiesPlanned - necessitiesActual) / necessitiesPlanned) * 100 : 0;
-            decimal savingsPercentageVariance = savingsPlanned > 0 ? ((savingsPlanned - savingsActual) / savingsPlanned) * 100 : 0;
-            decimal discretionaryPercentageVariance = discretionaryPlanned > 0 ? ((discretionaryPlanned - discretionaryActual) / discretionaryPlanned) * 100 : 0;
+            decimal necessitiesPercentageVariance = necessitiesPlanned.Amount > 0 ? ((necessitiesPlanned.Amount - necessitiesActual.Amount) / necessitiesPlanned.Amount) * 100 : 0;
+            decimal savingsPercentageVariance = savingsPlanned.Amount > 0 ? ((savingsPlanned.Amount - savingsActual.Amount) / savingsPlanned.Amount) * 100 : 0;
+            decimal discretionaryPercentageVariance = discretionaryPlanned.Amount > 0 ? ((discretionaryPlanned.Amount - discretionaryActual.Amount) / discretionaryPlanned.Amount) * 100 : 0;
 
             _logger.LogInformation("Budget rule report generated successfully for rule: {Rule}", rule);
             return new BudgetRuleReportDTO
@@ -165,6 +170,7 @@ namespace BudgetTracker.Application.Services
                 NecessitiesPercentageVariance = necessitiesPercentageVariance,
                 SavingsPercentageVariance = savingsPercentageVariance,
                 DiscretionaryPercentageVariance = discretionaryPercentageVariance
+
             };
         }
 
@@ -185,9 +191,9 @@ namespace BudgetTracker.Application.Services
             // 3. For each saving goal, sum expenses linked to that goal
             foreach (var goal in savingGoals)
             {
-                decimal currentAmount = expenses
-                    .Where(e => e.Category == "Savings" && e.SavingGoalId == goal.Id)
-                    .Sum(e => e.Amount);
+                Money currentAmount = expenses
+    .Where(e => e.Category == "Savings" && e.SavingGoalId == goal.Id)
+    .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
 
                 report.Add(new SavingGoalReportDTO
                 {
@@ -200,19 +206,19 @@ namespace BudgetTracker.Application.Services
             }
 
             // === CHANGE: Calculate Bulk/Uncategorized savings ===
-            decimal bulkSavings = expenses
+            Money bulkSavings = expenses
                 .Where(e => e.Category == "Savings" &&
                            (e.SavingGoalId == null || e.SavingGoalId == Guid.Empty))
-                .Sum(e => e.Amount);
+                .Aggregate(new Money(0, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
 
             // If there are any bulk savings, add a "virtual" saving goal to the report
-            if (bulkSavings > 0)
+            if (bulkSavings.Amount > 0)
             {
                 report.Add(new SavingGoalReportDTO
                 {
                     Id = Guid.Empty, // or a special value to indicate "bulk"
                     GoalName = "Bulk/Uncategorized Savings",
-                    TargetAmount = 0, // No target for bulk savings
+                    TargetAmount = new Money(0m, _currencyService.CurrentCurrency), // No target for bulk savings
                     CurrentAmount = bulkSavings,
                     TargetDate = null // Or DateTime.MinValue, as appropriate
                 });
@@ -236,12 +242,12 @@ namespace BudgetTracker.Application.Services
                  e.ExpenseDate >= startDate &&
                  e.ExpenseDate <= endDate);
 
-            decimal totalExpenses = expenses.Sum(e => e.Amount);
+            Money totalExpenses = expenses.Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
             var categoryTotals = expenses.GroupBy(e => e.Category)
-                                         .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
+                                         .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount.Amount));
             var categoryPercentages = categoryTotals.ToDictionary(
                 ct => ct.Key,
-                ct => totalExpenses > 0 ? (ct.Value / totalExpenses) * 100 : 0);
+                ct => totalExpenses.Amount > 0 ? (ct.Value / totalExpenses.Amount) * 100 : 0);
 
             return new ExpenseReportDTO
             {
@@ -300,17 +306,19 @@ namespace BudgetTracker.Application.Services
             foreach (var cat in dto.Categories)
                 foreach (var p in periods)
                 {
-                    dto.PlannedByCategoryAndDate[(cat, p)] = 0m;
-                    dto.ActualByCategoryAndDate[(cat, p)] = 0m;
+                    dto.PlannedByCategoryAndDate[(cat, p)] = new Money (0m, _currencyService.CurrentCurrency);
+                    dto.ActualByCategoryAndDate[(cat, p)] = new Money (0m, _currencyService.CurrentCurrency);
                 }
 
             // 4) distribute planned evenly
             foreach (var item in budget.BudgetItems)
             {
                 var normCat = item.Category;
-                var perPeriod = item.PlannedAmount / periods.Count;
+                var perPeriodAmount = item.PlannedAmount.Amount / periods.Count;
+                var perPeriodMoney = new Money(perPeriodAmount, item.PlannedAmount.Currency); // or use _currencyService.CurrentCurrency
+
                 foreach (var p in periods)
-                    dto.PlannedByCategoryAndDate[(item.Category, p)] += perPeriod;
+                    dto.PlannedByCategoryAndDate[(item.Category, p)] += perPeriodMoney;
             }
 
             // 5) tally actuals
@@ -334,8 +342,8 @@ namespace BudgetTracker.Application.Services
 
                     foreach (var p in periods)
                     {
-                        dto.PlannedByCategoryAndDate[(normCat, p)] = 0m;
-                        dto.ActualByCategoryAndDate[(normCat, p)] = 0m;
+                        dto.PlannedByCategoryAndDate[(normCat, p)] = new Money(0m, _currencyService.CurrentCurrency);
+                        dto.ActualByCategoryAndDate[(normCat, p)] = new Money(0m, _currencyService.CurrentCurrency);
                     }
                 }
 

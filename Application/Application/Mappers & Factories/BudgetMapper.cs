@@ -1,6 +1,7 @@
 ﻿using BudgetTracker.Application.DTOs;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Domain.Entities;
+using BudgetTracker.Domain.ValueObjects;
 using System;
 using System.Linq;
 
@@ -29,7 +30,7 @@ namespace BudgetTracker.Application.Mappers
                     Id = Guid.NewGuid(),
                     Category = item.Category,
                     PlannedAmount = item.PlannedAmount,
-                    ActualAmount = 0m,
+                    ActualAmount = new Money(0m,item.PlannedAmount.Currency),
                     BudgetContainerId = budget.Id   // ← use budget.Id here
                 }).ToList();
             }
