@@ -1,5 +1,6 @@
 ﻿using System;
 using BudgetTracker.Domain.Entities;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Domain.Entities
 {
@@ -11,7 +12,7 @@ namespace BudgetTracker.Domain.Entities
         public BudgetContainer? BudgetContainer { get; set; }
 
         public string Category { get; set; } = string.Empty;
-        public decimal Amount { get; set; }
+        public Money Amount { get; set; }
 
         // The day (for weekly/monthly budgets) or month‐start (for yearly budgets)
         public DateTime Period { get; set; }

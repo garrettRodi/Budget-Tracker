@@ -13,8 +13,8 @@ namespace BudgetTracker.Domain.ValueObjects
 
         public Money(decimal amount, string currency)
         {
-            if (amount < 0)
-                throw new ArgumentException("Amount cannot be negative.");
+           // if (amount < 0)
+               // throw new ArgumentException("Amount cannot be negative.");
             if (string.IsNullOrWhiteSpace(currency))
                 throw new ArgumentException("Currency is required");
 

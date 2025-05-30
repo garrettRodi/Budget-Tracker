@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Infrastructure.EntityConfigurations;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Infrastructure.DataAccess
 {
@@ -140,6 +141,21 @@ namespace BudgetTracker.Infrastructure.DataAccess
         GroupName = "Discretionary",
     }
             );
+
+            // CHANGE: Map Money as an owned type for Income
+            modelBuilder.Entity<Income>().OwnsOne(i => i.Amount, owned =>
+            {
+                owned.Property(m => m.Amount).HasColumnName("Amount");      // CHANGE: Maps Money.Amount
+                owned.Property(m => m.Currency).HasColumnName("Currency");  // CHANGE: Maps Money.Currency
+            });
+
+            // CHANGE: Map Money as an owned type for Expense
+            modelBuilder.Entity<Expense>().OwnsOne(e => e.Amount, owned =>
+            {
+                owned.Property(m => m.Amount).HasColumnName("Amount");      // CHANGE: Maps Money.Amount
+                owned.Property(m => m.Currency).HasColumnName("Currency");  // CHANGE: Maps Money.Currency
+            });
         }
+    }
     }
 }

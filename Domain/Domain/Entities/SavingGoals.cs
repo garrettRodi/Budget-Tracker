@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Domain.Entities
 {
@@ -10,8 +11,8 @@ namespace BudgetTracker.Domain.Entities
     {
         public Guid Id { get; set; }
         public string GoalName { get; set; } = string.Empty; // e.g., "Emergency Fund"
-        public decimal TargetAmount { get; set; }
-        public decimal CurrentAmount { get; set; }
+        public Money TargetAmount { get; set; }
+        public Money CurrentAmount { get; set; }
         public DateTime? TargetDate { get; set; }
     
         public Guid BudgetContainerId { get; set; }
