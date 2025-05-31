@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Domain.Entities;
+using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
@@ -16,13 +17,15 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         private readonly InputProcessor _input;
         private readonly IConsole _console;
         private readonly ICategoryMappingService _categoryMappingService;
+        private readonly ICurrencyService _currencyService;
 
         public BudgetHelpers(
             IBudgetService budgetService,
             SelectBudgetContainer selector,
             InputProcessor input,
             IConsole console,
-            ICategoryMappingService categoryMappingService)
+            ICategoryMappingService categoryMappingService,
+            ICurrencyService currencyService)
         {
             _budgetService = budgetService
                 ?? throw new ArgumentNullException(nameof(budgetService));
@@ -33,6 +36,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console = console
                 ?? throw new ArgumentNullException(nameof(console));
             _categoryMappingService = categoryMappingService;
+            _currencyService = currencyService;
         }
 
         public async Task CreateBudgetAsync()
@@ -102,7 +106,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     items.Add(new CreateBudgetItemCommand
                     {
                         Category = category,
-                        PlannedAmount = plannedAmount
+                        PlannedAmount = new Money(plannedAmount, _currencyService.CurrentCurrency)
                     });
                 }
 
@@ -134,7 +138,6 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             _console.ReadKey();
         }
-
 
         public async Task ViewBudgetsAsync()
         {

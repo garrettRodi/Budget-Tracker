@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Services;
+using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
@@ -14,12 +16,14 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
+        private readonly ICurrencyService _currencyService;
 
         public PlannedExpenseHelpers(
             IPlannedExpenseService plannedExpenseService,
             SelectBudgetContainer selector,
             InputProcessor input,
-            IConsole console)
+            IConsole console,
+            ICurrencyService currencyService)
         {
             _plannedExpenseService = plannedExpenseService
                 ?? throw new ArgumentNullException(nameof(plannedExpenseService));
@@ -29,6 +33,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 ?? throw new ArgumentNullException(nameof(input));
             _console = console
                 ?? throw new ArgumentNullException(nameof(console));
+            _currencyService = currencyService;
         }
 
         public async Task CreatePlannedExpenseAsync()
@@ -51,7 +56,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             {
                 BudgetContainerId = budgetId,
                 Category = category,
-                Amount = amount,
+                Amount = new Money(amount, _currencyService.CurrentCurrency),
                 Period = period
             };
 
@@ -130,7 +135,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 Id = id,
                 BudgetContainerId = budgetId,
                 Category = string.IsNullOrWhiteSpace(category) ? existing.Category : category,
-                Amount = amount,
+                Amount = new Money(amount, _currencyService.CurrentCurrency),
                 Period = period
             };
 

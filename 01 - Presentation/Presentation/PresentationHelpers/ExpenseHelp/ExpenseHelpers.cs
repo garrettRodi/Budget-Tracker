@@ -6,6 +6,7 @@ using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Helpers;
 using BudgetTracker.Presentation.UIHelpers;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
 {
@@ -17,6 +18,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
+        private readonly ICurrencyService _currencyService;
 
         public ExpenseHelpers(
             IExpenseService expenseService,
@@ -24,7 +26,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             ISavingGoalsService savingGoalsService,
             SelectBudgetContainer selector,
             InputProcessor input,
-            IConsole console)
+            IConsole console,
+            ICurrencyService currencyService)
         {
             _expenseService = expenseService
                 ?? throw new ArgumentNullException(nameof(expenseService));
@@ -38,6 +41,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 ?? throw new ArgumentNullException(nameof(input));
             _console = console
                 ?? throw new ArgumentNullException(nameof(console));
+            _currencyService = currencyService;
         }
 
         public async Task CreateExpenseAsync()
@@ -84,7 +88,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             {
                 BudgetContainerId = budgetId,
                 Name = name,
-                Amount = amount,
+                Amount = new Money(amount, _currencyService.CurrentCurrency),
                 Date = date,
                 Category = category,
                 SavingGoalId = savingGoalId
@@ -183,7 +187,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 BudgetContainerId = budgetId,
                 Id = id,
                 Name = name,
-                Amount = amount,
+                Amount = new Money(amount, _currencyService.CurrentCurrency),
                 Date = date,
                 Category = category,
                 SavingGoalId = savingGoalId

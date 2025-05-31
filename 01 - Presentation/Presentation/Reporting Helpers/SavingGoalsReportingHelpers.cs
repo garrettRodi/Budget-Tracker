@@ -56,13 +56,13 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                     _console.WriteLine($"Goal: {g.GoalName}");
                     _console.WriteLine($"  Target Amount: {g.TargetAmount:C}");
                     _console.WriteLine($"  Current Saved: {g.CurrentAmount:C}");
-                    var progress = g.TargetAmount > 0
-                        ? g.CurrentAmount / g.TargetAmount * 100
+                    var progress = g.TargetAmount.Amount > 0
+                        ? g.CurrentAmount.Amount / g.TargetAmount.Amount * 100
                         : 0;
                     _console.WriteLine($"  Progress: {progress:F2}%");
                 }
                 _console.WriteLine(new string('-', 40));
-                totalSavings += g.CurrentAmount;
+                totalSavings += g.CurrentAmount.Amount;
             }
             _console.WriteLine($"Total Savings (All Goals + Bulk): {{totalSavings:C}}\"");
             _console.ReadKey();

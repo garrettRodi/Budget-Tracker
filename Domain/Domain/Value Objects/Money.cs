@@ -17,6 +17,7 @@ namespace BudgetTracker.Domain.ValueObjects
             Amount = amount;
             Currency = currency;
         }
+        private Money() { } // For EF Core
 
         public Money Add(Money other)
         {
@@ -40,6 +41,12 @@ namespace BudgetTracker.Domain.ValueObjects
             if (a.Currency != b.Currency)
                 throw new InvalidOperationException("Cannot subtract amounts in different currencies.");
             return new Money(a.Amount - b.Amount, a.Currency);
+        }
+        public static Money operator /(Money m, decimal divisor)
+        {
+            if (divisor == 0)
+                throw new DivideByZeroException();
+            return new Money(m.Amount / divisor, m.Currency);
         }
     }
 }

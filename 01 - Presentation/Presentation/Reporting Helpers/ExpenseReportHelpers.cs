@@ -59,15 +59,15 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 _console.WriteLine("\nSavings Breakdown:");
                 var goals = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
                 var bulk = goals.FirstOrDefault(g => g.Id == Guid.Empty);
-                var goalTotal = goals.Where(g => g.Id != Guid.Empty).Sum(g => g.CurrentAmount);
+                var goalTotal = goals.Where(g => g.Id != Guid.Empty).Sum(g => g.CurrentAmount.Amount);
 
                 foreach (var g in goals.Where(g => g.Id != Guid.Empty))
                     _console.WriteLine($"  {g.GoalName}: {g.CurrentAmount:C}");
 
-                if (bulk != null && bulk.CurrentAmount > 0)
+                if (bulk != null && bulk.CurrentAmount.Amount > 0)
                     _console.WriteLine($"  Bulk/Uncategorized: {bulk.CurrentAmount:C}");
 
-                _console.WriteLine($"  === Total Savings: {(goalTotal + (bulk?.CurrentAmount ?? 0)):C}");
+                _console.WriteLine($"  === Total Savings: {(goalTotal + (bulk?.CurrentAmount.Amount ?? 0)):C}");
             }
             _console.ReadKey();
         }

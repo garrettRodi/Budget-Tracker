@@ -14,7 +14,7 @@ namespace BudgetTracker.Domain.Services
         public void ValidateExpense(Expense expense)
         {
             if (expense.Amount.Amount < 0)
-                throw new InvalidExpenseException(expense.Amount.Amount);
+                throw new InvalidExpenseException(expense.Amount);
 
             if (expense.ExpenseDate > DateTime.Now)
                 throw new Exception("Expense date cannot be in the future.");
