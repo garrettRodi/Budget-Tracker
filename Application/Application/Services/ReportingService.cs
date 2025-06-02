@@ -315,7 +315,7 @@ namespace BudgetTracker.Application.Services
             {
                 var normCat = item.Category;
                 var perPeriodAmount = item.PlannedAmount.Amount / periods.Count;
-                var perPeriodMoney = new Money(perPeriodAmount, item.PlannedAmount.Currency); // or use _currencyService.CurrentCurrency
+                var perPeriodMoney = new Money(perPeriodAmount, _currencyService.CurrentCurrency);
 
                 foreach (var p in periods)
                     dto.PlannedByCategoryAndDate[(item.Category, p)] += perPeriodMoney;

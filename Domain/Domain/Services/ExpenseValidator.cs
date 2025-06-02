@@ -25,16 +25,6 @@ namespace BudgetTracker.Domain.Services
             if (string.IsNullOrWhiteSpace(expense.Category))
                 throw  new Exception("Expense category cannot be empty.");
 
-            if (expense.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
-            {
-                if (!expense.SavingGoalId.HasValue)
-                    throw new Exception("A savings expense must be assigned to a savings goal.");
-            }
-            else
-            {
-                if (expense.SavingGoalId.HasValue)
-                    throw new ValidationException("Only savings expenses can have a saving goal.");
-            }
                     // Add more validation rules as needed.
         }
     }

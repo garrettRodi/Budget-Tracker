@@ -6,6 +6,7 @@ using BudgetTracker.Domain.Exceptions;
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Domain.Services;
 using Microsoft.Extensions.Logging; // Use Microsoft.Extensions.Logging for ILogger<T>
+using BudgetTracker.Application.Interfaces;
 
 
 namespace BudgetTracker.Application.Services
@@ -14,12 +15,14 @@ namespace BudgetTracker.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<BudgetService> _logger;
+        private readonly ICurrencyService _currencyService;
         
 
-        public BudgetService(IUnitOfWork unitOfWork, ILogger<BudgetService> logger)
+        public BudgetService(IUnitOfWork unitOfWork, ILogger<BudgetService> logger, ICurrencyService currencyService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _currencyService = currencyService;
         }
 
         // Creates a new budget based on user-provided details.
@@ -28,7 +31,7 @@ namespace BudgetTracker.Application.Services
             try
             {
                 // Convert the command to a BudgetContainer entity using the mapper.
-                var budget = command.ToEntity();
+                var budget = command.ToEntity(_currencyService.CurrentCurrency);
                 var validator = new BudgetValidator();
                 validator.ValidateBudget(budget, isNew: true);
 

@@ -15,9 +15,14 @@ namespace BudgetTracker.Domain.ValueObjects
                 throw new ArgumentException("Currency is required");
 
             Amount = amount;
-            Currency = currency;
+            Currency = currency.Trim().ToUpperInvariant(); ;
         }
         private Money() { } // For EF Core
+
+        public override string ToString()
+        {
+            return $"{Amount:C} {Currency}";
+        }
 
         public Money Add(Money other)
         {

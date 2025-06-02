@@ -69,6 +69,14 @@ namespace BudgetTracker.Infrastructure.DataAccess
                 .WithOne(s => s.BudgetContainer)
                 .HasForeignKey(s => s.BudgetContainerId)
                 .OnDelete(DeleteBehavior.Cascade); // Cascading delete if a container is removed.
+
+            // ExpenseSavingGoal Cascade Delete
+            modelBuilder.Entity<Expense>()
+            .HasOne(e => e.SavingGoal)
+            .WithMany()
+            .HasForeignKey(e => e.SavingGoalId)
+            .OnDelete(DeleteBehavior.Cascade);
+
             // Owning Money
             modelBuilder.Entity<BudgetItem>().OwnsOne(b => b.PlannedAmount);
             modelBuilder.Entity<BudgetItem>().OwnsOne(b => b.ActualAmount);

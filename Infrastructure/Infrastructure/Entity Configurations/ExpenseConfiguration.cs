@@ -16,8 +16,8 @@ namespace BudgetTracker.Infrastructure.EntityConfigurations
                 .HasMaxLength(100)
                 .IsRequired();
 
-            builder.Property(e => e.Amount)
-                .IsRequired();
+            // builder.Property(e => e.Amount).IsRequired();
+
             // If you want to ensure date can't be in the future, you'd normally do that in domain logic
             // or as a constraint, but this is just an example of how you'd refine your schema.
         }
