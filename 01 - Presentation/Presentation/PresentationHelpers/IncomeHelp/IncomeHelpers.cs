@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Services;
+using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
@@ -14,12 +16,14 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
+        private readonly ICurrencyService _currencyService;
 
         public IncomeHelpers(
             IIncomeService incomeService,
             SelectBudgetContainer selector,
             InputProcessor input,
-            IConsole console)
+            IConsole console,
+            ICurrencyService currencyService)
         {
             _incomeService = incomeService
                 ?? throw new ArgumentNullException(nameof(incomeService));
@@ -29,6 +33,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 ?? throw new ArgumentNullException(nameof(input));
             _console = console
                 ?? throw new ArgumentNullException(nameof(console));
+            _currencyService = currencyService;
         }
 
         public async Task CreateIncomeAsync()
@@ -46,7 +51,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             {
                 BudgetContainerId = budgetId,
                 Source = source,
-                ActualAmount = amount,
+                ActualAmount = new Money(amount, _currencyService.CurrentCurrency),
                 ReceivedDate = date
             };
 
@@ -66,7 +71,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             foreach (var inc in list)
             {
                 _console.WriteLine(
-                    $"ID: {inc.Id} | Source: {inc.Source} | Amount: {inc.ActualAmount:C} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
+                $"ID: {inc.Id} | Source: {inc.Source} | Amount: {inc.ActualAmount} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
             }
             if (!list.Any())
                 _console.WriteLine("No incomes found for the active budget.");
@@ -96,7 +101,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 BudgetContainerId = budgetId,
                 Id = id,
                 Source = source,
-                ActualAmount = amount,
+                ActualAmount = new Money(amount, _currencyService.CurrentCurrency),
                 ReceivedDate = date
             };
 

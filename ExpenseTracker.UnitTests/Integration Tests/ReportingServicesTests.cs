@@ -59,7 +59,7 @@ namespace BudgetTracker.Tests.IntegrationTests
             // Now add two expenses that belong to that budget container.
             await _unitOfWork.ExpenseRepository.AddAsync(new Expense
             {
-                Amount = 100,
+                Amount = (100, _currencyService.CurrentCurrency),
                 Category = "Food",
                 ExpenseDate = new DateTime(2023, 1, 15),
                 BudgetContainerId = activeBudgetId

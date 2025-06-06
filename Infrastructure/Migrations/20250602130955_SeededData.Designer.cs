@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace _04__Infrastructure.Migrations
 {
     [DbContext(typeof(BudgetTrackerDbContext))]
-    [Migration("20250528173835_StandardCategories")]
-    partial class StandardCategories
+    [Migration("20250602130955_SeededData")]
+    partial class SeededData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,17 +53,11 @@ namespace _04__Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("ActualAmount")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("BudgetContainerId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("PlannedAmount")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -192,9 +186,6 @@ namespace _04__Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("BudgetContainerId")
                         .HasColumnType("TEXT");
 
@@ -213,11 +204,16 @@ namespace _04__Infrastructure.Migrations
                     b.Property<Guid?>("SavingGoalId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("SavingGoalsId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BudgetContainerId");
 
                     b.HasIndex("SavingGoalId");
+
+                    b.HasIndex("SavingGoalsId");
 
                     b.ToTable("Expenses", (string)null);
                 });
@@ -226,9 +222,6 @@ namespace _04__Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("ActualAmount")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("BudgetContainerId")
@@ -272,9 +265,6 @@ namespace _04__Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("BudgetContainerId")
                         .HasColumnType("TEXT");
 
@@ -303,9 +293,6 @@ namespace _04__Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("BudgetContainerId")
                         .HasColumnType("TEXT");
 
@@ -328,14 +315,8 @@ namespace _04__Infrastructure.Migrations
                     b.Property<Guid>("BudgetContainerId")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("CurrentAmount")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("GoalName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("TargetAmount")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("TargetDate")
@@ -356,7 +337,39 @@ namespace _04__Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "ActualAmount", b1 =>
+                        {
+                            b1.Property<Guid>("BudgetItemId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("BudgetItemId");
+
+                            b1.ToTable("BudgetItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BudgetItemId");
+                        });
+
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "PlannedAmount", b1 =>
+                        {
+                            b1.Property<Guid>("BudgetItemId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("BudgetItemId");
+
+                            b1.ToTable("BudgetItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BudgetItemId");
+                        });
+
+                    b.Navigation("ActualAmount")
+                        .IsRequired();
+
                     b.Navigation("BudgetContainer");
+
+                    b.Navigation("PlannedAmount")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.Expense", b =>
@@ -368,8 +381,29 @@ namespace _04__Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("BudgetTracker.Domain.Entities.SavingGoals", "SavingGoal")
+                        .WithMany()
+                        .HasForeignKey("SavingGoalId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("BudgetTracker.Domain.Entities.SavingGoals", null)
                         .WithMany("Expenses")
-                        .HasForeignKey("SavingGoalId");
+                        .HasForeignKey("SavingGoalsId");
+
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "Amount", b1 =>
+                        {
+                            b1.Property<Guid>("ExpenseId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("ExpenseId");
+
+                            b1.ToTable("Expenses");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ExpenseId");
+                        });
+
+                    b.Navigation("Amount")
+                        .IsRequired();
 
                     b.Navigation("BudgetContainer");
 
@@ -382,6 +416,22 @@ namespace _04__Infrastructure.Migrations
                         .WithMany("Incomes")
                         .HasForeignKey("BudgetContainerId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "ActualAmount", b1 =>
+                        {
+                            b1.Property<Guid>("IncomeId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("IncomeId");
+
+                            b1.ToTable("Incomes");
+
+                            b1.WithOwner()
+                                .HasForeignKey("IncomeId");
+                        });
+
+                    b.Navigation("ActualAmount")
                         .IsRequired();
 
                     b.Navigation("BudgetContainer");
@@ -399,6 +449,22 @@ namespace _04__Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("SavingGoalId");
 
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "Amount", b1 =>
+                        {
+                            b1.Property<Guid>("PlannedExpenseId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("PlannedExpenseId");
+
+                            b1.ToTable("PlannedExpenses");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PlannedExpenseId");
+                        });
+
+                    b.Navigation("Amount")
+                        .IsRequired();
+
                     b.Navigation("BudgetContainer");
 
                     b.Navigation("SavingGoal");
@@ -412,6 +478,22 @@ namespace _04__Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "Amount", b1 =>
+                        {
+                            b1.Property<Guid>("PlannedIncomeId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("PlannedIncomeId");
+
+                            b1.ToTable("PlannedIncomes");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PlannedIncomeId");
+                        });
+
+                    b.Navigation("Amount")
+                        .IsRequired();
+
                     b.Navigation("BudgetContainer");
                 });
 
@@ -423,7 +505,39 @@ namespace _04__Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "CurrentAmount", b1 =>
+                        {
+                            b1.Property<Guid>("SavingGoalsId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("SavingGoalsId");
+
+                            b1.ToTable("SavingGoals");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SavingGoalsId");
+                        });
+
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "TargetAmount", b1 =>
+                        {
+                            b1.Property<Guid>("SavingGoalsId")
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("SavingGoalsId");
+
+                            b1.ToTable("SavingGoals");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SavingGoalsId");
+                        });
+
                     b.Navigation("BudgetContainer");
+
+                    b.Navigation("CurrentAmount")
+                        .IsRequired();
+
+                    b.Navigation("TargetAmount")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.BudgetContainer", b =>

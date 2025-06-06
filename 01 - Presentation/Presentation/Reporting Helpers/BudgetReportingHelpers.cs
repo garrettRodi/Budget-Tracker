@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Services;
 using BudgetTracker.Domain.Entities;
+using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
 using Microsoft.VisualBasic;
 
@@ -17,13 +18,15 @@ namespace BudgetTracker.Presentation.ReportingHelpers
         private readonly IBudgetService _budgetService;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
+        private readonly ICurrencyService _currencyService;
 
         public BudgetReportingHelpers(
             IReportingService reportingService,
             SelectBudgetContainer selector,
             IBudgetService budgetService,
             InputProcessor input,
-            IConsole console)
+            IConsole console,
+            ICurrencyService currencyService)
         {
             _reportingService = reportingService
                 ?? throw new ArgumentNullException(nameof(reportingService));
@@ -35,6 +38,8 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 ?? throw new ArgumentNullException(nameof(input));
             _console = console
                 ?? throw new ArgumentNullException(nameof(console));
+            _currencyService = currencyService
+                ?? throw new ArgumentNullException(nameof(currencyService));
         }
 
         /// <summary>
@@ -59,9 +64,9 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             // Add uncategorized/ bulk savings to the Savings line
             var savingGoalsReport = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
             var bulk = savingGoalsReport.FirstOrDefault(g => g.Id == Guid.Empty);
-            decimal bulkAmount = bulk?.CurrentAmount ?? 0m;
+            Money bulkAmount = bulk?.CurrentAmount ?? new Money(0m, _currencyService.CurrentCurrency); ;
 
-            decimal totalSavingsActual = report.SavingsActual + bulkAmount;
+            Money totalSavingsActual = report.SavingsActual + bulkAmount;
             _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {totalSavingsActual:C} (Goals: {report.SavingsActual:C} + Bulk: {bulkAmount:C}), Variance: {report.SavingsPercentageVariance:F2}%");
             _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
             _console.ReadKey();
@@ -116,7 +121,8 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 {
                     Console.Write("| " + cat.PadRight(13) + "|");
 
-                    decimal rowPln = 0, rowAct = 0;
+                    Money rowPln = new Money(0, _currencyService.CurrentCurrency);
+                    Money rowAct = new Money(0, _currencyService.CurrentCurrency);
                     foreach (var d in pageDates)
                     {
                         var pln = matrix.PlannedByCategoryAndDate[(cat, d)];
@@ -132,15 +138,19 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
                 // --- Differences Row for this page ---
                 Console.Write("| " + "Diff".PadRight(13) + "|");
-                decimal pageTotalDiff = 0;
+                Money pageTotalDiff = new Money(0, _currencyService.CurrentCurrency);
                 foreach (var d in pageDates)
                 {
-                    decimal periodPln = categories.Sum(cat => matrix.PlannedByCategoryAndDate[(cat, d)]);
-                    decimal periodAct = categories.Sum(cat => matrix.ActualByCategoryAndDate[(cat, d)]);
-                    decimal periodDiff = periodPln - periodAct;
+                    Money periodPln = categories
+                        .Select(cat => matrix.PlannedByCategoryAndDate[(cat, d)])
+                        .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
+                    Money periodAct = categories
+                        .Select(cat => matrix.ActualByCategoryAndDate[(cat, d)])
+                        .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
+                    Money periodDiff = periodPln - periodAct;
                     pageTotalDiff += periodDiff;
 
-                    Console.ForegroundColor = periodDiff >= 0
+                    Console.ForegroundColor = periodDiff.Amount >= 0
                         ? ConsoleColor.Green
                         : ConsoleColor.Red;
                     Console.Write($"{periodDiff,12:C}|");
@@ -148,7 +158,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 }
 
                 // Page total difference column
-                Console.ForegroundColor = pageTotalDiff >= 0
+                Console.ForegroundColor = pageTotalDiff.Amount >= 0
                     ? ConsoleColor.Green
                     : ConsoleColor.Red;
                 Console.Write($"{pageTotalDiff,11:C}|\n");
@@ -175,32 +185,40 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             {
                 int divisor = budget.Frequency switch
                 {
-                    BudgetFrequency.Weekly  => 7,
+                    BudgetFrequency.Weekly => 7,
                     BudgetFrequency.Monthly => (matrix.EndDate - matrix.StartDate).Days + 1,
-                    BudgetFrequency.Yearly  => periods.Count,
-                    _                       => periods.Count
+                    BudgetFrequency.Yearly => periods.Count,
+                    _ => periods.Count
                 };
 
                 _console.WriteLine("\n=== Yearly Category Totals ===");
                 foreach (var cat in categories)
                 {
-                    decimal totPln  = periods.Sum(d => matrix.PlannedByCategoryAndDate[(cat, d)]);
-                    decimal totAct  = periods.Sum(d => matrix.ActualByCategoryAndDate[(cat, d)]);
-                    decimal totDiff = totPln - totAct;
-                    bool isSavings  = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
+                    var currency = matrix.PlannedByCategoryAndDate[(cat, periods.First())].Currency; // or get from context/service
+                    Money totPln = periods
+                        .Select(d => matrix.PlannedByCategoryAndDate[(cat, d)])
+                        .Aggregate(new Money(0m, currency), (sum, m) => sum + m);
 
-                    Console.ForegroundColor = (totDiff >= 0) ^ isSavings
+                    Money totAct = periods
+                        .Select(d => matrix.ActualByCategoryAndDate[(cat, d)])
+                        .Aggregate(new Money(0m, currency), (sum, m) => sum + m);
+
+                    Money totDiff = totPln - totAct;
+                    bool isSavings = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
+
+                    Console.ForegroundColor = (totDiff.Amount >= 0) ^ isSavings
                         ? ConsoleColor.Green
                         : ConsoleColor.Red;
                     _console.WriteLine($"{cat.PadRight(15)} {totDiff,12:C}");
                     Console.ForegroundColor = prevColor;
                 }
 
-                decimal grandTotalDiff = categories
-                    .Sum(cat => periods.Sum(d =>
-                        matrix.PlannedByCategoryAndDate[(cat, d)]
-                      - matrix.ActualByCategoryAndDate[(cat, d)]));
-                decimal avgDiff = grandTotalDiff / divisor;
+                Money grandTotalDiff = categories
+                    .Select(cat => periods
+                    .Select(d => matrix.PlannedByCategoryAndDate[(cat, d)] - matrix.ActualByCategoryAndDate[(cat, d)])
+                    .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m))
+                    .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
+                Money avgDiff = grandTotalDiff/ divisor;
 
                 _console.WriteLine($"\nAverage Difference ({divisor} periods): {avgDiff,12:C}");
             }
@@ -208,9 +226,9 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             //  Show bulk/uncategorized savings after the matrix 
             var savingGoalsReport = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
             var bulk = savingGoalsReport.FirstOrDefault(g => g.Id == Guid.Empty);
-            if (bulk != null && bulk.CurrentAmount > 0)
+            if (bulk != null && bulk.CurrentAmount.Amount > 0)
             {
-                _console.WriteLine($"\nBulk/Uncategorized Savings: {bulk.CurrentAmount:C}");
+                _console.WriteLine($"\nBulk/Uncategorized Savings: {bulk.CurrentAmount.Amount:C}");
             }
 
             _console.WriteLine("\nPress any key to return to menu...");

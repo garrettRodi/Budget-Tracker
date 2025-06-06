@@ -14,7 +14,6 @@ namespace BudgetTracker.Domain.Entities
         public Money TargetAmount { get; set; }
         public Money CurrentAmount { get; set; }
         public DateTime? TargetDate { get; set; }
-    
         public Guid BudgetContainerId { get; set; }
         public BudgetContainer BudgetContainer { get; set; } = null!;
         public ICollection<Expense> Expenses { get; set; } = new List<Expense>();

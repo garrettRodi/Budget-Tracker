@@ -14,6 +14,7 @@ using BudgetTracker.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using BudgetTracker.Presentation.PresentationHelpers;
 using BudgetTracker.Presentation.ReportingHelpers;
+using BudgetTracker.Application.Mappers;
 
 namespace BudgetTracker.Presentation
 {
@@ -95,6 +96,7 @@ namespace BudgetTracker.Presentation
 
                         // Currency conversion
                         services.AddHttpClient<CurrencyConversionService>();
+                        services.AddSingleton<ICurrencyService, CurrencyService>();
 
                         // App Controller
                         services.AddScoped<AppController>();

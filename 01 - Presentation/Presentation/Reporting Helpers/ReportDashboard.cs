@@ -63,8 +63,8 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             {
                 foreach (var g in namedGoals)
                 {
-                    var progress = g.TargetAmount > 0
-                        ? g.CurrentAmount / g.TargetAmount * 100
+                    var progress = g.TargetAmount.Amount > 0
+                        ? g.CurrentAmount.Amount / g.TargetAmount.Amount * 100
                         : 0;
                     _console.WriteLine($"  {g.GoalName}: {g.CurrentAmount:C} / {g.TargetAmount:C} ({progress:F2}%)");
                 }
@@ -75,13 +75,13 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             }
 
             // Show "Bulk/Uncategorized Savings" if present
-            if (bulkGoal != null && bulkGoal.CurrentAmount > 0)
+            if (bulkGoal != null && bulkGoal.CurrentAmount.Amount > 0)
             {
                 _console.WriteLine($"  {bulkGoal.GoalName}: {bulkGoal.CurrentAmount:C} (Bulk/Uncategorized)");
             }
 
             // Show total savings (all goals + bulk)
-            decimal totalSavings = savingGoals.Sum(g => g.CurrentAmount);
+            decimal totalSavings = savingGoals.Sum(g => g.CurrentAmount.Amount);
             _console.WriteLine($"\nTotal Savings (all goals + bulk): {totalSavings:C}");
 
             // 4. Most recent savings expense

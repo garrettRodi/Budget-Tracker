@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Services;
+using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
@@ -13,17 +15,20 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
+        private readonly ICurrencyService _currencyService;
 
         public PlannedIncomeHelpers(
             IPlannedIncomeService plannedService,
             SelectBudgetContainer selector,
             InputProcessor input,
-            IConsole console)
+            IConsole console,
+            ICurrencyService currencyService)
         {
             _plannedService = plannedService;
             _selector = selector;
             _input = input;
             _console = console;
+            _currencyService = currencyService;
         }
 
         public async Task CreatePlannedIncomeAsync()
@@ -41,7 +46,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             {
                 BudgetContainerId = budgetId,
                 PeriodStart = period,
-                Amount = amount
+                Amount = new Money(amount, _currencyService.CurrentCurrency)
             };
 
             var dto = await _plannedService.CreatePlannedIncomeAsync(cmd);
@@ -88,7 +93,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             {
                 Id = id,
                 PeriodStart = period,
-                Amount = amount
+                Amount = new Money(amount, _currencyService.CurrentCurrency)
             };
 
             bool ok = await _plannedService.UpdatePlannedIncomeAsync(cmd);

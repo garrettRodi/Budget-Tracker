@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Application.DTOs
 {
@@ -10,7 +11,8 @@ namespace BudgetTracker.Application.DTOs
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public decimal TotalExpenses { get; set; }
+        public string Currency {  get; set; }
+        public Money TotalExpenses { get; set; }
         // Total amount per expense category.
         public Dictionary<string, decimal> CategoryTotals { get; set; } = new Dictionary<string, decimal>();
         // Percentage thwt each category contributes to the total expenses.

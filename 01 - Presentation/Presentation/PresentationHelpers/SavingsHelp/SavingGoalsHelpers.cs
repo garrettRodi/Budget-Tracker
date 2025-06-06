@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Services;
+using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
@@ -14,12 +16,14 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
+        private readonly ICurrencyService _currencyService;
 
         public SavingGoalsHelpers(
             ISavingGoalsService savingGoalsService,
             SelectBudgetContainer selector,
             InputProcessor input,
-            IConsole console)
+            IConsole console,
+            ICurrencyService currencyService)
         {
             _savingGoalsService = savingGoalsService
                 ?? throw new ArgumentNullException(nameof(savingGoalsService));
@@ -29,6 +33,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 ?? throw new ArgumentNullException(nameof(input));
             _console = console
                 ?? throw new ArgumentNullException(nameof(console));
+            _currencyService = currencyService;
         }
 
         public async Task CreateSavingGoalAsync()
@@ -48,8 +53,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             {
                 BudgetContainerId = budgetId,
                 GoalName = goalName,
-                TargetAmount = targetAmount,
-                CurrentAmount = currentAmount,
+                TargetAmount = new Money(targetAmount, _currencyService.CurrentCurrency),
+                CurrentAmount = new Money(currentAmount, _currencyService.CurrentCurrency),
                 TargetDate = targetDate
             };
 
@@ -103,8 +108,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 BudgetContainerId = budgetId,
                 Id = id,
                 GoalName = goalName,
-                TargetAmount = targetAmount,
-                CurrentAmount = currentAmount,
+                TargetAmount = new Money(targetAmount, _currencyService.CurrentCurrency),
+                CurrentAmount = new Money(currentAmount, _currencyService.CurrentCurrency),
                 TargetDate = targetDate
             };
 

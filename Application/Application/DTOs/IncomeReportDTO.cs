@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Application.DTOs
 {
@@ -10,6 +11,7 @@ namespace BudgetTracker.Application.DTOs
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public decimal TotalIncome { get; set; }
+        public Money TotalIncome { get; set; }
+        public string Currency {  get; set; }
     }
 }

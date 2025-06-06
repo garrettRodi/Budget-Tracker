@@ -1,6 +1,7 @@
 ﻿using BudgetTracker.Application.DTOs;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Domain.Entities;
+using BudgetTracker.Domain.ValueObjects;
 using System;
 using System.Linq;
 
@@ -8,7 +9,7 @@ namespace BudgetTracker.Application.Mappers
 {
     public static class BudgetMapper
     {
-        public static BudgetContainer ToEntity(this CreateBudgetCommand command)
+        public static BudgetContainer ToEntity(this CreateBudgetCommand command, string currency)
         {
             // 1) Create the parent and generate its ID
             var budget = new BudgetContainer
@@ -29,7 +30,7 @@ namespace BudgetTracker.Application.Mappers
                     Id = Guid.NewGuid(),
                     Category = item.Category,
                     PlannedAmount = item.PlannedAmount,
-                    ActualAmount = 0m,
+                    ActualAmount = new Money(0m, currency),
                     BudgetContainerId = budget.Id   // ← use budget.Id here
                 }).ToList();
             }

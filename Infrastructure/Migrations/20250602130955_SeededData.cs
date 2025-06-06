@@ -5,7 +5,7 @@
 namespace _04__Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class StandardCategories : Migration
+    public partial class SeededData : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

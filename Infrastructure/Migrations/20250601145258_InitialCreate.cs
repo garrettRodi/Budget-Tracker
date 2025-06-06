@@ -73,9 +73,7 @@ namespace _04__Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Category = table.Column<string>(type: "TEXT", nullable: false),
-                    PlannedAmount = table.Column<decimal>(type: "TEXT", nullable: false),
-                    ActualAmount = table.Column<decimal>(type: "TEXT", nullable: false)
+                    Category = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -94,7 +92,6 @@ namespace _04__Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Source = table.Column<string>(type: "TEXT", nullable: false),
-                    ActualAmount = table.Column<decimal>(type: "TEXT", nullable: false),
                     ReceivedDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
@@ -115,7 +112,6 @@ namespace _04__Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
                     PeriodStart = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -135,8 +131,6 @@ namespace _04__Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     GoalName = table.Column<string>(type: "TEXT", nullable: false),
-                    TargetAmount = table.Column<decimal>(type: "TEXT", nullable: false),
-                    CurrentAmount = table.Column<decimal>(type: "TEXT", nullable: false),
                     TargetDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false)
                 },
@@ -157,11 +151,11 @@ namespace _04__Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
                     ExpenseDate = table.Column<DateTime>(type: "TEXT", nullable: false),
                     Category = table.Column<string>(type: "TEXT", nullable: false),
                     BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SavingGoalId = table.Column<Guid>(type: "TEXT", nullable: true)
+                    SavingGoalId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    SavingGoalsId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -176,6 +170,12 @@ namespace _04__Infrastructure.Migrations
                         name: "FK_Expenses_SavingGoals_SavingGoalId",
                         column: x => x.SavingGoalId,
                         principalTable: "SavingGoals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Expenses_SavingGoals_SavingGoalsId",
+                        column: x => x.SavingGoalsId,
+                        principalTable: "SavingGoals",
                         principalColumn: "Id");
                 });
 
@@ -187,7 +187,6 @@ namespace _04__Infrastructure.Migrations
                     SavingGoalId = table.Column<Guid>(type: "TEXT", nullable: true),
                     BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Category = table.Column<string>(type: "TEXT", nullable: false),
-                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
                     Period = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -247,6 +246,11 @@ namespace _04__Infrastructure.Migrations
                 name: "IX_Expenses_SavingGoalId",
                 table: "Expenses",
                 column: "SavingGoalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Expenses_SavingGoalsId",
+                table: "Expenses",
+                column: "SavingGoalsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Incomes_BudgetContainerId",
