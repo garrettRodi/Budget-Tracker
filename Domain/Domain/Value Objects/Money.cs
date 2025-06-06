@@ -1,6 +1,4 @@
-﻿// ... existing using statements ...
-
-namespace BudgetTracker.Domain.ValueObjects
+﻿namespace BudgetTracker.Domain.ValueObjects
 {
     public class Money
     {
@@ -18,6 +16,15 @@ namespace BudgetTracker.Domain.ValueObjects
             Currency = currency.Trim().ToUpperInvariant(); ;
         }
         private Money() { } // For EF Core
+
+        // ——— NEW private constructor to allow negative values ———
+        // This is used only by operator- below—no external code can call it.
+        private Money(decimal amount, string currency, bool allowNegative)
+        {
+            // Skip the "amount < 0" check here
+            Amount = amount;
+            Currency = currency.Trim().ToUpperInvariant();
+        }
 
         public override string ToString()
         {
@@ -37,15 +44,19 @@ namespace BudgetTracker.Domain.ValueObjects
         {
             if (a.Currency != b.Currency)
                 throw new InvalidOperationException("Cannot add amounts in different currencies.");
-            return new Money(a.Amount + b.Amount, a.Currency);
+
+            // Use the private constructor that accepts a negative result:
+            return new Money(a.Amount + b.Amount, a.Currency, allowNegative: true);
         }
 
         // Operator overload for -
         public static Money operator -(Money a, Money b)
         {
-            if (a.Currency != b.Currency)
+            if(a.Currency != b.Currency)
                 throw new InvalidOperationException("Cannot subtract amounts in different currencies.");
-            return new Money(a.Amount - b.Amount, a.Currency);
+            // Instead of using `new Money(a.Amount - b.Amount, a.Currency)` (which would throw
+            // for negative), call the private constructor with allowNegative: true.
+            return new Money(a.Amount - b.Amount, a.Currency, allowNegative: true);
         }
         public static Money operator /(Money m, decimal divisor)
         {

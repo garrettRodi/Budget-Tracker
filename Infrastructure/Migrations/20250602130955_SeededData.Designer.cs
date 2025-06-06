@@ -3,6 +3,7 @@ using System;
 using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace _04__Infrastructure.Migrations
 {
     [DbContext(typeof(BudgetTrackerDbContext))]
-    partial class BudgetTrackerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250602130955_SeededData")]
+    partial class SeededData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
@@ -339,18 +342,6 @@ namespace _04__Infrastructure.Migrations
                             b1.Property<Guid>("BudgetItemId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("ActualAmount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("ActualAmount_Currency");
-
                             b1.HasKey("BudgetItemId");
 
                             b1.ToTable("BudgetItems");
@@ -363,18 +354,6 @@ namespace _04__Infrastructure.Migrations
                         {
                             b1.Property<Guid>("BudgetItemId")
                                 .HasColumnType("TEXT");
-
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("PlannedAmount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("PlannedAmount_Currency");
 
                             b1.HasKey("BudgetItemId");
 
@@ -415,18 +394,6 @@ namespace _04__Infrastructure.Migrations
                             b1.Property<Guid>("ExpenseId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("Amount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("Amount_Currency");
-
                             b1.HasKey("ExpenseId");
 
                             b1.ToTable("Expenses");
@@ -455,18 +422,6 @@ namespace _04__Infrastructure.Migrations
                         {
                             b1.Property<Guid>("IncomeId")
                                 .HasColumnType("TEXT");
-
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("ActualAmount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("ActualAmount_Currency");
 
                             b1.HasKey("IncomeId");
 
@@ -499,18 +454,6 @@ namespace _04__Infrastructure.Migrations
                             b1.Property<Guid>("PlannedExpenseId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("Amount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("Amount_Currency");
-
                             b1.HasKey("PlannedExpenseId");
 
                             b1.ToTable("PlannedExpenses");
@@ -540,18 +483,6 @@ namespace _04__Infrastructure.Migrations
                             b1.Property<Guid>("PlannedIncomeId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("Amount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("Amount_Currency");
-
                             b1.HasKey("PlannedIncomeId");
 
                             b1.ToTable("PlannedIncomes");
@@ -579,18 +510,6 @@ namespace _04__Infrastructure.Migrations
                             b1.Property<Guid>("SavingGoalsId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("CurrentAmount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("CurrentAmount_Currency");
-
                             b1.HasKey("SavingGoalsId");
 
                             b1.ToTable("SavingGoals");
@@ -603,18 +522,6 @@ namespace _04__Infrastructure.Migrations
                         {
                             b1.Property<Guid>("SavingGoalsId")
                                 .HasColumnType("TEXT");
-
-                            b1.Property<decimal>("Amount")
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("TargetAmount_Amount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .ValueGeneratedOnAdd()
-                                .HasMaxLength(3)
-                                .HasColumnType("TEXT")
-                                .HasDefaultValue("USD")
-                                .HasColumnName("TargetAmount_Currency");
 
                             b1.HasKey("SavingGoalsId");
 
