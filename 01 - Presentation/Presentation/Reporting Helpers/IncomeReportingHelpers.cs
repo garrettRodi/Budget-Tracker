@@ -44,6 +44,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
             _console.WriteLine($"Income Report ({start:yyyy-MM-dd} – {end:yyyy-MM-dd})");
             _console.WriteLine($"Total Income: {report.TotalIncome:C}");
+            _console.ReadKey();
         }
     }
 }

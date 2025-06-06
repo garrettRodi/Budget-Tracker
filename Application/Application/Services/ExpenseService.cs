@@ -2,10 +2,13 @@
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Mappers;
+using BudgetTracker.Application.Helpers;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Services;
 using BudgetTracker.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
+using SQLitePCL;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 namespace BudgetTracker.Application.Services
 {
     public class ExpenseService : IExpenseService
@@ -24,9 +27,11 @@ namespace BudgetTracker.Application.Services
 
         public async Task<ExpenseDTO> CreateExpenseAsync(CreateExpenseCommand createCommand)
         {
-           _logger.LogInformation("Creating a new expense with the following details: {Details}", createCommand);
+            _logger.LogInformation("Creating a new expense with the following details: {Details}", createCommand);
 
+            _logger.LogInformation($"[DEBUG] Service received SavingGoalId: {createCommand.SavingGoalId}");
             Expense entity = createCommand.ToEntity();
+            _logger.LogInformation($"[DEBUG] New Expense entity SavingGoalId: {entity.SavingGoalId}");
 
             // Validate the expense before saving.
             var validator = new ExpenseValidator();
@@ -47,7 +52,7 @@ namespace BudgetTracker.Application.Services
             {
                 // Find a matching BudgetItem by comparing the category.
                 var matchingBudgetItem = activeBudget.BudgetItems.FirstOrDefault(item =>
-                    item.Category.Equals(entity.Category, StringComparison.OrdinalIgnoreCase));
+                    item.Category == entity.Category);
 
                 if (matchingBudgetItem != null)
                 {
@@ -61,35 +66,15 @@ namespace BudgetTracker.Application.Services
                     _logger.LogInformation("BudgetItem updated successfully with new actual amount: {ActualAmount}", matchingBudgetItem.ActualAmount);
                 }
             }
-           
+
             // Update a Saving Goal if the expense category is 'Savings'.
-            if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
+            if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase)
+                && entity.SavingGoalId.HasValue)
             {
-                // Get all saving goals using SavingGoalsService.
-                var savingGoals = await _savingGoalsService.GetAllSavingGoalsAsync();
-
-                // Choose the first active saving goal (the one that hasn't met its target).
-                var activeGoal = savingGoals.FirstOrDefault(g => g.CurrentAmount < g.TargetAmount);
-                if (activeGoal != null)
-                {
-                    // Add the expense amount to the saving goal's current amount.
-                    activeGoal.CurrentAmount += entity.Amount;
-                    // Prepare an update command.
-                    var updateCommand = new BudgetTracker.Application.DTOs.Commands.UpdateSavingGoalCommand
-                    {
-                        Id = activeGoal.Id,
-                        GoalName = activeGoal.GoalName,
-                        TargetAmount = activeGoal.TargetAmount,
-                        CurrentAmount = activeGoal.CurrentAmount,
-                        TargetDate = activeGoal.TargetDate
-                    };
-
-                    // Update the saving goal in the repository.
-                    await _savingGoalsService.UpdateSavingGoalAsync(updateCommand);
-
-                    _logger.LogInformation("Saving goal updated successfully with new current amount: {CurrentAmount}", activeGoal.CurrentAmount);
-                }
+                await _savingGoalsService.RecalculateCurrentAmountAsync(entity.SavingGoalId.Value);
+                _logger.LogInformation("Saving goal updated successfully with new current amount: {CurrentAmount}");
             }
+
             _logger.LogInformation("Expense created successfully with ID: {Id}", entity.Id);
 
             return entity.ToDto();
@@ -139,24 +124,38 @@ namespace BudgetTracker.Application.Services
             return expenses.Select(e => e.ToDto());
         }
 
-        public async Task<bool> UpdateExpenseAsync(UpdateExpenseCommand updateCommand)
+        public async Task<bool> UpdateExpenseAsync(UpdateExpenseCommand cmd)
         {
-            _logger.LogInformation("Updating expense with ID: {Id}", updateCommand.Id);
+            _logger.LogInformation("Called UpdateExpenseAsync for Id={Id}, Category={Category}, SavingGoalId={SavingGoalId}, Amount={Amount}",
+    cmd.Id, cmd.Category, cmd.SavingGoalId, cmd.Amount);
 
-            var existingExpense = await _unitOfWork.ExpenseRepository.GetByIdAsync(updateCommand.Id);
-            if (existingExpense == null)
-                return false;
+            var existing = await _unitOfWork.ExpenseRepository.GetByIdAsync(cmd.Id);
+            if (existing == null) return false;
 
-            // Validate updated expense.
-            var validator = new ExpenseValidator();
-            validator.ValidateExpense(existingExpense);
+            // Update fields
+            existing.Name = cmd.Name;
+            existing.Amount = cmd.Amount;
+            existing.ExpenseDate = cmd.Date;
+            existing.Category = cmd.Category;
+            existing.SavingGoalId = cmd.SavingGoalId;
 
-            updateCommand.ToEntity(existingExpense);
+            await _unitOfWork.ExpenseRepository.UpdateAsync(existing);
+            await _unitOfWork.CommitAsync();
 
-            _logger.LogInformation("Expense updated successfully with ID: {Id}", existingExpense.Id);
+            _logger.LogInformation("Called UpdateExpenseAsync for Id={Id}, Category={Category}, SavingGoalId={SavingGoalId}, Amount={Amount}",
+    cmd.Id, cmd.Category, cmd.SavingGoalId, cmd.Amount);
 
-            return await _unitOfWork.ExpenseRepository.UpdateAsync(existingExpense);
+            // If it's a savings expense linked to a goal, recalculate.
+            if (string.Equals(cmd.Category, "Savings", StringComparison.OrdinalIgnoreCase)
+        && cmd.SavingGoalId != null && cmd.SavingGoalId != Guid.Empty && cmd.SavingGoalId != null && cmd.SavingGoalId != Guid.Empty)
+            {
+                _logger.LogInformation("About to call RecalculateCurrentAmountAsync for SavingGoalId={SavingGoalId}", cmd.SavingGoalId);
+                await _savingGoalsService.RecalculateCurrentAmountAsync(cmd.SavingGoalId.Value);
+                _logger.LogInformation("DEBUG: Finished RecalculateCurrentAmountAsync for SavingGoalId={SavingGoalId}", cmd.SavingGoalId);
+            }
+            return true;
         }
+
 
         public async Task<bool> DeleteExpenseAsync(Guid id)
         {

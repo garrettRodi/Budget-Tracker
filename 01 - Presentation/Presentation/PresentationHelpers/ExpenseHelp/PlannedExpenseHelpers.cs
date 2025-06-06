@@ -43,7 +43,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            string category = _input.GetInput("Enter category: ");
+            string category = _input.GetTitleInput("Enter category: ");
             decimal amount = _input.GetValidDecimal("Enter planned amount: ");
             DateTime period = _input.GetValidDate("Enter period (yyyy-MM-dd): ");
 
@@ -57,6 +57,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _plannedExpenseService.CreatePlannedExpenseAsync(cmd);
             _console.WriteLine($"Planned expense '{dto.Category}' on {dto.Period:yyyy-MM-dd} for {dto.Amount:C} created with ID: {dto.Id}");
+            _console.ReadKey();
         }
 
         public async Task ViewPlannedExpensesAsync()
@@ -71,7 +72,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var list = await _plannedExpenseService.GetPlannedExpensesAsync(budgetId);
+            var list = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
             if (!list.Any())
             {
                 _console.WriteLine("No planned expenses found.");
@@ -85,6 +86,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     _console.WriteLine($"{pe.Id}\t{pe.Period:yyyy-MM-dd}\t{pe.Category}\t{pe.Amount:C}");
                 }
             }
+            _console.ReadKey();
         }
 
         public async Task UpdatePlannedExpenseAsync()
@@ -99,7 +101,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var all = await _plannedExpenseService.GetPlannedExpensesAsync(budgetId);
+            var all = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
             if (!all.Any())
             {
                 _console.WriteLine("No planned expenses to update.");
@@ -119,7 +121,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var existing = all.First(pe => pe.Id == id);
 
-            string category = _input.GetInput($"Category ({existing.Category}): ");
+            string category = _input.GetTitleInput($"Category ({existing.Category}): ");
             decimal amount = _input.GetValidDecimal($"Amount ({existing.Amount:C}): ");
             DateTime period = _input.GetValidDate($"Period ({existing.Period:yyyy-MM-dd}): ");
 
@@ -134,6 +136,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             bool ok = await _plannedExpenseService.UpdatePlannedExpenseAsync(cmd);
             _console.WriteLine(ok ? "Planned expense updated successfully." : "Failed to update planned expense.");
+            _console.ReadKey();
         }
 
         public async Task DeletePlannedExpenseAsync()
@@ -148,7 +151,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var all = await _plannedExpenseService.GetPlannedExpensesAsync(budgetId);
+            var all = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
             if (!all.Any())
             {
                 _console.WriteLine("No planned expenses to delete.");
@@ -168,6 +171,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             bool ok = await _plannedExpenseService.DeletePlannedExpenseAsync(id);
             _console.WriteLine(ok ? "Planned expense deleted." : "Failed to delete planned expense.");
+            _console.ReadKey();
         }
     }
 }

@@ -11,5 +11,6 @@ namespace BudgetTracker.Application.Interfaces
         Task<SavingGoalDTO?> GetSavingGoalByIdAsync(Guid id);
         Task<bool> UpdateSavingGoalAsync(UpdateSavingGoalCommand command);
         Task<bool> DeleteSavingGoalAsync(Guid id);
+        Task RecalculateCurrentAmountAsync(Guid savingGoalId);
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Domain.Entities;
 using BudgetTracker.Presentation.UIHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
@@ -41,10 +42,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 _console.Clear();
                 _console.WriteLine("=== Create Budget ===");
 
-                string name = _input.GetInput("Enter budget name: ");
-                var frequency = _input.GetEnum(
-                    "Enter frequency (Weekly/Monthly/Yearly): ",
-                    Domain.Entities.BudgetFrequency.Monthly);
+                string name = _input.GetTitleInput("Enter budget name: ");
+                var frequency = _input.GetEnum<BudgetFrequency>("Enter frequency (Weekly, Monthly, Yearly): ");
                 DateTime startDate = _input.GetValidDate(
                     "Enter start date (yyyy-MM-dd): ");
                 DateTime endDate = _input.GetValidDate(
@@ -58,6 +57,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                 // 2) Let the user pick categories until they type 'done'
                 var items = new List<CreateBudgetItemCommand>();
+
                 while (true)
                 {
                     _console.WriteLine("--- Select a category or type 'done' ---");
@@ -67,9 +67,18 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     }
                     _console.WriteLine($"{allCategories.Count + 1}. Other (enter custom)");
 
-                    string input = _input.GetInput("Choice or 'done': ").Trim();
+                    string input = _input.GetTitleInput("Choice or 'done': ").Trim();
+
                     if (input.Equals("done", StringComparison.OrdinalIgnoreCase))
-                        break;
+                    {
+                        if (items.Count == 0)
+                        {
+                            _console.WriteLine("You must enter at least one budget item before finishing.");
+                            continue; // Loop again instead of returning
+                        }
+
+                        break; // Exit loop if at least one item exists
+                    }
 
                     string category;
                     if (int.TryParse(input, out int choice)
@@ -78,10 +87,9 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     {
                         category = allCategories[choice - 1];
                     }
-                    else if (choice == allCategories.Count + 1
-                             || !int.TryParse(input, out _))
+                    else if (choice == allCategories.Count + 1 || !int.TryParse(input, out _))
                     {
-                        category = _input.GetInput("Enter custom category name: ");
+                        category = _input.GetTitleInput("Enter custom category name: ");
                     }
                     else
                     {
@@ -89,8 +97,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         continue;
                     }
 
-                    decimal plannedAmount = _input.GetValidDecimal(
-                        "Enter planned amount: ");
+                    decimal plannedAmount = _input.GetValidDecimal("Enter planned amount: ");
+
                     items.Add(new CreateBudgetItemCommand
                     {
                         Category = category,
@@ -124,6 +132,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 _console.WriteLine($"Error creating budget: {ex.Message}");
                 _console.WriteLine(ex.StackTrace);
             }
+            _console.ReadKey();
         }
 
 
@@ -140,6 +149,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             if (!budgets.Any())
                 _console.WriteLine("No budgets found.");
+            _console.ReadKey();
         }
 
         public async Task UpdateBudgetAsync()
@@ -149,9 +159,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            string name = _input.GetInput("Enter new budget name: ");
-            var frequency = _input.GetEnum("Enter new frequency (Weekly/Monthly/Yearly): ",
-                Domain.Entities.BudgetFrequency.Monthly);
+            string name = _input.GetTitleInput("Enter new budget name: ");
+            var frequency = _input.GetEnum<BudgetFrequency>("Enter new frequency (Weekly/Monthly/Yearly): ");
             DateTime startDate = _input.GetValidDate("Enter new start date (yyyy-MM-dd): ");
             DateTime endDate = _input.GetValidDate("Enter new end date (yyyy-MM-dd): ");
             bool autoRenew = _input.GetBool("Auto renew? (y/n): ");
@@ -170,6 +179,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Budget updated successfully."
                 : "Failed to update budget.");
+            _console.ReadKey();
         }
 
         public async Task DeleteBudgetAsync()
@@ -183,6 +193,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Budget deleted successfully."
                 : "Failed to delete budget.");
+            _console.ReadKey();
         }
     }
 }

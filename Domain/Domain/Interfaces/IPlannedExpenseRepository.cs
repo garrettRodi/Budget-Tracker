@@ -7,6 +7,6 @@ namespace BudgetTracker.Domain.Interfaces
 {
     public interface IPlannedExpenseRepository : IGenericRepository<PlannedExpense>
     {
-        Task<IEnumerable<PlannedExpense>> GetPlannedExpensesByBudgetAsync(Guid budgetContainerId);
+        Task<IEnumerable<PlannedExpense>> ViewPlannedExpensesByBudgetAsync(Guid budgetContainerId);
     }
 }

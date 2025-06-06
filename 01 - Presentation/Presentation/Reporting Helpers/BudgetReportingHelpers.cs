@@ -6,6 +6,7 @@ using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Services;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Presentation.UIHelpers;
+using Microsoft.VisualBasic;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
@@ -54,8 +55,16 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
             _console.WriteLine($"Rule: {report.Rule}");
             _console.WriteLine($"  Necessities - Planned: {report.NecessitiesPlanned:C}, Actual: {report.NecessitiesActual:C}, Variance: {report.NecessitiesPercentageVariance:F2}%");
-            _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {report.SavingsActual:C}, Variance: {report.SavingsPercentageVariance:F2}%");
+
+            // Add uncategorized/ bulk savings to the Savings line
+            var savingGoalsReport = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
+            var bulk = savingGoalsReport.FirstOrDefault(g => g.Id == Guid.Empty);
+            decimal bulkAmount = bulk?.CurrentAmount ?? 0m;
+
+            decimal totalSavingsActual = report.SavingsActual + bulkAmount;
+            _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {totalSavingsActual:C} (Goals: {report.SavingsActual:C} + Bulk: {bulkAmount:C}), Variance: {report.SavingsPercentageVariance:F2}%");
             _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
+            _console.ReadKey();
         }
         public async Task ViewBudgetMatrixReportAsync()
         {
@@ -194,6 +203,14 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 decimal avgDiff = grandTotalDiff / divisor;
 
                 _console.WriteLine($"\nAverage Difference ({divisor} periods): {avgDiff,12:C}");
+            }
+
+            //  Show bulk/uncategorized savings after the matrix 
+            var savingGoalsReport = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
+            var bulk = savingGoalsReport.FirstOrDefault(g => g.Id == Guid.Empty);
+            if (bulk != null && bulk.CurrentAmount > 0)
+            {
+                _console.WriteLine($"\nBulk/Uncategorized Savings: {bulk.CurrentAmount:C}");
             }
 
             _console.WriteLine("\nPress any key to return to menu...");

@@ -39,7 +39,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            var goalName = _input.GetInput("Enter saving goal name: ");
+            var goalName = _input.GetTitleInput("Enter saving goal name: ");
             var targetAmount = _input.GetValidDecimal("Enter target amount: ");
             var currentAmount = _input.GetValidDecimal("Enter current amount: ");
             var targetDate = _input.GetValidDate("Enter target date (yyyy-MM-dd): ");
@@ -55,6 +55,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _savingGoalsService.CreateSavingGoalAsync(cmd);
             _console.WriteLine($"Saving goal '{dto.GoalName}' created with ID: {dto.Id}");
+            _console.ReadKey();
         }
 
         public async Task ViewSavingGoalsAsync()
@@ -74,6 +75,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             if (!list.Any())
                 _console.WriteLine("No saving goals found for the active budget.");
+            _console.ReadKey();
         }
 
         public async Task UpdateSavingGoalAsync()
@@ -91,7 +93,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            var goalName = _input.GetInput("Enter updated goal name: ");
+            var goalName = _input.GetTitleInput("Enter updated goal name: ");
             var targetAmount = _input.GetValidDecimal("Enter updated target amount: ");
             var currentAmount = _input.GetValidDecimal("Enter updated current amount: ");
             var targetDate = _input.GetValidDate("Enter updated target date (yyyy-MM-dd): ");
@@ -110,6 +112,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Saving goal updated successfully."
                 : "Saving goal update failed.");
+            _console.ReadKey();
         }
 
         public async Task DeleteSavingGoalAsync()
@@ -131,6 +134,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Saving goal deleted successfully."
                 : "Saving goal deletion failed.");
+            _console.ReadKey();
         }
     }
 }

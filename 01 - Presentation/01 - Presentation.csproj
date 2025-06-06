@@ -27,5 +27,9 @@
     <ProjectReference Include="..\Domain\03 - Domain.csproj" />
     <ProjectReference Include="..\Infrastructure\04 - Infrastructure.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Database\" />
+  </ItemGroup>
 	
 </Project>

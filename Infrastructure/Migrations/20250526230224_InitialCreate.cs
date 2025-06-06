@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace _04__Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class FreshStart : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -89,28 +89,6 @@ namespace _04__Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Expenses",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
-                    ExpenseDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Category = table.Column<string>(type: "TEXT", nullable: false),
-                    BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Expenses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Expenses_BudgetContainers_BudgetContainerId",
-                        column: x => x.BudgetContainerId,
-                        principalTable: "BudgetContainers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Incomes",
                 columns: table => new
                 {
@@ -125,6 +103,26 @@ namespace _04__Infrastructure.Migrations
                     table.PrimaryKey("PK_Incomes", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Incomes_BudgetContainers_BudgetContainerId",
+                        column: x => x.BudgetContainerId,
+                        principalTable: "BudgetContainers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PlannedIncomes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    PeriodStart = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlannedIncomes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PlannedIncomes_BudgetContainers_BudgetContainerId",
                         column: x => x.BudgetContainerId,
                         principalTable: "BudgetContainers",
                         principalColumn: "Id",
@@ -153,6 +151,61 @@ namespace _04__Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Expenses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    ExpenseDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Category = table.Column<string>(type: "TEXT", nullable: false),
+                    BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SavingGoalId = table.Column<Guid>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Expenses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Expenses_BudgetContainers_BudgetContainerId",
+                        column: x => x.BudgetContainerId,
+                        principalTable: "BudgetContainers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Expenses_SavingGoals_SavingGoalId",
+                        column: x => x.SavingGoalId,
+                        principalTable: "SavingGoals",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PlannedExpenses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SavingGoalId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    BudgetContainerId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Category = table.Column<string>(type: "TEXT", nullable: false),
+                    Amount = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Period = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlannedExpenses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PlannedExpenses_BudgetContainers_BudgetContainerId",
+                        column: x => x.BudgetContainerId,
+                        principalTable: "BudgetContainers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PlannedExpenses_SavingGoals_SavingGoalId",
+                        column: x => x.SavingGoalId,
+                        principalTable: "SavingGoals",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.InsertData(
                 table: "Categories",
                 columns: new[] { "Id", "Name" },
@@ -171,7 +224,13 @@ namespace _04__Infrastructure.Migrations
                     { new Guid("00000000-0000-0000-0000-000000000001"), "Food", "Necessities" },
                     { new Guid("00000000-0000-0000-0000-000000000002"), "Rent", "Necessities" },
                     { new Guid("00000000-0000-0000-0000-000000000003"), "Entertainment", "Discretionary" },
-                    { new Guid("00000000-0000-0000-0000-000000000004"), "Investments", "Savings" }
+                    { new Guid("00000000-0000-0000-0000-000000000004"), "Investments", "Savings" },
+                    { new Guid("00000000-0000-0000-0000-000000000005"), "Utilities", "Necessities" },
+                    { new Guid("00000000-0000-0000-0000-000000000006"), "Transportation", "Necessities" },
+                    { new Guid("00000000-0000-0000-0000-000000000007"), "Healthcare", "Necessities" },
+                    { new Guid("00000000-0000-0000-0000-000000000008"), "Clothing", "Discretionary" },
+                    { new Guid("00000000-0000-0000-0000-000000000009"), "Education", "Discretionary" },
+                    { new Guid("00000000-0000-0000-0000-000000000010"), "Miscellaneous", "Discretionary" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -185,8 +244,28 @@ namespace _04__Infrastructure.Migrations
                 column: "BudgetContainerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Expenses_SavingGoalId",
+                table: "Expenses",
+                column: "SavingGoalId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Incomes_BudgetContainerId",
                 table: "Incomes",
+                column: "BudgetContainerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlannedExpenses_BudgetContainerId",
+                table: "PlannedExpenses",
+                column: "BudgetContainerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlannedExpenses_SavingGoalId",
+                table: "PlannedExpenses",
+                column: "SavingGoalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlannedIncomes_BudgetContainerId",
+                table: "PlannedIncomes",
                 column: "BudgetContainerId");
 
             migrationBuilder.CreateIndex(
@@ -215,6 +294,12 @@ namespace _04__Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Logs");
+
+            migrationBuilder.DropTable(
+                name: "PlannedExpenses");
+
+            migrationBuilder.DropTable(
+                name: "PlannedIncomes");
 
             migrationBuilder.DropTable(
                 name: "SavingGoals");

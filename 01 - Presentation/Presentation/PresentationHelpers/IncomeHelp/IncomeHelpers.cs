@@ -38,7 +38,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            string source = _input.GetInput("Enter income source (e.g., Salary, Bonus): ");
+            string source = _input.GetTitleInput("Enter income source (e.g., Salary, Bonus): ");
             decimal amount = _input.GetValidDecimal("Enter the actual amount received: ");
             DateTime date = _input.GetValidDate("Enter received date (yyyy-MM-dd): ");
 
@@ -52,6 +52,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var dto = await _incomeService.CreateIncomeAsync(cmd);
             _console.WriteLine($"Income from '{dto.Source}' created successfully with ID: {dto.Id}");
+            _console.ReadKey();
         }
 
         public async Task ViewIncomesAsync()
@@ -69,6 +70,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             }
             if (!list.Any())
                 _console.WriteLine("No incomes found for the active budget.");
+            _console.ReadKey();
         }
 
         public async Task UpdateIncomeAsync()
@@ -85,7 +87,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
-            string source = _input.GetInput("Enter updated income source: ");
+            string source = _input.GetTitleInput("Enter updated income source: ");
             decimal amount = _input.GetValidDecimal("Enter updated amount received: ");
             DateTime date = _input.GetValidDate("Enter updated received date (yyyy-MM-dd): ");
 
@@ -102,6 +104,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Income updated successfully."
                 : "Income update failed.");
+            _console.ReadKey();
         }
 
         public async Task DeleteIncomeAsync()
@@ -122,6 +125,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine(success
                 ? "Income deleted successfully."
                 : "Income deletion failed.");
+            _console.ReadKey();
         }
     }
 }

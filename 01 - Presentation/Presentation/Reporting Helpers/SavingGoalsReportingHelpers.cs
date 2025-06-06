@@ -34,24 +34,38 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            var goals = await _reportingService.GenerateSavingGoalReportAsync(budgetId);
+            var goals = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
             if (!goals.Any())
             {
                 _console.WriteLine("No saving goals found for the active budget.");
                 return;
             }
 
+            decimal totalSavings = 0m; // Track total for all saving goals + bulk
+
             foreach (var g in goals)
             {
-                _console.WriteLine($"Goal: {g.GoalName}");
-                _console.WriteLine($"  Target Amount: {g.TargetAmount:C}");
-                _console.WriteLine($"  Current Saved: {g.CurrentAmount:C}");
-                var progress = g.TargetAmount > 0
-                    ? g.CurrentAmount / g.TargetAmount * 100
-                    : 0;
-                _console.WriteLine($"  Progress: {progress:F2}%");
+                if (g.Id == Guid.Empty)
+                {
+                    _console.WriteLine($"Bulk/Uncategorized Savings:");
+                    _console.WriteLine($"  Saved: {g.CurrentAmount:C}");
+                    // Optionally: Don't show target/progress for bulk
+                }
+                else
+                {
+                    _console.WriteLine($"Goal: {g.GoalName}");
+                    _console.WriteLine($"  Target Amount: {g.TargetAmount:C}");
+                    _console.WriteLine($"  Current Saved: {g.CurrentAmount:C}");
+                    var progress = g.TargetAmount > 0
+                        ? g.CurrentAmount / g.TargetAmount * 100
+                        : 0;
+                    _console.WriteLine($"  Progress: {progress:F2}%");
+                }
                 _console.WriteLine(new string('-', 40));
+                totalSavings += g.CurrentAmount;
             }
+            _console.WriteLine($"Total Savings (All Goals + Bulk): {{totalSavings:C}}\"");
+            _console.ReadKey();
         }
     }
 }

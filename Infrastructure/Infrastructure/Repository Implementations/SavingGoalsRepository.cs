@@ -32,5 +32,17 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
                 .Where(g => g.BudgetContainerId == budgetContainerId)
                 .ToListAsync();
         }
+
+        public async Task<SavingGoals?> GetGoalWithExpensesAsync(Guid id)
+        {
+            return await _dbSet
+                .Include(g => g.Expenses)
+                .FirstOrDefaultAsync(g => g.Id == id);
+        }
+        public async Task<bool> UpdateAsync(SavingGoals goal)
+        {
+            _context.SavingGoals.Update(goal);
+            return true; // Or false if not found; true is fine for EF
+        }
     }
 }

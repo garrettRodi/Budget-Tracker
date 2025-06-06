@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using BudgetTracker.Application.DTOs;
+using BudgetTracker.Application.Helpers;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Interfaces;
@@ -21,12 +22,6 @@ namespace BudgetTracker.Application.Services
             _logger = logger;
         }
 
-        public ReportingService(IUnitOfWork unitOfWork, ICategoryMappingService categoryMappingService)
-        {
-            _unitOfWork = unitOfWork;
-            _categoryMappingService = categoryMappingService;
-        }
-
         public async Task<ExpenseReportDTO> GenerateExpenseReportAsync(Guid budgetContainerId, DateTime startDate, DateTime endDate)
         {
             _logger.LogInformation("Generating expense report for budget {BudgetId} from {StartDate} to {EndDate}", budgetContainerId, startDate, endDate);
@@ -38,8 +33,9 @@ namespace BudgetTracker.Application.Services
 
             decimal totalExpenses = expenses.Sum(e => e.Amount);
 
-            var categoryTotals = expenses.GroupBy(e => e.Category)
-                                         .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
+            var categoryTotals = expenses
+     .GroupBy(e => e.Category)
+     .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
 
             var categoryPercentages = categoryTotals.ToDictionary(
                  ct => ct.Key,
@@ -174,28 +170,54 @@ namespace BudgetTracker.Application.Services
 
         public async Task<IEnumerable<SavingGoalReportDTO>> GenerateSavingGoalReportAsync(Guid budgetContainerId)
         {
-            _logger.LogInformation("Generating saving goal report for budget container {BudgetContainerId}", budgetContainerId);
+            // 1. Get all saving goals for the budget
+            var savingGoals = (await _unitOfWork.SavingGoalsRepository.GetAllAsync())
+                .Where(g => g.BudgetContainerId == budgetContainerId)
+                .ToList();
 
-            // Use the UnitOfWork to filter saving goals by the provided budgetContainerId.
-            var savingGoals = await _unitOfWork.SavingGoalsRepository.FindAsync(s => s.BudgetContainerId == budgetContainerId);
+            // 2. Get all expenses for the budget, to sum up savings
+            var expenses = (await _unitOfWork.ExpenseRepository.GetAllAsync())
+                .Where(e => e.BudgetContainerId == budgetContainerId)
+                .ToList();
 
-            if (savingGoals == null || !savingGoals.Any())
+            var report = new List<SavingGoalReportDTO>();
+
+            // 3. For each saving goal, sum expenses linked to that goal
+            foreach (var goal in savingGoals)
             {
-                _logger.LogWarning("No saving goals found for budget container {BudgetContainerId}", budgetContainerId);
-                return Enumerable.Empty<SavingGoalReportDTO>();
+                decimal currentAmount = expenses
+                    .Where(e => e.Category == "Savings" && e.SavingGoalId == goal.Id)
+                    .Sum(e => e.Amount);
+
+                report.Add(new SavingGoalReportDTO
+                {
+                    Id = goal.Id,
+                    GoalName = goal.GoalName,
+                    TargetAmount = goal.TargetAmount,
+                    CurrentAmount = currentAmount,
+                    TargetDate = goal.TargetDate
+                });
             }
 
-            // Map the saving goals to their DTO representation.
-            var report = savingGoals.Select(g => new SavingGoalReportDTO
-            {
-                Id = g.Id,
-                GoalName = g.GoalName,
-                TargetAmount = g.TargetAmount,
-                CurrentAmount = g.CurrentAmount,
-                TargetDate = g.TargetDate
-            });
+            // === CHANGE: Calculate Bulk/Uncategorized savings ===
+            decimal bulkSavings = expenses
+                .Where(e => e.Category == "Savings" &&
+                           (e.SavingGoalId == null || e.SavingGoalId == Guid.Empty))
+                .Sum(e => e.Amount);
 
-            _logger.LogInformation("Saving goal report generated with {Count} items for budget container {BudgetContainerId}", report.Count(), budgetContainerId);
+            // If there are any bulk savings, add a "virtual" saving goal to the report
+            if (bulkSavings > 0)
+            {
+                report.Add(new SavingGoalReportDTO
+                {
+                    Id = Guid.Empty, // or a special value to indicate "bulk"
+                    GoalName = "Bulk/Uncategorized Savings",
+                    TargetAmount = 0, // No target for bulk savings
+                    CurrentAmount = bulkSavings,
+                    TargetDate = null // Or DateTime.MinValue, as appropriate
+                });
+            }
+
             return report;
         }
 
@@ -268,7 +290,10 @@ namespace BudgetTracker.Application.Services
                 StartDate = start,
                 EndDate = end,
                 ReportingPeriods = periods,
-                Categories = budget.BudgetItems.Select(i => i.Category).Distinct().ToList()
+                Categories = budget.BudgetItems
+                    .Select(i => i.Category)
+                    .Distinct()
+                    .ToList()
             };
 
             // 3) zero‐fill every cell
@@ -282,6 +307,7 @@ namespace BudgetTracker.Application.Services
             // 4) distribute planned evenly
             foreach (var item in budget.BudgetItems)
             {
+                var normCat = item.Category;
                 var perPeriod = item.PlannedAmount / periods.Count;
                 foreach (var p in periods)
                     dto.PlannedByCategoryAndDate[(item.Category, p)] += perPeriod;
@@ -299,7 +325,22 @@ namespace BudgetTracker.Application.Services
                     ? new DateTime(exp.ExpenseDate.Year, exp.ExpenseDate.Month, 1)
                     : exp.ExpenseDate.Date;
 
-                dto.ActualByCategoryAndDate[(exp.Category, key)] += exp.Amount;
+                var normCat = exp.Category;
+
+                // If this category wasn't in planned, add it to categories and zero-fill
+                if (!dto.Categories.Contains(normCat))
+                {
+                    dto.Categories.Add(normCat); // So it shows up in the matrix output
+
+                    foreach (var p in periods)
+                    {
+                        dto.PlannedByCategoryAndDate[(normCat, p)] = 0m;
+                        dto.ActualByCategoryAndDate[(normCat, p)] = 0m;
+                    }
+                }
+
+                // Now it's safe to increment
+                dto.ActualByCategoryAndDate[(normCat, key)] += exp.Amount;
             }
 
             _logger.LogInformation(

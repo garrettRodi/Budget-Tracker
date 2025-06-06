@@ -51,12 +51,17 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             _console.WriteLine("Income (Last 30 Days):");
             _console.WriteLine($"  Total Income: {incomeReport.TotalIncome:C}\n");
 
-            // 3. Saving goals progress
-            var goals = await _reportingService.GenerateSavingGoalReportAsync(budgetId);
+            // 3. Saving goals progress + bulk savings (total savings = goals + bulk)
+            var savingGoals = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
+
+            // Split out the "bulk/unallocated" (ID == Guid.Empty) and named goals
+            var namedGoals = savingGoals.Where(g => g.Id != Guid.Empty).ToList();
+            var bulkGoal = savingGoals.FirstOrDefault(g => g.Id == Guid.Empty);
+
             _console.WriteLine("Saving Goals:");
-            if (goals.Any())
+            if (namedGoals.Any())
             {
-                foreach (var g in goals)
+                foreach (var g in namedGoals)
                 {
                     var progress = g.TargetAmount > 0
                         ? g.CurrentAmount / g.TargetAmount * 100
@@ -68,6 +73,16 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             {
                 _console.WriteLine("  No saving goals found.");
             }
+
+            // Show "Bulk/Uncategorized Savings" if present
+            if (bulkGoal != null && bulkGoal.CurrentAmount > 0)
+            {
+                _console.WriteLine($"  {bulkGoal.GoalName}: {bulkGoal.CurrentAmount:C} (Bulk/Uncategorized)");
+            }
+
+            // Show total savings (all goals + bulk)
+            decimal totalSavings = savingGoals.Sum(g => g.CurrentAmount);
+            _console.WriteLine($"\nTotal Savings (all goals + bulk): {totalSavings:C}");
 
             // 4. Most recent savings expense
             var allExpenses = await _expenseService.GetExpensesByBudgetContainerIdAsync(budgetId);
@@ -87,6 +102,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             {
                 _console.WriteLine("\nNo saving expenses found.");
             }
+            _console.ReadKey();
         }
     }
 }

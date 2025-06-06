@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using BudgetTracker.Tests.UnitTests.Fakes;
 using Xunit;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Tests.UnitTests.ApplicationTests
 {
@@ -102,7 +103,9 @@ namespace BudgetTracker.Tests.UnitTests.ApplicationTests
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
             using var context = new BudgetTrackerDbContext(options);
-            var unitOfWork = new UnitOfWork(context);
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddDebug());
+            var unitOfWork = new UnitOfWork(context, loggerFactory);
+
             var fakeSavingGoalsService = new FakeSavingGoalsService(); // Using the fake saving goals service
             var expenseService = new ExpenseService(unitOfWork, fakeSavingGoalsService, NullLogger<ExpenseService>.Instance);
 

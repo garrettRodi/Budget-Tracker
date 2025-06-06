@@ -4,6 +4,7 @@ using BudgetTracker.Domain.Entities;
 using BudgetTracker.Infrastructure.DataAccess;
 using BudgetTracker.Infrastructure.RepositoryImplementations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace BudgetTracker.Tests.IntegrationTests
@@ -20,7 +21,9 @@ namespace BudgetTracker.Tests.IntegrationTests
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
             _context = new BudgetTrackerDbContext(options);
-            _unitOfWork = new UnitOfWork(_context);
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddDebug());
+            _unitOfWork = new UnitOfWork(_context, loggerFactory);
+
         }
 
         [Fact]

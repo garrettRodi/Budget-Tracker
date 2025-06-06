@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace _04__Infrastructure.Migrations
 {
     [DbContext(typeof(BudgetTrackerDbContext))]
-    [Migration("20250516145819_AddedPlannedIncome")]
-    partial class AddedPlannedIncome
+    [Migration("20250526230224_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -210,9 +210,14 @@ namespace _04__Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("SavingGoalId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BudgetContainerId");
+
+                    b.HasIndex("SavingGoalId");
 
                     b.ToTable("Expenses", (string)null);
                 });
@@ -259,6 +264,37 @@ namespace _04__Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Logs");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.PlannedExpense", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BudgetContainerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Period")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SavingGoalId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetContainerId");
+
+                    b.HasIndex("SavingGoalId");
+
+                    b.ToTable("PlannedExpenses");
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.PlannedIncome", b =>
@@ -331,7 +367,13 @@ namespace _04__Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BudgetTracker.Domain.Entities.SavingGoals", "SavingGoal")
+                        .WithMany("Expenses")
+                        .HasForeignKey("SavingGoalId");
+
                     b.Navigation("BudgetContainer");
+
+                    b.Navigation("SavingGoal");
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.Income", b =>
@@ -343,6 +385,23 @@ namespace _04__Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("BudgetContainer");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.PlannedExpense", b =>
+                {
+                    b.HasOne("BudgetTracker.Domain.Entities.BudgetContainer", "BudgetContainer")
+                        .WithMany()
+                        .HasForeignKey("BudgetContainerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BudgetTracker.Domain.Entities.SavingGoals", "SavingGoal")
+                        .WithMany()
+                        .HasForeignKey("SavingGoalId");
+
+                    b.Navigation("BudgetContainer");
+
+                    b.Navigation("SavingGoal");
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.PlannedIncome", b =>
@@ -378,6 +437,11 @@ namespace _04__Infrastructure.Migrations
                     b.Navigation("PlannedIncomes");
 
                     b.Navigation("SavingGoals");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.SavingGoals", b =>
+                {
+                    b.Navigation("Expenses");
                 });
 #pragma warning restore 612, 618
         }
