@@ -64,7 +64,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 _console.WriteLine(new string('-', 40));
                 totalSavings += g.CurrentAmount.Amount;
             }
-            _console.WriteLine($"Total Savings (All Goals + Bulk): {{totalSavings:C}}\"");
+            _console.WriteLine($"Total Savings (All Goals + Bulk): {totalSavings:C}");
             _console.ReadKey();
         }
     }

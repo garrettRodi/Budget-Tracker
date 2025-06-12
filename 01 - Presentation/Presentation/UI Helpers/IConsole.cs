@@ -14,5 +14,6 @@ namespace BudgetTracker.Presentation.UIHelpers
         string ReadLine();
         ConsoleKeyInfo ReadKey(bool intercept = false);
         void Clear();
+        ConsoleColor ForegroundColor { get; set; }
     }
 }

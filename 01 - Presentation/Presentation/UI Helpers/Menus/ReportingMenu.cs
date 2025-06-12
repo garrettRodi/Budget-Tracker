@@ -48,6 +48,7 @@ namespace BudgetTracker.Presentation.UIHelpers
             while (!back)
             {
                 _console.Clear();
+                _console.Write("AFTER CLEAR");
                 _console.WriteLine("=== Reporting Menu ===");
                 _console.WriteLine("1. Generate Income Report");
                 _console.WriteLine("2. Generate Expense Report");

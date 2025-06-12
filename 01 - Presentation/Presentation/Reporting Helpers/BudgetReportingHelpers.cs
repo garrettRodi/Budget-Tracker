@@ -73,6 +73,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
         }
         public async Task ViewBudgetMatrixReportAsync()
         {
+            _console.WriteLine("=== START OF MATRIX METHOD ===");
             // 1) Get the active budget and its matrix
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
@@ -90,36 +91,40 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 .ToList();
 
             // Save original console color to restore later
-            var prevColor = Console.ForegroundColor;
+            var prevColor = _console.ForegroundColor;
 
             // 4) Render each page
-            for (int p = 0; p < pages.Count; p++)
+            int currentPage = 0;
+            while (true)
             {
-                var pageDates = pages[p];
+                _console.Clear();
+                _console.Write("AFTER CLEAR");
+                _console.WriteLine("=== START OF MATRIX PAGE RENDER ===");
+                var pageDates = pages[currentPage];
 
-                Console.Clear();
-                Console.WriteLine(
+               
+                _console.WriteLine(
                     $"=== Budget Matrix: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} " +
-                    $"(Page {p + 1}/{pages.Count}) ===\n");
+                    $"(Page {currentPage + 1}/{pages.Count}) ===\n");
 
                 // --- Build separator line dynamically ---
                 string sep = "+" + new string('-', 15) + "+";
                 foreach (var _ in pageDates) sep += new string('-', 13) + "+";
                 sep += new string('-', 11) + "+";
-                Console.WriteLine(sep);
+                _console.WriteLine(sep);
 
                 // --- Header row ---
-                Console.Write("| Category".PadRight(15) + "|");
+                _console.Write("| Category".PadRight(15) + "|");
                 foreach (var d in pageDates)
-                    Console.Write(d.ToString("MM/dd").PadLeft(12) + "|");
-                Console.Write(" TotPln".PadLeft(11) + "|\n");
+                    _console.Write(d.ToString("MM/yyyy").PadLeft(12) + "|");
+                _console.Write(" TotPln".PadLeft(11) + "|\n");
 
-                Console.WriteLine(sep.Replace('-', '='));
+                _console.WriteLine(sep.Replace('-', '='));
 
                 // --- Data rows per category ---
                 foreach (var cat in categories)
                 {
-                    Console.Write("| " + cat.PadRight(13) + "|");
+                    _console.Write("| " + cat.PadRight(13) + "|");
 
                     Money rowPln = new Money(0, _currencyService.CurrentCurrency);
                     Money rowAct = new Money(0, _currencyService.CurrentCurrency);
@@ -129,15 +134,15 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                         var act = matrix.ActualByCategoryAndDate[(cat, d)];
                         rowPln += pln;
                         rowAct += act;
-                        Console.Write($"{pln,6:C}/{act,-6:C}|");
+                        _console.Write($"{pln,12:C}/{act,12:C}|");
                     }
 
-                    Console.Write($"{rowPln,9:C}|\n");
-                    Console.WriteLine(sep);
+                    _console.Write($"{rowPln,9:C}|\n");
+                    _console.WriteLine(sep);
                 }
 
                 // --- Differences Row for this page ---
-                Console.Write("| " + "Diff".PadRight(13) + "|");
+                _console.Write("| " + "Diff".PadRight(13) + "|");
                 Money pageTotalDiff = new Money(0, _currencyService.CurrentCurrency);
                 foreach (var d in pageDates)
                 {
@@ -150,36 +155,51 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                     Money periodDiff = periodPln - periodAct;
                     pageTotalDiff += periodDiff;
 
-                    Console.ForegroundColor = periodDiff.Amount >= 0
+                    _console.ForegroundColor = periodDiff.Amount >= 0
                         ? ConsoleColor.Green
                         : ConsoleColor.Red;
-                    Console.Write($"{periodDiff,12:C}|");
-                    Console.ForegroundColor = prevColor;
+                    _console.Write($"{periodDiff,12:C}|");
+                    _console.ForegroundColor = prevColor;
                 }
 
                 // Page total difference column
-                Console.ForegroundColor = pageTotalDiff.Amount >= 0
+                _console.ForegroundColor = pageTotalDiff.Amount >= 0
                     ? ConsoleColor.Green
                     : ConsoleColor.Red;
-                Console.Write($"{pageTotalDiff,11:C}|\n");
-                Console.ForegroundColor = prevColor;
+                _console.Write($"{pageTotalDiff,11:C}|\n");
+                _console.ForegroundColor = prevColor;
 
-                Console.WriteLine(sep);
+                _console.WriteLine(sep);
 
-                // Pause between pages
-                if (pages.Count > 1 && p < pages.Count - 1)
+                // Paging controls
+                if (pages.Count == 1)
+                    break;
+
+                _console.WriteLine("n: Next page, p: Previous page, q: Quit");
+                // Wait for a valid key
+                while (true)
                 {
-                    Console.Write("Press any key for next page...");
-                    Console.ReadKey(true);
+                    var key = _console.ReadKey(true).Key;
+                    if (key == ConsoleKey.N && currentPage < pages.Count - 1)
+                    {
+                        currentPage++;
+                        break; // break inner loop, re-render next page
+                    }
+                    else if (key == ConsoleKey.P && currentPage > 0)
+                    {
+                        currentPage--;
+                        break; // break inner loop, re-render previous page
+                    }
+                    else if (key == ConsoleKey.Q)
+                    {
+                        _console.Clear();
+                        return; // exit the method
+                    }
+                    // else: ignore and keep waiting for a valid key
                 }
             }
 
             // 5) Final totals & averages for Yearly budgets
-            _console.WriteLine($"DEBUG: _budgetService is {(_budgetService == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: _reportingService is {(_reportingService == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: matrix is {(matrix == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: matrix.ReportingPeriods is {(matrix?.ReportingPeriods == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: matrix.Categories is {(matrix?.Categories == null ? "NULL" : "OK")}");
             var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
             if (budget != null && budget.Frequency == BudgetFrequency.Yearly)
             {
@@ -206,11 +226,11 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                     Money totDiff = totPln - totAct;
                     bool isSavings = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
 
-                    Console.ForegroundColor = (totDiff.Amount >= 0) ^ isSavings
+                    _console.ForegroundColor = (totDiff.Amount >= 0) ^ isSavings
                         ? ConsoleColor.Green
                         : ConsoleColor.Red;
                     _console.WriteLine($"{cat.PadRight(15)} {totDiff,12:C}");
-                    Console.ForegroundColor = prevColor;
+                    _console.ForegroundColor = prevColor;
                 }
 
                 Money grandTotalDiff = categories
@@ -232,7 +252,8 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             }
 
             _console.WriteLine("\nPress any key to return to menu...");
-            Console.ReadKey(true);
+            _console.WriteLine("=== END OF MATRIX METHOD ===");
+            _console.ReadKey(true);
         }
     }
 }
