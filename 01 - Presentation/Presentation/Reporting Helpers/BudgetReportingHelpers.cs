@@ -54,7 +54,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
             var rule = _input.GetInput("Enter budget rule (e.g., 50/20/30): ");
             var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
-            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
+            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ", allowFuture: true);
 
             var report = await _reportingService.GenerateBudgetRuleReportAsync(rule, budgetId, start, end);
 

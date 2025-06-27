@@ -25,7 +25,7 @@ namespace BudgetTracker.Presentation
             // 1) Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.Console()           // ← write to console as well
+                //  .WriteTo.Console()           // ← write to console as well
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
