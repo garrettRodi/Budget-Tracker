@@ -10,11 +10,9 @@ namespace BudgetTracker.Domain.Entities
         public SavingGoals? SavingGoal { get; set; }
         public Guid BudgetContainerId { get; set; }
         public BudgetContainer? BudgetContainer { get; set; }
-
+        public string Name { get; set; } = null!;
         public string Category { get; set; } = string.Empty;
-        public Money Amount { get; set; }
-
-        // The day (for weekly/monthly budgets) or month‐start (for yearly budgets)
+        public Money Amount { get; set; } = null!;
         public DateTime Period { get; set; }
     }
 }

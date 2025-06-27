@@ -29,10 +29,8 @@ namespace BudgetTracker.Application.Services
         {
             _logger.LogInformation("Creating a new expense with the following details: {Details}", createCommand);
 
-            _logger.LogInformation($"[DEBUG] Service received SavingGoalId: {createCommand.SavingGoalId}");
             Expense entity = createCommand.ToEntity();
-            _logger.LogInformation($"[DEBUG] New Expense entity SavingGoalId: {entity.SavingGoalId}");
-
+            
             // Validate the expense before saving.
             var validator = new ExpenseValidator();
             validator.ValidateExpense(entity);

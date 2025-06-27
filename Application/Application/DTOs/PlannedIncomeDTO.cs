@@ -11,8 +11,9 @@ namespace BudgetTracker.Application.DTOs
     {
         public Guid Id { get; set; }
         public Guid BudgetContainerId { get; set; }
-        public Money Amount { get; set; }
-        public string Currency {  get; set; }
+        public string Source { get; set; } = null!;
+        public Money Amount { get; set; } = null!;
+        public string Currency { get; set; } = null!;
         public DateTime PeriodStart { get; set; }
     }
 }

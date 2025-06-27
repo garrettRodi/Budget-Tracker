@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Presentation-Project": {
+      "commandName": "Project",
+      "console": "internalConsole",
+      "remoteDebugEnabled": false
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

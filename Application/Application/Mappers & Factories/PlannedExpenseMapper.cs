@@ -12,6 +12,7 @@ namespace BudgetTracker.Application.Mappers
             {
                 Id = Guid.NewGuid(),
                 BudgetContainerId = cmd.BudgetContainerId,
+                Name = cmd.Name,
                 Category = cmd.Category,
                 Amount = cmd.Amount,
                 Period = cmd.Period
@@ -20,6 +21,7 @@ namespace BudgetTracker.Application.Mappers
         public static PlannedExpense ToEntity(this UpdatePlannedExpenseCommand cmd, PlannedExpense existing)
         {
             existing.Category = cmd.Category;
+            existing.Name = cmd.Name;
             existing.Amount = cmd.Amount;
             existing.Period = cmd.Period;
             return existing;
@@ -29,6 +31,7 @@ namespace BudgetTracker.Application.Mappers
             => new()
             {
                 Id = pe.Id,
+                Name = pe.Name,
                 Category = pe.Category,
                 Amount = pe.Amount,
                 Period = pe.Period

@@ -10,7 +10,8 @@ namespace BudgetTracker.Application.DTOs.Commands
     public class CreatePlannedIncomeCommand
     {
         public Guid BudgetContainerId { get; set; }
-        public Money Amount { get; set; }
+        public string Source { get; set; } = null!;
+        public Money Amount { get; set; } = null!;
         public DateTime PeriodStart { get; set; }
     }
 }

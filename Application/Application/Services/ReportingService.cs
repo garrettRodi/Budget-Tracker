@@ -309,18 +309,36 @@ namespace BudgetTracker.Application.Services
                     dto.PlannedByCategoryAndDate[(cat, p)] = new Money (0m, _currencyService.CurrentCurrency);
                     dto.ActualByCategoryAndDate[(cat, p)] = new Money (0m, _currencyService.CurrentCurrency);
                 }
+            // 4) tally planned expenses from your existing PlannedExpenseRepository
+            var plannedExpenses = await _unitOfWork.PlannedExpenseRepository.FindAsync(pe =>
+                pe.BudgetContainerId == budgetContainerId &&
+                pe.Period >= start &&
+                pe.Period <= end);
 
-            // 4) distribute planned evenly
-            foreach (var item in budget.BudgetItems)
+            // --- NEW: ensure any planned-expense categories are in the dictionary ---
+            foreach (var newCat in plannedExpenses.Select(pe => pe.Category).Distinct())
             {
-                var normCat = item.Category;
-                var perPeriodAmount = item.PlannedAmount.Amount / periods.Count;
-                var perPeriodMoney = new Money(perPeriodAmount, _currencyService.CurrentCurrency);
-
-                foreach (var p in periods)
-                    dto.PlannedByCategoryAndDate[(item.Category, p)] += perPeriodMoney;
+                if (!dto.Categories.Contains(newCat))
+                {
+                    dto.Categories.Add(newCat);
+                    foreach (var p in periods)
+                    {
+                        dto.PlannedByCategoryAndDate[(newCat, p)] = new Money(0m, _currencyService.CurrentCurrency);
+                        dto.ActualByCategoryAndDate[(newCat, p)] = new Money(0m, _currencyService.CurrentCurrency);
+                    }
+                }
             }
 
+            foreach (var pe in plannedExpenses)
+            {
+                // match the period key exactly like you do for actuals:
+                var key = budget.Frequency == BudgetFrequency.Yearly
+                    ? new DateTime(pe.Period.Year, pe.Period.Month, 1)
+                    : pe.Period.Date;
+            
+                // accumulate each planned expense into its own period/category cell
+                dto.PlannedByCategoryAndDate[(pe.Category, key)] += pe.Amount;
+            }
             // 5) tally actuals
             var expenses = await _unitOfWork.ExpenseRepository.FindAsync(e =>
                 e.BudgetContainerId == budgetContainerId
@@ -346,10 +364,46 @@ namespace BudgetTracker.Application.Services
                         dto.ActualByCategoryAndDate[(normCat, p)] = new Money(0m, _currencyService.CurrentCurrency);
                     }
                 }
-
-                // Now it's safe to increment
                 dto.ActualByCategoryAndDate[(normCat, key)] += exp.Amount;
             }
+
+            // 6) tally actual income
+            var incomes = await _unitOfWork.IncomeRepository.FindAsync(i =>
+                i.BudgetContainerId == budgetContainerId &&
+                i.ReceivedDate >= start &&
+                i.ReceivedDate <= end);
+
+            foreach (var inc in incomes)
+            {
+                var key = budget.Frequency == BudgetFrequency.Yearly
+                    ? new DateTime(inc.ReceivedDate.Year, inc.ReceivedDate.Month, 1)
+                    : inc.ReceivedDate.Date;
+
+                // ensure the DTO has an entry for Income on that period
+                if (!dto.ActualByCategoryAndDate.ContainsKey(("Income", key)))
+                    dto.ActualByCategoryAndDate[("Income", key)] = new Money(0m, _currencyService.CurrentCurrency);
+
+                dto.ActualByCategoryAndDate[("Income", key)] += inc.ActualAmount;
+            }
+
+            // 6b) tally planned income
+            var plannedIncomes = await _unitOfWork.PlannedIncomeRepository.FindAsync(pi =>
+                pi.BudgetContainerId == budgetContainerId &&
+                pi.PeriodStart >= start &&
+                pi.PeriodStart <= end);
+
+            foreach (var pi in plannedIncomes)
+            {
+                var key = budget.Frequency == BudgetFrequency.Yearly
+                    ? new DateTime(pi.PeriodStart.Year, pi.PeriodStart.Month, 1)
+                    : pi.PeriodStart.Date;
+
+                if (!dto.PlannedByCategoryAndDate.ContainsKey(("Income", key)))
+                    dto.PlannedByCategoryAndDate[("Income", key)] = new Money(0m, _currencyService.CurrentCurrency);
+
+                dto.PlannedByCategoryAndDate[("Income", key)] += pi.Amount;
+            }
+
 
             _logger.LogInformation(
                 "Budget matrix report ready: {Cats} categories over {Cols} columns",

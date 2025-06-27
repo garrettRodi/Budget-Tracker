@@ -25,7 +25,7 @@ namespace BudgetTracker.Presentation
             // 1) Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                //.WriteTo.Console()           // ← write to console as well
+                .WriteTo.Console()           // ← write to console as well
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
@@ -104,7 +104,6 @@ namespace BudgetTracker.Presentation
                     .Build();
 
                 // 3) Ensure DB is created/migrated
-                Console.WriteLine("== BEFORE MIGRATE ==");
                 using (var scope = host.Services.CreateScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<BudgetTrackerDbContext>();
@@ -112,24 +111,19 @@ namespace BudgetTracker.Presentation
                 }
 
                 // 4) Run the app
-                Console.WriteLine("== BEFORE RUNAPP ==");
                 using (var scope = host.Services.CreateScope())
                 {
                     var app = scope.ServiceProvider.GetRequiredService<AppController>();
-                    Console.WriteLine("About to invoke RunAsync()");
                     await app.RunAsync();
-                    Console.WriteLine("Returned from RunAsync()");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ UNCAUGHT STARTUP EXCEPTION: " + ex);
                 Log.Fatal(ex, "Application start-up failed.");
             }
             finally
             {
                 Log.CloseAndFlush();
-                Console.WriteLine("== END OF MAIN ==");
                 Console.ReadLine();
             }
         }

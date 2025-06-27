@@ -159,19 +159,40 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         {
             _console.Clear();
             _console.WriteLine("=== Update Budget ===");
-            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
 
-            string name = _input.GetTitleInput("Enter new budget name: ");
-            var frequency = _input.GetEnum<BudgetFrequency>("Enter new frequency (Weekly/Monthly/Yearly): ");
-            DateTime startDate = _input.GetValidDate("Enter new start date (yyyy-MM-dd): ");
-            DateTime endDate = _input.GetValidDate("Enter new end date (yyyy-MM-dd): ");
-            bool autoRenew = _input.GetBool("Auto renew? (y/n): ");
+            var budgets = (await _budgetService.GetAllBudgetsAsync()).ToList(); // ✅ Correct
+
+            if (!budgets.Any())
+            {
+                _console.WriteLine("No budgets available to update.");
+                _console.ReadKey();
+                return;
+            }
+            foreach (var b in budgets)
+            {
+                _console.WriteLine(
+                    $"ID: {b.Id} | Name: {b.Name} | Frequency: {b.Frequency} | " +
+                    $"Start: {b.StartDate:yyyy-MM-dd} | End: {b.EndDate:yyyy-MM-dd} | AutoRenew: {b.AutoRenew}");
+            }
+            Guid id;
+            while (true)
+            {
+                id = _input.GetValidGuid("Enter the ID of the budget to update: ");
+                if (budgets.Any(b => b.Id == id)) break;
+                _console.WriteLine("Invalid ID. Please select one from the list above.");
+            }
+            var existing = budgets.First(b => b.Id == id);
+
+            string name = _input.GetTitleInput($"Name ({existing.Name}): ");
+            var frequency = _input.GetEnum<BudgetFrequency>($"Frequency ({existing.Frequency}): ");
+            DateTime startDate = _input.GetValidDate($"Start Date ({existing.StartDate:yyyy-MM-dd}): ");
+            DateTime endDate = _input.GetValidDate($"End Date ({existing.EndDate:yyyy-MM-dd}): ");
+            bool autoRenew = _input.GetBool($"Auto Renew ({(existing.AutoRenew ? "y" : "n")}): ");
 
             var cmd = new UpdateBudgetCommand
             {
-                Id = budgetId,
-                Name = name,
+                Id = id,
+                Name = string.IsNullOrWhiteSpace(name) ? existing.Name : name,
                 Frequency = frequency,
                 StartDate = startDate,
                 EndDate = endDate,
@@ -189,14 +210,32 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         {
             _console.Clear();
             _console.WriteLine("=== Delete Budget ===");
-            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
 
-            bool success = await _budgetService.DeleteBudgetAsync(budgetId);
-            _console.WriteLine(success
-                ? "Budget deleted successfully."
-                : "Failed to delete budget.");
+            var budgets = (await _budgetService.GetAllBudgetsAsync()).ToList();
+            if (!budgets.Any())
+            {
+                _console.WriteLine("No budgets available to delete.");
+                _console.ReadKey();
+                return;
+            }
+
+            foreach (var b in budgets)
+            {
+                _console.WriteLine($"ID: {b.Id} | Name: {b.Name} | Frequency: {b.Frequency} | Start: {b.StartDate:yyyy-MM-dd} | End: {b.EndDate:yyyy-MM-dd} | AutoRenew: {b.AutoRenew}");
+            }
+
+            Guid id;
+            while (true)
+            {
+                id = _input.GetValidGuid("Enter the ID of the budget to delete: ");
+                if (budgets.Any(b => b.Id == id)) break;
+                _console.WriteLine("Invalid ID. Please select one from the list above.");
+            }
+
+            bool success = await _budgetService.DeleteBudgetAsync(id);
+            _console.WriteLine(success ? "Budget deleted successfully." : "Failed to delete budget.");
             _console.ReadKey();
         }
+
     }
 }

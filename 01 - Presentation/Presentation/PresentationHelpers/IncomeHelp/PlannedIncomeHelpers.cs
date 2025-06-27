@@ -39,18 +39,20 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            DateTime period = _input.GetValidDate("Enter period date (yyyy-MM-dd): ");
+            DateTime period = _input.GetValidDate("Enter period date (yyyy-MM-dd): ", allowFuture: true);
             decimal amount = _input.GetValidDecimal("Enter planned amount: ");
+            string source = _input.GetTitleInput("Enter income source: ");
 
             var cmd = new CreatePlannedIncomeCommand
             {
                 BudgetContainerId = budgetId,
+                Source = source,
                 PeriodStart = period,
                 Amount = new Money(amount, _currencyService.CurrentCurrency)
             };
 
             var dto = await _plannedService.CreatePlannedIncomeAsync(cmd);
-            _console.WriteLine($"Planned income for {dto.PeriodStart:d} created (ID: {dto.Id})");
+            _console.WriteLine($"Planned income for {dto.Source} created (ID: {dto.Id})");
             _console.ReadKey();
         }
 
@@ -65,7 +67,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var list = await _plannedService.GetPlannedIncomesByBudgetAsync(budgetId);
             foreach (var pi in list)
             {
-                _console.WriteLine($"ID: {pi.Id} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount:C}");
+                _console.WriteLine($"ID: {pi.Id} |Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount:C}");
             }
             if (!list.Any())
                 _console.WriteLine("No planned incomes found.");
@@ -78,26 +80,53 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine("=== Update Planned Income ===");
 
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
-
-            _console.Write("Enter planned income ID: ");
-            if (!Guid.TryParse(_console.ReadLine(), out var id))
+            if (budgetId == Guid.Empty)
             {
-                _console.WriteLine("Invalid ID format."); return;
+                _console.WriteLine("No active budget found.");
+                _console.ReadKey();
+                return;
+            }
+           var list = await _plannedService.GetPlannedIncomesByBudgetAsync(budgetId);
+            if (!list.Any())
+            {
+                _console.WriteLine("No planned incomes available to update.");
+                _console.ReadKey();
+                return;
             }
 
-            DateTime period = _input.GetValidDate("Enter new period date (yyyy-MM-dd): ");
-            decimal amount = _input.GetValidDecimal("Enter new planned amount: ");
+            foreach (var pi in list)
+            {
+                _console.WriteLine($"ID: {pi.Id} | Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount:C}");
+            }
+
+            Guid id;
+            while (true)
+            {
+                _console.Write("Enter planned income ID to update: ");
+                var input = _console.ReadLine();
+                if (Guid.TryParse(input, out id) && list.Any(pi => pi.Id == id))
+                    break;
+                _console.WriteLine("Invalid ID. Please try again.");
+            }
+
+            var existing = list.First(pi => pi.Id == id);
+
+            string source = _input.GetTitleInput($"Source ({existing.Source}): ");
+            DateTime period = _input.GetValidDate($"Date ({existing.PeriodStart:yyyy-MM-dd}): ", allowFuture: true);
+            decimal amount = _input.GetValidDecimal($"Amount ({existing.Amount:C}): ");
 
             var cmd = new UpdatePlannedIncomeCommand
             {
                 Id = id,
+                Source = source,
                 PeriodStart = period,
                 Amount = new Money(amount, _currencyService.CurrentCurrency)
             };
 
             bool ok = await _plannedService.UpdatePlannedIncomeAsync(cmd);
-            _console.WriteLine(ok ? "Updated successfully." : "Update failed.");
+            _console.WriteLine(ok 
+                ? "Updated successfully." 
+                : "Update failed.");
             _console.ReadKey();
         }
 
@@ -107,16 +136,40 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine("=== Delete Planned Income ===");
 
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
-
-            _console.Write("Enter planned income ID: ");
-            if (!Guid.TryParse(_console.ReadLine(), out var id))
+            if (budgetId == Guid.Empty)
             {
-                _console.WriteLine("Invalid ID format."); return;
+                _console.WriteLine("No active budget found.");
+                _console.ReadKey();
+                return;
+            }
+
+            var list = await _plannedService.GetPlannedIncomesByBudgetAsync(budgetId);
+            if (!list.Any())
+            {
+                _console.WriteLine("No planned incomes available to delete.");
+                _console.ReadKey();
+                return;
+            }
+
+            foreach (var pi in list)
+            {
+                _console.WriteLine($"ID: {pi.Id} | Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount:C}");
+            }
+
+            Guid id;
+            while (true)
+            {
+                _console.Write("Enter planned income ID to delete: ");
+                var input = _console.ReadLine();
+                if (Guid.TryParse(input, out id) && list.Any(pi => pi.Id == id))
+                    break;
+                _console.WriteLine("Invalid ID. Please try again.");
             }
 
             bool ok = await _plannedService.DeletePlannedIncomeAsync(id);
-            _console.WriteLine(ok ? "Deleted successfully." : "Delete failed.");
+            _console.WriteLine(ok 
+                ? "Deleted successfully."
+                : "Delete failed.");
             _console.ReadKey();
         }
     }

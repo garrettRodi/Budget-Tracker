@@ -45,15 +45,23 @@ namespace BudgetTracker.Presentation.UIHelpers
         }
 
 
-        public DateTime GetValidDate(string prompt)
+        public DateTime GetValidDate(string prompt, bool allowFuture = false)
         {
-            DateTime date;
             while (true)
             {
                 _console.Write(prompt);
-                if (DateTime.TryParse(_console.ReadLine(), out date))
-                    return date;
-                _console.WriteLine("Invalid date format. Please use yyyy-mm-dd.");
+                var input = _console.ReadLine();
+                if (!DateTime.TryParse(input, out var date))
+                {
+                    _console.WriteLine("Invalid date format. Please use yyyy-MM-dd.");
+                    continue;
+                }
+                if (!allowFuture && date.Date > DateTime.Today)
+                {
+                    _console.WriteLine("Date cannot be in the future. Please enter a date on or before today.");
+                    continue;
+                }
+                return date;
             }
         }
 
@@ -88,8 +96,8 @@ namespace BudgetTracker.Presentation.UIHelpers
 
             while (true)
             {
-                Console.WriteLine(prompt);
-                Console.WriteLine($"Options: {string.Join(", ", validValues)}");
+                _console.WriteLine(prompt);
+                _console.WriteLine($"Options: {string.Join(", ", validValues)}");
 
                 string input = GetInput("> ").Trim();
 
@@ -99,7 +107,7 @@ namespace BudgetTracker.Presentation.UIHelpers
                     return result;
                 }
 
-                Console.WriteLine("Invalid selection. Please enter one of the listed options.");
+                _console.WriteLine("Invalid selection. Please enter one of the listed options.");
             }
         }
 
@@ -120,12 +128,12 @@ namespace BudgetTracker.Presentation.UIHelpers
         {
             while (true)
             {
-                Console.Write(prompt);
+                _console.Write(prompt);
                 var input = Console.ReadLine()?.Trim();
                 if (Guid.TryParse(input, out var guid))
                     return guid;
 
-                Console.WriteLine("Invalid ID format. Please enter a valid GUID.");
+                _console.WriteLine("Invalid ID format. Please enter a valid GUID.");
             }
         }
     }

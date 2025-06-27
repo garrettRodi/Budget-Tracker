@@ -1,17 +1,20 @@
-﻿// File: Presentation/UIHelpers/SystemConsole.cs
-using System;
+﻿using System;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace BudgetTracker.Presentation.UIHelpers
 {
-    // Production implementation that directly delegates to System.Console.
     public class SystemConsole : IConsole
     {
+        public void Clear()
+        {
+            Console.Clear();
+        }
+
         public void Write(string message) => Console.Write(message);
-        public void WriteLine(string message = "") => Console.WriteLine(message);
+        public void WriteLine(string message) => Console.WriteLine(message);
+        public ConsoleKeyInfo ReadKey(bool i) => Console.ReadKey(i);
         public string ReadLine() => Console.ReadLine() ?? "";
-        public ConsoleKeyInfo ReadKey(bool intercept = false)
-            => Console.ReadKey(intercept);
-        public void Clear() => Console.Clear();
         public ConsoleColor ForegroundColor
         {
             get => Console.ForegroundColor;

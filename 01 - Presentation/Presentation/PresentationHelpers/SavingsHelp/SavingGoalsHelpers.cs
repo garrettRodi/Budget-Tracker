@@ -42,7 +42,12 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine("=== Create Saving Goal ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
+            if (budgetId == Guid.Empty)
+            {
+                _console.WriteLine("No active budget found. Please create or select a budget first.");
+                _console.ReadKey();
+                return;
+            }
 
             var goalName = _input.GetTitleInput("Enter saving goal name: ");
             var targetAmount = _input.GetValidDecimal("Enter target amount: ");
@@ -89,19 +94,44 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine("=== Update Saving Goal ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
-
-            var idInput = _input.GetInput("Enter saving goal ID to update: ");
-            if (!Guid.TryParse(idInput, out var id))
+            if (budgetId == Guid.Empty)
             {
-                _console.WriteLine("Invalid ID format.");
+                _console.WriteLine("No active budget found. Please create or select a budget first.");
+                _console.ReadKey();
                 return;
             }
 
-            var goalName = _input.GetTitleInput("Enter updated goal name: ");
-            var targetAmount = _input.GetValidDecimal("Enter updated target amount: ");
-            var currentAmount = _input.GetValidDecimal("Enter updated current amount: ");
-            var targetDate = _input.GetValidDate("Enter updated target date (yyyy-MM-dd): ");
+            var list = (await _savingGoalsService.GetSavingGoalsByBudgetContainerIdAsync(budgetId)).ToList();
+
+            if (!list.Any())
+            {
+                _console.WriteLine("No saving goals found for the active budget.");
+                _console.ReadKey();
+                return;
+            }
+
+            foreach (var goal in list)
+            {
+                _console.WriteLine(
+                    $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount:C} | " +
+                    $"Current: {goal.CurrentAmount:C} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
+            }
+
+            Guid id;
+
+            while (true)
+            {
+                id = _input.GetValidGuid("Enter the ID of the saving goal to update.");
+                if (list.Any(x => x.Id == id)) break;
+                _console.WriteLine("Invalid ID. Please choose from the list above.");
+            }
+
+            var existing = list.First(x => x.Id == id);
+
+            string goalName = _input.GetTitleInput($"Name ({existing.GoalName}): ");
+            decimal targetAmount = _input.GetValidDecimal($"Target Amount ({existing.TargetAmount:C}): ");
+            decimal currentAmount = _input.GetValidDecimal($"Current Amount ({existing.CurrentAmount:C}): ");
+            DateTime targetDate = _input.GetValidDate($"Target Date ({existing.TargetDate:yyyy-MM-dd}): ");
 
             var cmd = new UpdateSavingGoalCommand
             {
@@ -126,13 +156,35 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             _console.WriteLine("=== Delete Saving Goal ===");
 
             var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
-
-            var idInput = _input.GetInput("Enter saving goal ID to delete: ");
-            if (!Guid.TryParse(idInput, out var id))
+            if (budgetId == Guid.Empty)
             {
-                _console.WriteLine("Invalid ID format.");
+                _console.WriteLine("No active budget found.");
+                _console.ReadKey();
                 return;
+            }
+
+            var list = (await _savingGoalsService.GetSavingGoalsByBudgetContainerIdAsync(budgetId)).ToList();
+
+            if (!list.Any())
+            {
+                _console.WriteLine("No saving goals to delete.");
+                _console.ReadKey();
+                return;
+            }
+
+            foreach (var g in list)
+            {
+                _console.WriteLine(
+                    $"ID: {g.Id} | Name: {g.GoalName} | Target: {g.TargetAmount:C} | " +
+                    $"Current: {g.CurrentAmount:C} | Target Date: {g.TargetDate:yyyy-MM-dd}");
+            }
+
+            Guid id;
+            while (true)
+            {
+                id = _input.GetValidGuid("Enter the ID of the saving goal to delete.");
+                if (list.Any(x => x.Id == id)) break;
+                _console.WriteLine("Invalid ID. Please choose from the list above.");
             }
 
             bool success = await _savingGoalsService.DeleteSavingGoalAsync(id);

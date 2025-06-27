@@ -48,20 +48,35 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
+            string name = _input.GetTitleInput("Enter name for planned expense: ");
             string category = _input.GetTitleInput("Enter category: ");
             decimal amount = _input.GetValidDecimal("Enter planned amount: ");
-            DateTime period = _input.GetValidDate("Enter period (yyyy-MM-dd): ");
+            DateTime period = _input.GetValidDate("Enter period (yyyy-MM-dd): ", allowFuture: true);
 
             var cmd = new CreatePlannedExpenseCommand
             {
                 BudgetContainerId = budgetId,
+                Name = name,
                 Category = category,
                 Amount = new Money(amount, _currencyService.CurrentCurrency),
                 Period = period
             };
 
-            var dto = await _plannedExpenseService.CreatePlannedExpenseAsync(cmd);
-            _console.WriteLine($"Planned expense '{dto.Category}' on {dto.Period:yyyy-MM-dd} for {dto.Amount:C} created with ID: {dto.Id}");
+            try
+            {
+                var dto = await _plannedExpenseService.CreatePlannedExpenseAsync(cmd);
+                _console.WriteLine($"Planned expense '{dto.Category}' on {dto.Period:yyyy-MM-dd} for {dto.Amount:C} created with ID: {dto.Id}");
+            }
+            catch (Exception ex)
+            {
+                _console.WriteLine($"Error creating planned expense: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    _console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+            }
+
+            _console.WriteLine("Press any key to return...");
             _console.ReadKey();
         }
 
@@ -74,26 +89,33 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             if (budgetId == Guid.Empty)
             {
                 _console.WriteLine("No active budget found. Please create a budget first.");
+                _console.ReadKey();
                 return;
             }
-
-            var list = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
-            if (!list.Any())
+            try
             {
-                _console.WriteLine("No planned expenses found.");
-            }
-            else
-            {
-                _console.WriteLine("ID\t\tPeriod\t\tCategory\tAmount");
-                _console.WriteLine("--\t\t------\t\t--------\t------");
-                foreach (var pe in list)
+                var list = await _plannedExpenseService.ViewPlannedExpensesAsync(budgetId);
+                if (!list.Any())
                 {
-                    _console.WriteLine($"{pe.Id}\t{pe.Period:yyyy-MM-dd}\t{pe.Category}\t{pe.Amount:C}");
+                    _console.WriteLine("No expenses found.");
+                }
+                else
+                {
+
+                    foreach (var exp in list)
+                    {
+                        _console.WriteLine(
+                            $"ID: {exp.Id} | Name: {exp.Name} | Amount: {exp.Amount:C} | Date: {exp.Period:yyyy-MM-dd} | Category: {exp.Category}");
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                _console.WriteLine($"Error retrieving planned expenses: {ex.Message}");
+            }
+            _console.WriteLine("\nPress any key to return...");
             _console.ReadKey();
         }
-
         public async Task UpdatePlannedExpenseAsync()
         {
             _console.Clear();
@@ -113,8 +135,9 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 return;
             }
 
+            // Display all planned expenses for user to choose from
             foreach (var pe in all)
-                _console.WriteLine($"{pe.Id}: {pe.Period:yyyy-MM-dd} | {pe.Category} | {pe.Amount:C}");
+                _console.WriteLine($"{pe.Id}: {pe.Name} | {pe.Period:yyyy-MM-dd} | {pe.Category} | {pe.Amount:C}");
 
             Guid id;
             while (true)
@@ -126,14 +149,16 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
             var existing = all.First(pe => pe.Id == id);
 
+            string name = _input.GetTitleInput($"Name ({existing.Name}): ");
             string category = _input.GetTitleInput($"Category ({existing.Category}): ");
             decimal amount = _input.GetValidDecimal($"Amount ({existing.Amount:C}): ");
-            DateTime period = _input.GetValidDate($"Period ({existing.Period:yyyy-MM-dd}): ");
+            DateTime period = _input.GetValidDate($"Period ({existing.Period:yyyy-MM-dd}): ", allowFuture: true);
 
             var cmd = new UpdatePlannedExpenseCommand
             {
                 Id = id,
                 BudgetContainerId = budgetId,
+                Name = string.IsNullOrWhiteSpace(name) ? existing.Name : name,
                 Category = string.IsNullOrWhiteSpace(category) ? existing.Category : category,
                 Amount = new Money(amount, _currencyService.CurrentCurrency),
                 Period = period

@@ -3,6 +3,7 @@ using System;
 using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace _04__Infrastructure.Migrations
 {
     [DbContext(typeof(BudgetTrackerDbContext))]
-    partial class BudgetTrackerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250626074610_AddNameToPlannedIncomeAndExpense")]
+    partial class AddNameToPlannedIncomeAndExpense
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.3");
@@ -297,11 +300,15 @@ namespace _04__Infrastructure.Migrations
                     b.Property<Guid>("BudgetContainerId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("PeriodStart")
+                    b.Property<string>("Category")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Source")
+                    b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PeriodStart")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

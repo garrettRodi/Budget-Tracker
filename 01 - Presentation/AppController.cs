@@ -70,7 +70,7 @@ namespace BudgetTracker.Presentation
         {
             bool exitRequested = false;
 
-            Console.WriteLine("DEBUG: Entering RunAsync");
+            _console.WriteLine("DEBUG: Entering RunAsync");
 
             while (!exitRequested)
             {
@@ -86,7 +86,7 @@ namespace BudgetTracker.Presentation
                     case "5": await _reportingMenu.ShowAsync(); break; // Report Menu
                     case "6": 
                         exitRequested = true;
-                        Console.WriteLine("DEBUG: Exit requested");
+                        _console.WriteLine("DEBUG: Exit requested");
                         break;
 
                     default:

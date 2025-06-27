@@ -2,7 +2,7 @@
 
 namespace BudgetTracker.Domain.Interfaces
 {
-    public interface IPlannedIncomeRepository
+    public interface IPlannedIncomeRepository : IGenericRepository<PlannedIncome>
     {
         Task AddAsync(PlannedIncome plannedIncome);
         Task<PlannedIncome?> GetByIdAsync(Guid id);
