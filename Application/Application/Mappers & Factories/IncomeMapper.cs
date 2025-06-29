@@ -16,7 +16,8 @@ namespace BudgetTracker.Application.Mappers
                 Source = command.Source,
                 ActualAmount = command.ActualAmount,
                 ReceivedDate = command.ReceivedDate,
-                BudgetContainerId = command.BudgetContainerId
+                BudgetContainerId = command.BudgetContainerId,
+                Medium = command.Medium
             };
         }
 
@@ -26,6 +27,7 @@ namespace BudgetTracker.Application.Mappers
             existingIncome.Source = command.Source;
             existingIncome.ActualAmount = command.ActualAmount;
             existingIncome.ReceivedDate = command.ReceivedDate;
+            existingIncome.Medium = command.Medium;
             return existingIncome;
         }
 
@@ -37,7 +39,8 @@ namespace BudgetTracker.Application.Mappers
                 Id = income.Id,
                 Source = income.Source,
                 ActualAmount = income.ActualAmount,
-                ReceivedDate = income.ReceivedDate
+                ReceivedDate = income.ReceivedDate,
+                Medium = income.Medium,
             };
         }
     }

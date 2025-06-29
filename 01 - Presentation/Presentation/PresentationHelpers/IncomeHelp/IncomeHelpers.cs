@@ -83,7 +83,9 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             foreach (var inc in list)
             {
                 _console.WriteLine(
-                $"ID: {inc.Id} | Source: {inc.Source} | Amount: {inc.ActualAmount} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
+                    $"ID: {inc.Id} | Source: {inc.Source} | " +
+                    $"Amount: {inc.ActualAmount.ToDisplay(_currencyService)} | " +
+                    $"Date: {inc.ReceivedDate:yyyy-MM-dd}");
             }
             if (!list.Any())
                 _console.WriteLine("No incomes found for the active budget.");

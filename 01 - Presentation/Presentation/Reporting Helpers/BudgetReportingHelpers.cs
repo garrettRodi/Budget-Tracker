@@ -6,6 +6,7 @@ using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Services;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.ValueObjects;
+using BudgetTracker.Presentation.PresentationHelpers;
 using BudgetTracker.Presentation.UIHelpers;
 using Microsoft.VisualBasic;
 
@@ -58,8 +59,16 @@ namespace BudgetTracker.Presentation.ReportingHelpers
 
             var report = await _reportingService.GenerateBudgetRuleReportAsync(rule, budgetId, start, end);
 
+            // ——— INTEGRATE BALANCES ———
+            _console.WriteLine();
+            _console.WriteLine("Balances at Budget Start / Now:");
+            _console.WriteLine($"  Cash: {report.InitialCashBalance.ToDisplay(_currencyService)} → {report.CurrentCashBalance.ToDisplay(_currencyService)}");
+            _console.WriteLine($"  Bank: {report.InitialBankBalance.ToDisplay(_currencyService)} → {report.CurrentBankBalance.ToDisplay(_currencyService)}");
+            _console.WriteLine();
+            // ————————————————————————
+
             _console.WriteLine($"Rule: {report.Rule}");
-            _console.WriteLine($"  Necessities - Planned: {report.NecessitiesPlanned:C}, Actual: {report.NecessitiesActual:C}, Variance: {report.NecessitiesPercentageVariance:F2}%");
+            _console.WriteLine($"  Necessities - Planned: {report.NecessitiesPlanned.ToDisplay(_currencyService)}, Actual: {report.NecessitiesActual.ToDisplay(_currencyService)}, Variance: {report.NecessitiesPercentageVariance:F2}%");
 
             // Add uncategorized/ bulk savings to the Savings line
             var savingGoalsReport = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
@@ -67,29 +76,29 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             Money bulkAmount = bulk?.CurrentAmount ?? new Money(0m, _currencyService.CurrentCurrency); ;
 
             Money totalSavingsActual = report.SavingsActual + bulkAmount;
-            _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {totalSavingsActual:C} (Goals: {report.SavingsActual:C} + Bulk: {bulkAmount:C}), Variance: {report.SavingsPercentageVariance:F2}%");
-            _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
+            _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned.ToDisplay(_currencyService)}, Actual: {totalSavingsActual:C} (Goals: {report.SavingsActual.ToDisplay(_currencyService)} + Bulk: {bulkAmount:C}), Variance: {report.SavingsPercentageVariance:F2}%");
+            _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned.ToDisplay(_currencyService)}, Actual: {report.DiscretionaryActual.ToDisplay(_currencyService)}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
             _console.ReadKey();
         }
         public async Task ViewBudgetMatrixReportAsync()
         {
-
+            // 1) Select the budget
             _console.Clear();
-            // 1) Get data
+            _console.WriteLine("=== Budget Matrix Report ===");
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
+            if (budgetId == Guid.Empty)
+            {
+                _console.WriteLine("No budget selected. Press any key to return...");
+                _console.ReadKey();
+                return;
+            }
 
-            _console.WriteLine("DEBUG: Categories = " + string.Join(", ", matrix.Categories));
-            var plannedKeys = matrix.PlannedByCategoryAndDate
-                     .Keys
-                     .Select(k => k.Item1)
-                     .Distinct();
-            _console.WriteLine("DEBUG: Planned keys = " + string.Join(", ", plannedKeys));
-_console.ReadKey();
+            // 2) Generate the matrix DTO
+            var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
             var periods = matrix.ReportingPeriods;
             var categories = matrix.Categories;
 
-            // 2) Split into pages of up to 7 periods
+            // 3) Split into pages
             const int PageSize = 7;
             var pages = periods
                 .Select((date, idx) => new { date, idx })
@@ -97,25 +106,25 @@ _console.ReadKey();
                 .Select(g => g.Select(x => x.date).ToList())
                 .ToList();
 
-            // 3) Column widths and colors
+            // 4) Layout settings
             const int categoryColWidth = 15;
-            const int cellColWidth = 15; // fits "1,234.00/1,234.00"
-            var defaultCurrency = _currencyService.CurrentCurrency;
+            const int cellColWidth = 15;
             var prevColor = _console.ForegroundColor;
+            bool done = false;
             int currentPage = 0;
-            int totalPages = pages.Count + 1; // +1 for the summary page
+            int totalPages = pages.Count + 1; // +1 for summary page
 
-
-            // 4) Paging loop
-            while (true)
+            // 5) Loop until user quits with Q on paging
+            while (!done)
             {
                 _console.Clear();
 
+                // 5a) Data pages
                 if (currentPage < pages.Count)
                 {
                     var pageDates = pages[currentPage];
 
-                    // Title and legend
+                    // Header
                     _console.WriteLine(
                         $"=== Budget Matrix: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} " +
                         $"(Page {currentPage + 1}/{totalPages}) ===");
@@ -123,31 +132,34 @@ _console.ReadKey();
 
                     // Separator line
                     string sep = "+" + new string('-', categoryColWidth) + "+";
-                    foreach (var _ in pageDates) sep += new string('-', cellColWidth) + "+";
+                    sep += string.Concat(Enumerable.Repeat(new string('-', cellColWidth) + "+", pageDates.Count));
                     _console.WriteLine(sep);
 
-                    // Header row
+                    // Column titles
                     _console.Write("| Category".PadRight(categoryColWidth) + "|");
                     foreach (var d in pageDates)
                         _console.Write(d.ToString("MM/yyyy").PadLeft(cellColWidth) + "|");
                     _console.WriteLine();
                     _console.WriteLine(sep.Replace('-', '='));
 
-                    // Income row (use TryGetValue and fall back to zero)
+                    // Income row
                     _console.Write("| Income".PadRight(categoryColWidth) + "|");
                     foreach (var d in pageDates)
                     {
                         matrix.PlannedByCategoryAndDate.TryGetValue(("Income", d), out var incomePln);
                         matrix.ActualByCategoryAndDate.TryGetValue(("Income", d), out var incomeAct);
-                        incomePln ??= new Money(0m, defaultCurrency);
-                        incomeAct ??= new Money(0m, defaultCurrency);
-                        string incomeCell = $"{incomePln.Amount:C}/{incomeAct.Amount:C}".PadLeft(cellColWidth);
+                        incomePln ??= new Money(0m, _currencyService.CurrentCurrency);
+                        incomeAct ??= new Money(0m, _currencyService.CurrentCurrency);
+
+                        string plnText = incomePln.ToDisplay(_currencyService);
+                        string actText = incomeAct.ToDisplay(_currencyService);
+                        string incomeCell = $"{plnText}/{actText}".PadLeft(cellColWidth);
                         _console.Write(incomeCell + "|");
                     }
                     _console.WriteLine();
                     _console.WriteLine(sep);
 
-                    // Data rows for each category
+                    // Category rows
                     foreach (var cat in categories)
                     {
                         _console.Write("| " + cat.PadRight(categoryColWidth - 2) + " |");
@@ -155,181 +167,134 @@ _console.ReadKey();
                         {
                             var pln = matrix.PlannedByCategoryAndDate[(cat, d)];
                             var act = matrix.ActualByCategoryAndDate[(cat, d)];
-                            string cell = $"{pln.Amount:C}/{act.Amount:C}".PadLeft(cellColWidth);
+
+                            string plnText = pln.ToDisplay(_currencyService);
+                            string actText = act.ToDisplay(_currencyService);
+                            string cell = $"{plnText}/{actText}".PadLeft(cellColWidth);
                             _console.Write(cell + "|");
                         }
                         _console.WriteLine();
                         _console.WriteLine(sep);
                     }
 
-                    // Period Totals row: income minus sum of other categories
+                    // Period Totals row
                     _console.Write("| Period Totals".PadRight(categoryColWidth) + "|");
                     foreach (var d in pageDates)
                     {
                         matrix.PlannedByCategoryAndDate.TryGetValue(("Income", d), out var incomePln);
                         matrix.ActualByCategoryAndDate.TryGetValue(("Income", d), out var incomeAct);
-                        incomePln ??= new Money(0m, defaultCurrency);
-                        incomeAct ??= new Money(0m, defaultCurrency);
+                        incomePln ??= new Money(0m, _currencyService.CurrentCurrency);
+                        incomeAct ??= new Money(0m, _currencyService.CurrentCurrency);
 
                         var expPln = categories
                             .Select(c => matrix.PlannedByCategoryAndDate[(c, d)])
-                            .Aggregate(new Money(0m, defaultCurrency), (sum, m) => sum + m);
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
                         var expAct = categories
                             .Select(c => matrix.ActualByCategoryAndDate[(c, d)])
-                            .Aggregate(new Money(0m, defaultCurrency), (sum, m) => sum + m);
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
 
                         var totPln = incomePln - expPln;
                         var totAct = incomeAct - expAct;
-                        // Prepare the two parts
-                        var plnStr = totPln.Amount.ToString("C");
-                        var actStr = totAct.Amount.ToString("C");
 
-                        // Right-align within the column
-                        int padding = cellColWidth - (plnStr.Length + 1 + actStr.Length);
+                        string totPlnText = totPln.ToDisplay(_currencyService);
+                        string totActText = totAct.ToDisplay(_currencyService);
+
+                        int padding = cellColWidth - (totPlnText.Length + 1 + totActText.Length);
                         _console.Write(new string(' ', Math.Max(padding, 0)));
 
-                        // 1) Color & write the Planned‐surplus portion
-                        _console.ForegroundColor = totPln.Amount >= 0
-                            ? ConsoleColor.Green   // good: planned income ≥ planned expenses
-                            : ConsoleColor.Red;     // bad: planned expenses > planned income
-                        _console.Write(plnStr);
-                        _console.ForegroundColor = prevColor; // reset
-
-                        _console.Write("/"); // separator (neutral)
-
-                        // 2) Color & write the Actual‐surplus portion
-                        _console.ForegroundColor = totAct.Amount >= 0
-                            ? ConsoleColor.Green   // good: actual income ≥ actual expenses
-                            : ConsoleColor.Red;     // bad: actual expenses > actual income
-                        _console.Write(actStr);
-                        _console.ForegroundColor = prevColor; // reset
-
-                        _console.Write("|"); // end cell
+                        _console.ForegroundColor = totPln.Amount >= 0 ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write(totPlnText);
                         _console.ForegroundColor = prevColor;
+                        _console.Write("/");
+
+                        _console.ForegroundColor = totAct.Amount >= 0 ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write(totActText);
+                        _console.ForegroundColor = prevColor;
+                        _console.Write("|");
                     }
                     _console.WriteLine();
                     _console.WriteLine(sep);
                 }
-
                 else
                 {
-                    // --- Summary Page (last page) ---
-                    _console.WriteLine($"=== Summary: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} (Page {currentPage + 1}/{totalPages}) ===");
-                    _console.WriteLine("(Planned / Actual → Difference / Avg Diff)");
+                    // 5b) Summary page
+                    _console.WriteLine(
+                        $"=== Summary: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} " +
+                        $"(Page {currentPage + 1}/{totalPages}) ===");
+                    _console.WriteLine("(Planned / Actual → Diff / Avg)");
 
-                    // Separator
-                    string sep = "+" + new string('-', categoryColWidth) + "+"
-                               + new string('-', cellColWidth * 4 + 3) + "+";
-                    _console.WriteLine(sep.Replace('-', '='));
+                    string sep2 = "+" + new string('-', categoryColWidth) + "+"
+                                + new string('-', cellColWidth * 4 + 3) + "+";
+                    _console.WriteLine(sep2.Replace('-', '='));
 
-                    // Header
                     _console.Write("| Category".PadRight(categoryColWidth) + "|");
                     _console.Write("Total Planned".PadLeft(cellColWidth) + "|");
                     _console.Write("Total Actual".PadLeft(cellColWidth) + "|");
                     _console.Write("Total Diff".PadLeft(cellColWidth) + "|");
                     _console.Write("Avg Diff".PadLeft(cellColWidth) + "|\n");
-                    _console.WriteLine(sep);
+                    _console.WriteLine(sep2);
 
-                    // For each category (including Income)
                     var allCats = new[] { "Income" }.Concat(categories);
                     foreach (var cat in allCats)
                     {
                         _console.Write("| " + cat.PadRight(categoryColWidth - 2) + " |");
 
-                        // Totals
                         var totalPln = periods
-                            .Select(d => matrix.PlannedByCategoryAndDate.TryGetValue((cat, d), out var p) ? p : new Money(0m, defaultCurrency))
-                            .Aggregate(new Money(0m, defaultCurrency), (s, m) => s + m);
+                            .Select(d => matrix.PlannedByCategoryAndDate.TryGetValue((cat, d), out var p) ? p : new Money(0m, _currencyService.CurrentCurrency))
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (s, m) => s + m);
                         var totalAct = periods
-                            .Select(d => matrix.ActualByCategoryAndDate.TryGetValue((cat, d), out var a) ? a : new Money(0m, defaultCurrency))
-                            .Aggregate(new Money(0m, defaultCurrency), (s, m) => s + m);
+                            .Select(d => matrix.ActualByCategoryAndDate.TryGetValue((cat, d), out var a) ? a : new Money(0m, _currencyService.CurrentCurrency))
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (s, m) => s + m);
 
-
-                        // Write cells
-                        _console.Write(totalPln.Amount.ToString("C").PadLeft(cellColWidth) + "|");
-                        _console.Write(totalAct.Amount.ToString("C").PadLeft(cellColWidth) + "|");
-
-                        // Difference
                         var diff = totalAct - totalPln;
+                        decimal avgVal = periods.Count > 0 ? diff.Amount / periods.Count : 0m;
+                        var avgMoney = new Money(avgVal, _currencyService.CurrentCurrency);
 
-                        
-                        // Color logic:
-                        //  • Income & Savings: diff >= 0 → good (green); diff < 0 → bad (red)
-                        //  • Other categories (expenses): diff <= 0 → good (green); diff > 0 → bad (red)
-                        bool isIncome = cat.Equals("Income", StringComparison.OrdinalIgnoreCase);
-                        bool isSavings = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
-                        if (isIncome || isSavings)
-                        {
-                            _console.ForegroundColor = diff.Amount >= 0
-                        ? ConsoleColor.Green
-                        : ConsoleColor.Red;
-                        }
-                        else
-                        {
-                            _console.ForegroundColor = diff.Amount <= 0
-                       ? ConsoleColor.Green
-                       : ConsoleColor.Red;
-                        }
-                        _console.Write(diff.Amount.ToString("C").PadLeft(cellColWidth) + "|");
-                        _console.ForegroundColor = prevColor; // Reset color after writing
+                        _console.Write(totalPln.ToDisplay(_currencyService).PadLeft(cellColWidth) + "|");
+                        _console.Write(totalAct.ToDisplay(_currencyService).PadLeft(cellColWidth) + "|");
 
-                        // Average Difference per period
-                        var avgDiff = periods.Count > 0
-                            ? diff.Amount / periods.Count
-                            : 0m;
+                        bool isInc = cat.Equals("Income", StringComparison.OrdinalIgnoreCase);
+                        bool isSav = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
 
-                        // Color Avg Diff using same rules
-                        if (isIncome || isSavings)
-                        {
-                            _console.ForegroundColor = avgDiff >= 0
-                                ? ConsoleColor.Green
-                                : ConsoleColor.Red;
-                        }
-                        else
-                        {
-                            _console.ForegroundColor = avgDiff <= 0
-                                ? ConsoleColor.Green
-                                : ConsoleColor.Red;
-                        }
-                        _console.Write(avgDiff.ToString("C").PadLeft(cellColWidth) + "|");
+                        _console.ForegroundColor = (isInc || isSav ? diff.Amount >= 0 : diff.Amount <= 0)
+                            ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write(diff.ToDisplay(_currencyService).PadLeft(cellColWidth) + "|");
+                        _console.ForegroundColor = prevColor;
+
+                        _console.ForegroundColor = (isInc || isSav ? avgMoney.Amount >= 0 : avgMoney.Amount <= 0)
+                            ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write(avgMoney.ToDisplay(_currencyService).PadLeft(cellColWidth) + "|");
                         _console.ForegroundColor = prevColor;
 
                         _console.WriteLine();
-                        _console.WriteLine(sep);
+                        _console.WriteLine(sep2);
                     }
 
-                    // Total Savings display below the summary table
                     var totalSavings = periods
-                        .Select(d => matrix.ActualByCategoryAndDate
-                            .TryGetValue(("Savings", d), out var s) ? s : new Money(0m, defaultCurrency))
-                        .Aggregate(new Money(0m, defaultCurrency), (sum, m) => sum + m);
+                        .Select(d => matrix.ActualByCategoryAndDate.TryGetValue(("Savings", d), out var s) ? s : new Money(0m, _currencyService.CurrentCurrency))
+                        .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
+
                     _console.WriteLine();
-                    _console.WriteLine($"Total Savings: {totalSavings.Amount:C}");
+                    _console.WriteLine($"Total Savings: {totalSavings.ToDisplay(_currencyService)}");
                 }
-                // Paging controls for all pages
+
+                // 6) Paging controls
                 if (totalPages == 1) break;
                 _console.WriteLine("Press [<] Prev, [>] Next, [Q] Quit");
-                while (true)
-                {
-                    var key = _console.ReadKey(true).Key;
-                    if (key == ConsoleKey.RightArrow && currentPage < totalPages - 1)
-                    {
-                        currentPage++;
-                        break;
-                    }
-                    if (key == ConsoleKey.LeftArrow && currentPage > 0)
-                    {
-                        currentPage--;
-                        break;
-                    }
-                    if (key == ConsoleKey.Q)
-                    {
-                        _console.Clear();
-                        return;
-                    }
-                }
+                var key = _console.ReadKey(true).Key;
+                if (key == ConsoleKey.RightArrow && currentPage < totalPages - 1)
+                    currentPage++;
+                else if (key == ConsoleKey.LeftArrow && currentPage > 0)
+                    currentPage--;
+                else if (key == ConsoleKey.Q)
+                    break;
             }
+
+            // 7) Final pause before returning
+            _console.WriteLine("\nPress any key to return to Reports menu...");
+            _console.ReadKey();
             _console.Clear();
         }
+
     }
 }

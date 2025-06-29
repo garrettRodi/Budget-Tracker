@@ -47,16 +47,16 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 try
                 {
                     _console.Clear();
-                    _console.WriteLine("=== Create Budget ===");
+                   _console.WriteLine("=== Create Budget ===");
 
                     string name = _input.GetTitleInput("Enter budget name: ");
                     var frequency = _input.GetEnum<BudgetFrequency>("Enter frequency (Weekly, Monthly, Yearly): ");
-                    DateTime startDate = _input.GetValidDate(
-                        "Enter start date (yyyy-MM-dd): ");
-                    DateTime endDate = _input.GetValidDate(
-                        "Enter end date (yyyy-MM-dd): ", allowFuture: true);
+                    DateTime startDate = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
+                    DateTime endDate = _input.GetValidDate("Enter end date (yyyy-MM-dd): ", allowFuture: true);
                     bool autoRenew = _input.GetBool("Auto renew? (y/n): ");
-
+                    decimal initialCash = _input.GetValidDecimal("Enter initial cash balance: ");
+                    decimal initialBank = _input.GetValidDecimal("Enter initial bank balance: ");
+ 
                     // 1) Fetch all category names from the injected service
                     var allCategories = (await _categoryMappingService
                                              .GetAllCategoryNamesAsync())
@@ -64,17 +64,22 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                     // 2) Let the user pick categories until they type 'done'
                     var items = new List<CreateBudgetItemCommand>();
-
+                  
                     while (true)
                     {
+                        _console.Clear();
+                        _console.WriteLine("=== Add Budget Items to the Budget ===");
                         _console.WriteLine("--- Select a category or type 'done' ---");
                         for (int idx = 0; idx < allCategories.Count; idx++)
                         {
                             _console.WriteLine($"{idx + 1}. {allCategories[idx]}");
                         }
                         _console.WriteLine($"{allCategories.Count + 1}. Other (enter custom)");
+                        
 
                         string input = _input.GetTitleInput("Choice or 'done': ").Trim();
+                        _console.WriteLine($"Number {input} added to the budget items list.");
+                        _console.ReadKey();
 
                         if (input.Equals("done", StringComparison.OrdinalIgnoreCase))
                         {
@@ -127,6 +132,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         StartDate = startDate,
                         EndDate = endDate,
                         AutoRenew = autoRenew,
+                        InitialBankBalance = initialBank,
+                        InitialCashBalance = initialCash,
                         Items = items
                     };
 
@@ -184,6 +191,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         _console.WriteLine(
                             $"ID: {b.Id} | Name: {b.Name} | Frequency: {b.Frequency} | " +
                             $"Start: {b.StartDate:yyyy-MM-dd} | End: {b.EndDate:yyyy-MM-dd} | AutoRenew: {b.AutoRenew}");
+                        _console.WriteLine(
+           $"    Initial Cash: {b.InitialCashBalance:C} | Initial Bank: {b.InitialBankBalance:C}");
                     }
                     Guid id;
                     while (true)
@@ -199,6 +208,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     DateTime startDate = _input.GetValidDate($"Start Date ({existing.StartDate:yyyy-MM-dd}): ");
                     DateTime endDate = _input.GetValidDate($"End Date ({existing.EndDate:yyyy-MM-dd}): ", allowFuture: true);
                     bool autoRenew = _input.GetBool($"Auto Renew ({(existing.AutoRenew ? "y" : "n")}): ");
+                    decimal initialCash = _input.GetValidDecimal($"Initial cash balance ({existing.InitialCashBalance}): ");
+                    decimal initialBank = _input.GetValidDecimal($"Initial bank balance ({existing.InitialBankBalance}): ");
 
                     var cmd = new UpdateBudgetCommand
                     {
@@ -207,7 +218,9 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         Frequency = frequency,
                         StartDate = startDate,
                         EndDate = endDate,
-                        AutoRenew = autoRenew
+                        AutoRenew = autoRenew,
+                        InitialCashBalance = initialCash,
+                        InitialBankBalance = initialBank
                     };
 
                     bool success = await _budgetService.UpdateBudgetAsync(cmd);

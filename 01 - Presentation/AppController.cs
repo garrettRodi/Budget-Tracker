@@ -26,6 +26,7 @@ namespace BudgetTracker.Presentation
         private readonly IncomeReportingHelpers _incomeReportingHelpers;
         private readonly ReportDashboard _reportDashboard;
         private readonly SavingGoalsReportingHelpers _savingGoalsReportingHelpers;
+        private readonly SettingsMenu _settingsMenu;
 
         public AppController(
             IConsole console,
@@ -44,7 +45,8 @@ namespace BudgetTracker.Presentation
             ExpenseReportHelpers expenseReportHelpers,
             IncomeReportingHelpers incomeReportingHelpers,
             ReportDashboard reportDashboard,
-            SavingGoalsReportingHelpers savingGoalsReportingHelpers
+            SavingGoalsReportingHelpers savingGoalsReportingHelpers,
+            SettingsMenu settingsMenu
         )
         {
             _console = console ?? throw new ArgumentNullException(nameof(console));
@@ -64,6 +66,7 @@ namespace BudgetTracker.Presentation
             _incomeReportingHelpers = incomeReportingHelpers ?? throw new ArgumentNullException(nameof(incomeReportingHelpers));
             _reportDashboard = reportDashboard ?? throw new ArgumentNullException(nameof(reportDashboard));
             _savingGoalsReportingHelpers = savingGoalsReportingHelpers ?? throw new ArgumentNullException(nameof(savingGoalsReportingHelpers));
+            _settingsMenu = settingsMenu ?? throw new ArgumentNullException(nameof(settingsMenu));
         }
 
         public async Task RunAsync()
@@ -84,9 +87,9 @@ namespace BudgetTracker.Presentation
                     case "3": await _expenseMenu.ShowAsync(); break; // Expense Menu
                     case "4": await _savingGoalsMenu.ShowAsync(); break; // Saving Goals Menu
                     case "5": await _reportingMenu.ShowAsync(); break; // Report Menu
-                    case "6": 
+                    case "6": await _settingsMenu.ViewSettingsAsync(); break; // Settings Menu
+                    case "7":
                         exitRequested = true;
-                        _console.WriteLine("DEBUG: Exit requested");
                         break;
 
                     default:

@@ -117,7 +117,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     foreach (var exp in list)
                     {
                         _console.WriteLine(
-                            $"ID: {exp.Id} | Name: {exp.Name} | Amount: {exp.Amount:C} | Date: {exp.Period:yyyy-MM-dd} | Category: {exp.Category}");
+                            $"ID: {exp.Id} | Name: {exp.Name} | Amount: {exp.Amount.ToDisplay(_currencyService)} | Date: {exp.Period:yyyy-MM-dd} | Category: {exp.Category}");
                     }
                 }
             }

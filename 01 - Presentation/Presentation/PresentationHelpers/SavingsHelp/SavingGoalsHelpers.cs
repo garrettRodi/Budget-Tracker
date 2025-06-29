@@ -93,8 +93,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             foreach (var goal in list)
             {
                 _console.WriteLine(
-                    $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount:C} | " +
-                    $"Current: {goal.CurrentAmount:C} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
+                    $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount.ToDisplay(_currencyService)} | " +
+                    $"Current: {goal.CurrentAmount.ToDisplay(_currencyService)} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
             }
             if (!list.Any())
                 _console.WriteLine("No saving goals found for the active budget.");
@@ -132,8 +132,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     foreach (var goal in list)
                     {
                         _console.WriteLine(
-                            $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount:C} | " +
-                            $"Current: {goal.CurrentAmount:C} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
+                            $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount.ToDisplay(_currencyService)} | " +
+                            $"Current: {goal.CurrentAmount.ToDisplay(_currencyService)} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
                     }
 
                     Guid id;

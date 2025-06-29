@@ -15,5 +15,10 @@ namespace BudgetTracker.Application.DTOs
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool AutoRenew { get; set; }
+        public decimal InitialCashBalance { get; set; }
+        public decimal InitialBankBalance { get; set; }
+        public decimal CurrentCashBalance { get; set; }
+        public decimal CurrentBankBalance { get; set; }
+
     }
 }

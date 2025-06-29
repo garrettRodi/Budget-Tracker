@@ -19,7 +19,9 @@ namespace BudgetTracker.Application.Mappers
                 Frequency = command.Frequency,
                 StartDate = command.StartDate,
                 EndDate = command.EndDate,
-                AutoRenew = command.AutoRenew
+                AutoRenew = command.AutoRenew,
+                InitialCashBalance = new Money(command.InitialCashBalance, currency),
+                InitialBankBalance = new Money(command.InitialBankBalance, currency)
             };
 
             // 2) Now map each item, using the parent’s ID
@@ -47,7 +49,11 @@ namespace BudgetTracker.Application.Mappers
                 Frequency = budget.Frequency,
                 StartDate = budget.StartDate,
                 EndDate = budget.EndDate,
-                AutoRenew = budget.AutoRenew
+                AutoRenew = budget.AutoRenew,
+                InitialCashBalance = budget.InitialCashBalance.Amount,
+                InitialBankBalance = budget.InitialBankBalance.Amount,
+                CurrentCashBalance = budget.CurrentCashBalance.Amount,
+                CurrentBankBalance = budget.CurrentBankBalance.Amount
             };
         }
     }

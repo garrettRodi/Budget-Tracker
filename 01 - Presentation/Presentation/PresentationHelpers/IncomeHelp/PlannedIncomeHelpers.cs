@@ -80,7 +80,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             var list = await _plannedService.GetPlannedIncomesByBudgetAsync(budgetId);
             foreach (var pi in list)
             {
-                _console.WriteLine($"ID: {pi.Id} |Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount:C}");
+                _console.WriteLine($"ID: {pi.Id} |Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount.ToDisplay(_currencyService)}");
             }
             if (!list.Any())
                 _console.WriteLine("No planned incomes found.");

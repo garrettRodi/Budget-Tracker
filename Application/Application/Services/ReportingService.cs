@@ -87,6 +87,10 @@ namespace BudgetTracker.Application.Services
 
             return new BudgetReportDTO
             {
+                InitialCashBalance = budget.InitialCashBalance,
+                InitialBankBalance = budget.InitialBankBalance,
+                CurrentCashBalance = budget.CurrentCashBalance,
+                CurrentBankBalance = budget.CurrentBankBalance,
                 BudgetedExpenses = plannedBudget,
                 ActualExpenses = actualExpenses,
                 Difference = plannedBudget - actualExpenses
@@ -160,6 +164,10 @@ namespace BudgetTracker.Application.Services
             _logger.LogInformation("Budget rule report generated successfully for rule: {Rule}", rule);
             return new BudgetRuleReportDTO
             {
+                InitialCashBalance = budgetContainer.InitialCashBalance,
+                InitialBankBalance = budgetContainer.InitialBankBalance,
+                CurrentCashBalance = budgetContainer.CurrentCashBalance,
+                CurrentBankBalance = budgetContainer.CurrentBankBalance,
                 Rule = rule,
                 NecessitiesPlanned = necessitiesPlanned,
                 NecessitiesActual = necessitiesActual,
@@ -293,6 +301,10 @@ namespace BudgetTracker.Application.Services
             // 2) init DTO
             var dto = new BudgetMatrixReportDTO
             {
+                InitialCashBalance = budget.InitialCashBalance,
+                InitialBankBalance = budget.InitialBankBalance,
+                CurrentCashBalance = budget.CurrentCashBalance,
+                CurrentBankBalance = budget.CurrentBankBalance,
                 StartDate = start,
                 EndDate = end,
                 ReportingPeriods = periods,

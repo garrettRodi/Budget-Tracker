@@ -21,5 +21,6 @@ namespace BudgetTracker.Domain.Entities
 
         public Guid? SavingGoalId { get; set; }
         public SavingGoals? SavingGoal { get; set; }
+        public TransactionMedium Medium { get; set; }
     }
 }

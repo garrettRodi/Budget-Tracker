@@ -29,17 +29,18 @@ namespace BudgetTracker.Application.Services
         {
             _logger.LogInformation("Creating a new expense with the following details: {Details}", createCommand);
 
-            Expense entity = createCommand.ToEntity();
-            
+            Expense expense = createCommand.ToEntity();
+            expense.Medium = createCommand.Medium;
+
             // Validate the expense before saving.
             var validator = new ExpenseValidator();
-            validator.ValidateExpense(entity);
+            validator.ValidateExpense(expense);
 
             // Add the expense to the repository.
-            await _unitOfWork.ExpenseRepository.AddAsync(entity);
+            await _unitOfWork.ExpenseRepository.AddAsync(expense);
             await _unitOfWork.CommitAsync();
 
-            _logger.LogInformation("Updating the BudgetItems actual amount with the new expense: {Expense}", entity);
+            _logger.LogInformation("Updating the BudgetItems actual amount with the new expense: {Expense}", expense);
 
             // Update the actual amount for the corresponding BudgetItem.
             var budgets = await _unitOfWork.BudgetRepository.GetAllAsync();
@@ -50,12 +51,12 @@ namespace BudgetTracker.Application.Services
             {
                 // Find a matching BudgetItem by comparing the category.
                 var matchingBudgetItem = activeBudget.BudgetItems.FirstOrDefault(item =>
-                    item.Category == entity.Category);
+                    item.Category == expense.Category);
 
                 if (matchingBudgetItem != null)
                 {
                     // Add the expense amount to the BudgetItem's actual value.
-                    matchingBudgetItem.ActualAmount += entity.Amount;
+                    matchingBudgetItem.ActualAmount += expense.Amount;
 
                     // Update the budget container in the repository.
                     await _unitOfWork.BudgetRepository.UpdateAsync(activeBudget);
@@ -66,16 +67,16 @@ namespace BudgetTracker.Application.Services
             }
 
             // Update a Saving Goal if the expense category is 'Savings'.
-            if (entity.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase)
-                && entity.SavingGoalId.HasValue)
+            if (expense.Category.Equals("Savings", StringComparison.OrdinalIgnoreCase)
+                && expense.SavingGoalId.HasValue)
             {
-                await _savingGoalsService.RecalculateCurrentAmountAsync(entity.SavingGoalId.Value);
+                await _savingGoalsService.RecalculateCurrentAmountAsync(expense.SavingGoalId.Value);
                 _logger.LogInformation("Saving goal updated successfully with new current amount: {CurrentAmount}");
             }
 
-            _logger.LogInformation("Expense created successfully with ID: {Id}", entity.Id);
+            _logger.LogInformation("Expense created successfully with ID: {Id}", expense.Id);
 
-            return entity.ToDto();
+            return expense.ToDto();
         }
 
         public async Task<IEnumerable<ExpenseDTO>> GetExpenseAsync()
@@ -136,6 +137,7 @@ namespace BudgetTracker.Application.Services
             existing.ExpenseDate = cmd.Date;
             existing.Category = cmd.Category;
             existing.SavingGoalId = cmd.SavingGoalId;
+            existing.Medium = cmd.Medium;
 
             await _unitOfWork.ExpenseRepository.UpdateAsync(existing);
             await _unitOfWork.CommitAsync();

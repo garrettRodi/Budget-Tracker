@@ -1,12 +1,13 @@
 ﻿using BudgetTracker.Application.DTOs;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Mappers;
 using BudgetTracker.Domain.Exceptions;
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Domain.Services;
+using BudgetTracker.Domain.ValueObjects;
 using Microsoft.Extensions.Logging; // Use Microsoft.Extensions.Logging for ILogger<T>
-using BudgetTracker.Application.Interfaces;
 
 
 namespace BudgetTracker.Application.Services
@@ -78,6 +79,8 @@ namespace BudgetTracker.Application.Services
                 budget.StartDate = command.StartDate;
                 budget.EndDate = command.EndDate;
                 budget.AutoRenew = command.AutoRenew;
+                budget.InitialCashBalance = new Money(command.InitialCashBalance, _currencyService.CurrentCurrency);
+                budget.InitialBankBalance = new Money(command.InitialBankBalance, _currencyService.CurrentCurrency);
 
                 var validator = new BudgetValidator();
                 validator.ValidateBudget(budget, isNew: false);

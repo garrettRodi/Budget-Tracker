@@ -7,15 +7,19 @@ using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Domain.Entities
 {
-    public class Income
+    public enum TransactionMedium
+    {
+        Cash,
+        Bank
+    }
+    public class Transfer
     {
         public Guid Id { get; set; }
-        public string Source { get; set; } = string.Empty;
-        public Money ActualAmount { get; set; }
-        public DateTime ReceivedDate { get; set; }
-    
         public Guid BudgetContainerId { get; set; }
         public BudgetContainer BudgetContainer { get; set; } = null!;
-        public TransactionMedium Medium { get; set; }
+        public TransactionMedium From { get; set; }
+        public TransactionMedium To { get; set; }
+        public Money Amount { get; set; }
+        public DateTime Date { get; set; }
     }
 }

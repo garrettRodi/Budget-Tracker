@@ -17,6 +17,7 @@ namespace BudgetTracker.Infrastructure.DataAccess
         public DbSet<CategoryMapping> CategoryMappings { get; set; } = null!;
         public DbSet<PlannedIncome> PlannedIncomes { get; set; } = null!;
         public DbSet<PlannedExpense> PlannedExpenses { get; set; } = null!;
+        public DbSet<Transfer> Transfers { get; set; } = null!;
 
         public BudgetTrackerDbContext(DbContextOptions<BudgetTrackerDbContext> options)
             : base(options)
@@ -79,6 +80,14 @@ namespace BudgetTracker.Infrastructure.DataAccess
                 .WithMany()
                 .HasForeignKey(e => e.SavingGoalId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // BudgetContainer → Transfers (1 : N) with cascade delete
+            modelBuilder.Entity<BudgetContainer>()
+                .HasMany(b => b.Transfers)
+                .WithOne(t => t.BudgetContainer)
+                .HasForeignKey(t => t.BudgetContainerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             //
             // ──────── OWNED TYPE MAPPINGS FOR Money ───────────────────
@@ -206,6 +215,52 @@ namespace BudgetTracker.Infrastructure.DataAccess
                         .IsRequired();
                     moneyBuilder.Property(m => m.Currency)
                         .HasColumnName("CurrentAmount_Currency")
+                        .HasMaxLength(3)
+                        .IsRequired()
+                        .HasDefaultValue("USD");
+                });
+
+            // ===== Transfer.Amount (Money) =====
+            modelBuilder.Entity<Transfer>()
+                .OwnsOne(t => t.Amount, tb =>
+                {
+                    tb.Property(m => m.Amount)
+                      .HasColumnName("TransferAmount_Amount")
+                      .HasColumnType("decimal(18,2)")
+                      .IsRequired();
+                    tb.Property(m => m.Currency)
+                      .HasColumnName("TransferAmount_Currency")
+                      .HasMaxLength(3)
+                      .IsRequired()
+                      .HasDefaultValue("USD");
+                });
+
+
+            // ===== BudgetContainer.InitialCashBalance (Money) =====
+            modelBuilder.Entity<BudgetContainer>()
+                .OwnsOne(b => b.InitialCashBalance, cash =>
+                {
+                    cash.Property(m => m.Amount)
+                        .HasColumnName("InitialCashBalance_Amount")
+                        .HasColumnType("decimal(18,2)")
+                        .IsRequired();
+                    cash.Property(m => m.Currency)
+                        .HasColumnName("InitialCashBalance_Currency")
+                        .HasMaxLength(3)
+                        .IsRequired()
+                        .HasDefaultValue("USD");
+                });
+
+            // ===== BudgetContainer.InitialBankBalance (Money) =====
+            modelBuilder.Entity<BudgetContainer>()
+                .OwnsOne(b => b.InitialBankBalance, bank =>
+                {
+                    bank.Property(m => m.Amount)
+                        .HasColumnName("InitialBankBalance_Amount")
+                        .HasColumnType("decimal(18,2)")
+                        .IsRequired();
+                    bank.Property(m => m.Currency)
+                        .HasColumnName("InitialBankBalance_Currency")
                         .HasMaxLength(3)
                         .IsRequired()
                         .HasDefaultValue("USD");

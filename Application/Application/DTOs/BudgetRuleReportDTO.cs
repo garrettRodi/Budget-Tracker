@@ -13,6 +13,10 @@ namespace BudgetTracker.Application.DTOs
         // Example: 50/20/30
         public string Rule { get; set; } = string.Empty;
         public string Currency {  get; set; }
+        public Money InitialCashBalance { get; set; }
+        public Money InitialBankBalance { get; set; }
+        public Money CurrentCashBalance { get; set; }
+        public Money CurrentBankBalance { get; set; }
         public Money NecessitiesPlanned { get; set; }
         public Money NecessitiesActual { get; set; }
         public Money SavingsPlanned { get; set; }

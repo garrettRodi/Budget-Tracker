@@ -25,7 +25,7 @@ namespace BudgetTracker.Presentation
             // 1) Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                //  .WriteTo.Console()           // ← write to console as well
+                .WriteTo.Console()           // ← write to console as well
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
@@ -56,6 +56,7 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<BudgetMenu>();
                         services.AddScoped<ReportingMenu>();
                         services.AddScoped<SavingGoalsMenu>();
+                        services.AddScoped<SettingsMenu>();
                         services.AddScoped<SelectBudgetContainer>();
 
                         // Presentation-level helpers
@@ -65,6 +66,7 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<PlannedIncomeHelpers>();
                         services.AddScoped<BudgetHelpers>();
                         services.AddScoped<SavingGoalsHelpers>();
+                        services.AddScoped<SettingsHelpers>();
 
                         // Presentation-level reporting helpers
                         services.AddScoped<BudgetReportingHelpers>();

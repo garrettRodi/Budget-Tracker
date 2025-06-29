@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BudgetTracker.Domain.Entities;
+﻿using BudgetTracker.Domain.Entities;
 
 namespace BudgetTracker.Application.DTOs.Commands
 {
@@ -15,5 +10,7 @@ namespace BudgetTracker.Application.DTOs.Commands
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool AutoRenew { get; set; }
+        public decimal InitialCashBalance { get; set; }
+        public decimal InitialBankBalance { get; set; }
     }
 }
