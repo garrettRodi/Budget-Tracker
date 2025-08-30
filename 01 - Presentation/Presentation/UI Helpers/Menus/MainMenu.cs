@@ -19,7 +19,8 @@ namespace BudgetTracker.Presentation.UIHelpers
             _console.WriteLine("3. Expense Management");
             _console.WriteLine("4. Savings Management");
             _console.WriteLine("5. Reporting");
-            _console.WriteLine("6. Exit");
+            _console.WriteLine("6. Settings");
+            _console.WriteLine("7. Exit");
             _console.Write("Enter your choice: ");
         }
     }

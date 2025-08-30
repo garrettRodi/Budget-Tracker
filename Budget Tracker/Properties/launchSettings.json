@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "00 - BudgetTracker": {
+        "commandName": "Project",
+       // "console": "externalConsole", // ← switch to external console
+        "remoteDebugEnabled": false
+    }
+  }
+}

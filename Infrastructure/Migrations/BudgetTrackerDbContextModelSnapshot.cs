@@ -26,6 +26,13 @@ namespace _04__Infrastructure.Migrations
                     b.Property<bool>("AutoRenew")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("USD");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("TEXT");
 
@@ -193,6 +200,9 @@ namespace _04__Infrastructure.Migrations
                     b.Property<DateTime>("ExpenseDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Medium")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -223,6 +233,9 @@ namespace _04__Infrastructure.Migrations
 
                     b.Property<Guid>("BudgetContainerId")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Medium")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("ReceivedDate")
                         .HasColumnType("TEXT");
@@ -269,6 +282,10 @@ namespace _04__Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("Period")
                         .HasColumnType("TEXT");
 
@@ -294,6 +311,10 @@ namespace _04__Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -324,6 +345,90 @@ namespace _04__Infrastructure.Migrations
                     b.HasIndex("BudgetContainerId");
 
                     b.ToTable("SavingGoals");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.Transfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BudgetContainerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("From")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("To")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetContainerId");
+
+                    b.ToTable("Transfers");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.BudgetContainer", b =>
+                {
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "InitialBankBalance", b1 =>
+                        {
+                            b1.Property<Guid>("BudgetContainerId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("InitialBankBalance_Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .ValueGeneratedOnAdd()
+                                .HasMaxLength(3)
+                                .HasColumnType("TEXT")
+                                .HasDefaultValue("USD")
+                                .HasColumnName("InitialBankBalance_Currency");
+
+                            b1.HasKey("BudgetContainerId");
+
+                            b1.ToTable("BudgetContainers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BudgetContainerId");
+                        });
+
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "InitialCashBalance", b1 =>
+                        {
+                            b1.Property<Guid>("BudgetContainerId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("InitialCashBalance_Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .ValueGeneratedOnAdd()
+                                .HasMaxLength(3)
+                                .HasColumnType("TEXT")
+                                .HasDefaultValue("USD")
+                                .HasColumnName("InitialCashBalance_Currency");
+
+                            b1.HasKey("BudgetContainerId");
+
+                            b1.ToTable("BudgetContainers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BudgetContainerId");
+                        });
+
+                    b.Navigation("InitialBankBalance")
+                        .IsRequired();
+
+                    b.Navigation("InitialCashBalance")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.BudgetItem", b =>
@@ -633,6 +738,45 @@ namespace _04__Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BudgetTracker.Domain.Entities.Transfer", b =>
+                {
+                    b.HasOne("BudgetTracker.Domain.Entities.BudgetContainer", "BudgetContainer")
+                        .WithMany("Transfers")
+                        .HasForeignKey("BudgetContainerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("BudgetTracker.Domain.ValueObjects.Money", "Amount", b1 =>
+                        {
+                            b1.Property<Guid>("TransferId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("TransferAmount_Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .ValueGeneratedOnAdd()
+                                .HasMaxLength(3)
+                                .HasColumnType("TEXT")
+                                .HasDefaultValue("USD")
+                                .HasColumnName("TransferAmount_Currency");
+
+                            b1.HasKey("TransferId");
+
+                            b1.ToTable("Transfers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TransferId");
+                        });
+
+                    b.Navigation("Amount")
+                        .IsRequired();
+
+                    b.Navigation("BudgetContainer");
+                });
+
             modelBuilder.Entity("BudgetTracker.Domain.Entities.BudgetContainer", b =>
                 {
                     b.Navigation("BudgetItems");
@@ -644,6 +788,8 @@ namespace _04__Infrastructure.Migrations
                     b.Navigation("PlannedIncomes");
 
                     b.Navigation("SavingGoals");
+
+                    b.Navigation("Transfers");
                 });
 
             modelBuilder.Entity("BudgetTracker.Domain.Entities.SavingGoals", b =>

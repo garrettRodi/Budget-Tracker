@@ -1,16 +1,21 @@
 ﻿// File: Presentation/UIHelpers/InputProcessor.cs
 using System;
 using BudgetTracker.Application.Helpers;
+using BudgetTracker.Application.Interfaces;
+using System.Threading.Tasks;
+
 
 namespace BudgetTracker.Presentation.UIHelpers
 {
     public class InputProcessor
     {
         private readonly IConsole _console;
+        private readonly ICurrencyService _currencyService;
 
-        public InputProcessor(IConsole console)
+        public InputProcessor(IConsole console, ICurrencyService currencyService)
         {
             _console = console ?? throw new ArgumentNullException(nameof(console));
+            _currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
         }
 
         public string GetInput(string prompt)
@@ -44,16 +49,23 @@ namespace BudgetTracker.Presentation.UIHelpers
             return TitleCaseHelper.TitleCase(input);
         }
 
-
-        public DateTime GetValidDate(string prompt)
+        public DateTime GetValidDate(string prompt, bool allowFuture = false)
         {
-            DateTime date;
             while (true)
             {
                 _console.Write(prompt);
-                if (DateTime.TryParse(_console.ReadLine(), out date))
-                    return date;
-                _console.WriteLine("Invalid date format. Please use yyyy-mm-dd.");
+                var input = _console.ReadLine();
+                if (!DateTime.TryParse(input, out var date))
+                {
+                    _console.WriteLine("Invalid date format. Please use yyyy-MM-dd.");
+                    continue;
+                }
+                if (!allowFuture && date.Date > DateTime.Today)
+                {
+                    _console.WriteLine("Date cannot be in the future. Please enter a date on or before today.");
+                    continue;
+                }
+                return date;
             }
         }
 
@@ -88,8 +100,8 @@ namespace BudgetTracker.Presentation.UIHelpers
 
             while (true)
             {
-                Console.WriteLine(prompt);
-                Console.WriteLine($"Options: {string.Join(", ", validValues)}");
+                _console.WriteLine(prompt);
+                _console.WriteLine($"Options: {string.Join(", ", validValues)}");
 
                 string input = GetInput("> ").Trim();
 
@@ -99,10 +111,9 @@ namespace BudgetTracker.Presentation.UIHelpers
                     return result;
                 }
 
-                Console.WriteLine("Invalid selection. Please enter one of the listed options.");
+                _console.WriteLine("Invalid selection. Please enter one of the listed options.");
             }
         }
-
 
         public bool GetBool(string prompt)
         {
@@ -120,13 +131,41 @@ namespace BudgetTracker.Presentation.UIHelpers
         {
             while (true)
             {
-                Console.Write(prompt);
+                _console.Write(prompt);
                 var input = Console.ReadLine()?.Trim();
                 if (Guid.TryParse(input, out var guid))
                     return guid;
 
-                Console.WriteLine("Invalid ID format. Please enter a valid GUID.");
+                _console.WriteLine("Invalid ID format. Please enter a valid GUID.");
             }
+        }
+
+        public async Task<string> GetCurrencySelectionAsync()
+        {
+            _console.Clear();
+            _console.WriteLine("=== Select Currency ===");
+            while (true)
+            {
+                string code = GetTitleInput("Enter currency code (i.e. USD, PLN):")
+                    .ToUpperInvariant();
+                if (code.Length != 3)
+                {
+                    _console.WriteLine("► Currency codes are always 3 letters. Try again.");
+                    continue;
+                }
+
+                // Ask the service whether it can handle this code:
+                if (!await _currencyService.IsSupportedCurrencyAsync(code))
+                {
+                    _console.WriteLine($"► Sorry, I don’t have rates for \"{code}\". Try another code.");
+                    continue;
+                }
+
+                await _currencyService.SetCurrencyAsync(code);
+                _console.WriteLine($"Currency switched to: {code}");
+                return code;
+            }
+
         }
     }
 }

@@ -4,107 +4,85 @@ using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Mappers;
 using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Domain.ValueObjects;
-using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Application.Services
 {
     public class SavingGoalsService : ISavingGoalsService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<SavingGoalsService> _logger;
         private readonly ICurrencyService _currencyService;
 
-        public SavingGoalsService(IUnitOfWork unitOfWork, ILogger<SavingGoalsService> logger, ICurrencyService currencyService)
+        public SavingGoalsService(IUnitOfWork unitOfWork, ICurrencyService currencyService)
         {
             _unitOfWork = unitOfWork;
-            _logger = logger;
             _currencyService = currencyService;
         }
 
         public async Task<SavingGoalDTO> CreateSavingGoalAsync(CreateSavingGoalCommand command)
         {
-            _logger.LogInformation("Creating a new saving goal with the following details: {Details}", command);
 
             var goal = command.ToEntity();
             await _unitOfWork.SavingGoalsRepository.AddAsync(goal);
             await _unitOfWork.CommitAsync();
 
-            _logger.LogInformation("Saving goal '{GoalName}' created successfully with ID {GoalId}", goal.GoalName, goal.Id);
             return goal.ToDto();
         }
 
         public async Task<SavingGoalDTO?> GetSavingGoalByIdAsync(Guid id)
         {
-            _logger.LogInformation("Retrieving saving goal with ID: {Id}", id);
 
             var goal = await _unitOfWork.SavingGoalsRepository.GetByIdAsync(id);
             if (goal == null)
             {
-                _logger.LogWarning("Saving goal with ID {Id} not found.", id);
                 return null;
             }
 
-            _logger.LogInformation("Saving goal with ID {Id} retrieved successfully.", id);
             return goal != null ? goal.ToDto() : null;
         }
 
         public async Task<IEnumerable<SavingGoalDTO>> GetSavingGoalsByBudgetContainerIdAsync(Guid budgetContainerId)
         {
-            _logger.LogInformation("Retrieving saving goals for budget container ID: {BudgetContainerId}", budgetContainerId);
-
             var goals = await _unitOfWork.SavingGoalsRepository.FindAsync(g => g.BudgetContainerId == budgetContainerId);
-
-            _logger.LogInformation("Retrieved {Count} saving goals for budget container ID: {BudgetContainerId}", goals.Count(), budgetContainerId);
             return goals.Select(g => g.ToDto());
         }
 
         public async Task<IEnumerable<SavingGoalDTO>> GetAllSavingGoalsAsync()
         {
-            _logger.LogInformation("Retrieving all saving goals.");
-
             var goals = await _unitOfWork.SavingGoalsRepository.GetAllAsync();
             if (goals == null || !goals.Any())
             {
-                _logger.LogWarning("No saving goals found.");
                 return Enumerable.Empty<SavingGoalDTO>();
             }
-
-            _logger.LogInformation("Retrieved {Count} saving goals.", goals.Count());
             return goals.Select(g => g.ToDto());
         }
 
         public async Task<bool> UpdateSavingGoalAsync(UpdateSavingGoalCommand command) // Method only update editable properties - not CurrentAmount
         {
-            _logger.LogInformation("Updating saving goal with ID: {Id}", command.Id);
             var goal = await _unitOfWork.SavingGoalsRepository.GetByIdAsync(command.Id);
             if (goal == null)
                 return false;
 
-           goal.GoalName = command.GoalName;
+            goal.GoalName = command.GoalName;
             goal.TargetAmount = command.TargetAmount;
             goal.TargetDate = command.TargetDate;
 
             var result = await _unitOfWork.SavingGoalsRepository.UpdateAsync(goal);
             if (!result)
             {
-                _logger.LogWarning("Failed to update saving goal with ID: {Id}", command.Id);
                 return false;
             }
 
             await _unitOfWork.CommitAsync();
-            _logger.LogInformation("Saving goal with ID {Id} updated successfully.", command.Id);
             return result;
         }
 
         public async Task RecalculateCurrentAmountAsync(Guid savingGoalId)
         {
-            _logger.LogInformation("Recalculating current amount for saving goal with ID: {Id}", savingGoalId);
 
             // 1. Fetch the saving goal
             var goal = await _unitOfWork.SavingGoalsRepository.GetByIdAsync(savingGoalId);
             if (goal == null)
             {
-                _logger.LogWarning("Saving goal with ID {Id} not found.", savingGoalId);
                 return;
             }
 
@@ -113,29 +91,25 @@ namespace BudgetTracker.Application.Services
                 e => e.SavingGoalId == savingGoalId && e.Category == "Savings");
 
             // 3. Sum all their amounts
-            Money total = expenses.Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, e) => sum +e.Amount);
+            Money total = expenses.Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, e) => sum + e.Amount);
 
             // 4. Update and save
             goal.CurrentAmount = total;
             await _unitOfWork.SavingGoalsRepository.UpdateAsync(goal);
             await _unitOfWork.CommitAsync();
 
-            _logger.LogInformation("Current amount for saving goal with ID {Id} recalculated successfully. New total: {Total}", savingGoalId, total);
         }
 
         public async Task<bool> DeleteSavingGoalAsync(Guid id)
         {
-            _logger.LogInformation("Deleting saving goal with ID: {Id}", id);
-           
+
             var result = await _unitOfWork.SavingGoalsRepository.DeleteAsync(id);
             if (!result)
             {
-                _logger.LogWarning("Failed to delete saving goal with ID: {Id}", id);
                 return false;
             }
             await _unitOfWork.CommitAsync();
 
-            _logger.LogInformation("Saving goal with ID {Id} deleted successfully.", id);
             return result;
         }
     }

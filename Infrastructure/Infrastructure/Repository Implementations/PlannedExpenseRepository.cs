@@ -24,7 +24,7 @@ namespace BudgetTracker.Infrastructure.RepositoryImplementations
 
         public async Task<IEnumerable<PlannedExpense>> ViewPlannedExpensesByBudgetAsync(Guid budgetContainerId)
         {
-            return await _context.PlannedExpenses
+            return await _dbSet
                 .Where(pe => pe.BudgetContainerId == budgetContainerId)
                 .ToListAsync();
         }

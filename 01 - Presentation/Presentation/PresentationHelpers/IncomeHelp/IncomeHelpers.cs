@@ -1,5 +1,6 @@
 ﻿// File: Presentation/IncomeHelpers/IncomeHelpers.cs
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
@@ -13,6 +14,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
     public class IncomeHelpers
     {
         private readonly IIncomeService _incomeService;
+        private readonly IBudgetService _budgetService;
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
@@ -20,6 +22,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public IncomeHelpers(
             IIncomeService incomeService,
+            IBudgetService budgetService,
             SelectBudgetContainer selector,
             InputProcessor input,
             IConsole console,
@@ -27,6 +30,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         {
             _incomeService = incomeService
                 ?? throw new ArgumentNullException(nameof(incomeService));
+            _budgetService = budgetService
+                ?? throw new ArgumentNullException(nameof(BudgetService));
             _selector = selector
                 ?? throw new ArgumentNullException(nameof(selector));
             _input = input
@@ -38,28 +43,45 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public async Task CreateIncomeAsync()
         {
-            _console.Clear();
-            _console.WriteLine("=== Create Income ===");
-            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
-
-            string source = _input.GetTitleInput("Enter income source (e.g., Salary, Bonus): ");
-            decimal amount = _input.GetValidDecimal("Enter the actual amount received: ");
-            DateTime date = _input.GetValidDate("Enter received date (yyyy-MM-dd): ");
-
-            var cmd = new CreateIncomeCommand
+            bool create;
+            do
             {
-                BudgetContainerId = budgetId,
-                Source = source,
-                ActualAmount = new Money(amount, _currencyService.CurrentCurrency),
-                ReceivedDate = date
-            };
+                try
+                {
+                    _console.Clear();
+                    _console.WriteLine("=== Create Income ===");
+                    // Get the active budget container ID
+                    var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+                    if (budgetId == Guid.Empty) return;
 
-            var dto = await _incomeService.CreateIncomeAsync(cmd);
-            _console.WriteLine($"Income from '{dto.Source}' created successfully with ID: {dto.Id}");
-            _console.ReadKey();
+                    // Fetch the budget to get its currency
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
+                    string source = _input.GetTitleInput("Enter income source (e.g., Salary, Bonus): ");
+                    decimal amount = _input.GetValidDecimal("Enter the actual amount received: ");
+                    DateTime date = _input.GetValidDate("Enter received date (yyyy-MM-dd): ");
+
+                    var cmd = new CreateIncomeCommand
+                    {
+                        BudgetContainerId = budgetId,
+                        Source = source,
+                        ActualAmount = new Money(amount, nativeCurrency),
+                        ReceivedDate = date
+                    };
+
+                    var dto = await _incomeService.CreateIncomeAsync(cmd);
+                    _console.WriteLine($"Income from '{dto.Source}' created successfully with ID: {dto.Id}");
+                    _console.ReadKey();
+                }
+                catch (Exception ex)
+                {
+                    _console.WriteLine($"Error creating income: {ex.Message}");
+                    _console.ReadKey();
+                }
+                create = _input.GetBool("Would you like to create another income? (y/n): ");
+            } while (create);
         }
-
         public async Task ViewIncomesAsync()
         {
             _console.Clear();
@@ -71,66 +93,147 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             foreach (var inc in list)
             {
                 _console.WriteLine(
-                $"ID: {inc.Id} | Source: {inc.Source} | Amount: {inc.ActualAmount} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
+                    $"ID: {inc.Id} | Source: {inc.Source} | " +
+                    $"Amount: {await inc.ActualAmount.ToDisplayAsync(_currencyService)} | " +
+                    $"Date: {inc.ReceivedDate:yyyy-MM-dd}");
             }
             if (!list.Any())
                 _console.WriteLine("No incomes found for the active budget.");
             _console.ReadKey();
         }
-
         public async Task UpdateIncomeAsync()
         {
-            _console.Clear();
-            _console.WriteLine("=== Update Income ===");
-            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
-
-            string idInput = _input.GetInput("Enter income ID to update: ");
-            if (!Guid.TryParse(idInput, out var id))
+            bool update;
+            do
             {
-                _console.WriteLine("Invalid ID format.");
-                return;
-            }
+                try
+                {
+                    _console.Clear();
+                    _console.WriteLine("=== Update Income ===");
+                    var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+                    if (budgetId == Guid.Empty)
+                    {
+                        _console.WriteLine("No active budget found. Please create or select a budget first.");
+                        _console.ReadKey();
+                        return;
+                    }
 
-            string source = _input.GetTitleInput("Enter updated income source: ");
-            decimal amount = _input.GetValidDecimal("Enter updated amount received: ");
-            DateTime date = _input.GetValidDate("Enter updated received date (yyyy-MM-dd): ");
+                    var list = (await _incomeService.GetIncomesByBudgetContainerIdAsync(budgetId)).ToList();
+                    if (!list.Any())
+                    {
+                        _console.WriteLine("No incomes found for the active budget.");
+                        _console.ReadKey();
+                        return;
+                    }
 
-            var cmd = new UpdateIncomeCommand
-            {
-                BudgetContainerId = budgetId,
-                Id = id,
-                Source = source,
-                ActualAmount = new Money(amount, _currencyService.CurrentCurrency),
-                ReceivedDate = date
-            };
+                    foreach (var inc in list)
+                    {
+                        _console.WriteLine($"ID: {inc.Id} | Source: {inc.Source} | Amount: {await inc.ActualAmount.ToDisplayAsync(_currencyService)} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
+                    }
 
-            bool success = await _incomeService.UpdateIncomeAsync(cmd);
-            _console.WriteLine(success
-                ? "Income updated successfully."
-                : "Income update failed.");
-            _console.ReadKey();
+                    Guid id;
+                    while (true)
+                    {
+                        id = _input.GetValidGuid("Enter income ID to update: ");
+                        if (list.Any(i => i.Id == id)) break;
+                        _console.WriteLine("Invalid ID. Please choose from the list above.");
+                    }
+
+                    var existing = list.First(i => i.Id == id);
+
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
+                    string source = _input.GetTitleInput($"Source ({existing.Source}): ");
+                    decimal amount = _input.GetValidDecimal($"Amount ({await existing.ActualAmount.ToDisplayAsync(_currencyService)}): ");
+                    DateTime date = _input.GetValidDate($"Date ({existing.ReceivedDate:yyyy-MM-dd}): ");
+
+                    // 0 - Amount Rule
+                    if (amount == 0)
+                    {
+                        bool deleted = await _incomeService.DeleteIncomeAsync(id);
+                        _console.WriteLine(deleted
+                            ? "Income deleted successfully (amount set to zero)."
+                            : "Income deletion failed.");
+                        _console.ReadKey();
+                        return;
+                    }
+
+                    var cmd = new UpdateIncomeCommand
+                    {
+                        BudgetContainerId = budgetId,
+                        Id = id,
+                        Source = string.IsNullOrWhiteSpace(source) ? existing.Source : source,
+                        ActualAmount = new Money(amount, nativeCurrency),
+                        ReceivedDate = date
+                    };
+
+                    bool success = await _incomeService.UpdateIncomeAsync(cmd);
+                    _console.WriteLine(success
+                        ? "Income updated successfully."
+                        : "Income update failed.");
+                    _console.ReadKey();
+                }
+                catch (Exception ex)
+                {
+                    _console.WriteLine($"Error updating income: {ex.Message}");
+                    _console.ReadKey();
+                }
+                update = _input.GetBool("Would you like to update another income? (y/n): ");
+            } while (update);
         }
 
         public async Task DeleteIncomeAsync()
         {
-            _console.Clear();
-            _console.WriteLine("=== Delete Income ===");
-            var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            if (budgetId == Guid.Empty) return;
-
-            string idInput = _input.GetInput("Enter income ID to delete: ");
-            if (!Guid.TryParse(idInput, out var id))
+            bool delete;
+            do
             {
-                _console.WriteLine("Invalid ID format.");
-                return;
-            }
+                try
+                {
+                    _console.Clear();
+                    _console.WriteLine("=== Delete Income ===");
+                    var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
+                    if (budgetId == Guid.Empty)
+                    {
+                        _console.WriteLine("No active budget found. Please create or select a budget first.");
+                        _console.ReadKey();
+                        return;
+                    }
 
-            bool success = await _incomeService.DeleteIncomeAsync(id);
-            _console.WriteLine(success
-                ? "Income deleted successfully."
-                : "Income deletion failed.");
-            _console.ReadKey();
+                    var list = (await _incomeService.GetIncomesByBudgetContainerIdAsync(budgetId)).ToList();
+                    if (!list.Any())
+                    {
+                        _console.WriteLine("No incomes found for the active budget.");
+                        _console.ReadKey();
+                        return;
+                    }
+
+                    foreach (var inc in list)
+                    {
+                        _console.WriteLine($"ID: {inc.Id} | Source: {inc.Source} | Amount: {await inc.ActualAmount.ToDisplayAsync(_currencyService)} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
+                    }
+
+                    Guid id;
+                    while (true)
+                    {
+                        id = _input.GetValidGuid("Enter income ID to delete: ");
+                        if (list.Any(i => i.Id == id)) break;
+                        _console.WriteLine("Invalid ID. Please choose from the list above.");
+                    }
+
+                    bool success = await _incomeService.DeleteIncomeAsync(id);
+                    _console.WriteLine(success
+                        ? "Income deleted successfully."
+                        : "Income deletion failed.");
+                    _console.ReadKey();
+                }
+                catch (Exception ex)
+                {
+                    _console.WriteLine($"Error deleting income: {ex.Message}");
+                    _console.ReadKey();
+                }
+                delete = _input.GetBool("Would you like to delete another income? (y/n): ");
+            } while (delete);
         }
     }
 }

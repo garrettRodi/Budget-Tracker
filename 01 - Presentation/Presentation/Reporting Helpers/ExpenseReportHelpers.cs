@@ -1,5 +1,6 @@
 ﻿// File: Presentation/ReportingHelpers/ExpenseReportHelpers.cs
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Presentation.UIHelpers;
@@ -38,7 +39,7 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             if (budgetId == Guid.Empty) return;
 
             var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
-            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
+            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ", allowFuture: true);
 
             var report = await _reportingService.GenerateExpenseReportAsync(budgetId, start, end);
 

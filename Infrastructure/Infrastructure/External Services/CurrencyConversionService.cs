@@ -1,16 +1,20 @@
-﻿using System.Net.Http;
+﻿// File: Infrastructure/Infrastructure/ExternalServices/CurrencyConversionService.cs
+using System;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using BudgetTracker.Domain.Interfaces;
+
 
 namespace BudgetTracker.Infrastructure.ExternalServices
 {
-    public class CurrencyConversionService
+    public class CurrencyConversionService : ICurrencyConversionService
     {
         private readonly HttpClient _httpClient;
 
         public CurrencyConversionService(HttpClient httpClient)
         {
-            _httpClient = httpClient;
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
         public async Task<decimal> GetConversionRateAsync(string fromCurrency, string toCurrency)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.ValueObjects;
 
 namespace BudgetTracker.Application.DTOs.Commands
@@ -16,6 +17,7 @@ namespace BudgetTracker.Application.DTOs.Commands
         public DateTime Date { get; set; }
         public string Category { get; set; } = string.Empty;
         public Guid? SavingGoalId { get; set; }
-        
+        public TransactionMedium Medium { get; set; }
+
     }
 }

@@ -9,17 +9,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Infrastructure\04 - Infrastructure.csproj" />
-  </ItemGroup>
+	<!-- 00 – Budget Tracker/00 - BudgetTracker.csproj -->
+	<ItemGroup>
+		<ProjectReference Include="..\Application\02 - Application.csproj" />
+		<ProjectReference Include="..\Infrastructure\04 - Infrastructure.csproj" />
+	</ItemGroup>
+
 
 </Project>

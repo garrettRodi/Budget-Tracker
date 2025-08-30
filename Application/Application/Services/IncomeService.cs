@@ -29,6 +29,7 @@ namespace BudgetTracker.Application.Services
 
             // Map command to entity
             Income income = createIncomeCommand.ToEntity();
+            income.Medium = createIncomeCommand.Medium;
 
             // Add to repository via UnitOfWork
             await _unitOfWork.IncomeRepository.AddAsync(income);
@@ -110,6 +111,8 @@ namespace BudgetTracker.Application.Services
             }
 
             existingIncome = updateCommand.ToEntity(existingIncome);
+            existingIncome.Medium = updateCommand.Medium;
+
             bool updated = await _unitOfWork.IncomeRepository.UpdateAsync(existingIncome);
             if (updated)
             {

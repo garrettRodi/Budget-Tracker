@@ -16,5 +16,6 @@ namespace BudgetTracker.Domain.Entities
     
         public Guid BudgetContainerId { get; set; }
         public BudgetContainer BudgetContainer { get; set; } = null!;
+        public TransactionMedium Medium { get; set; }
     }
 }

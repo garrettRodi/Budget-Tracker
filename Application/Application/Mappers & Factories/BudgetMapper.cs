@@ -19,7 +19,9 @@ namespace BudgetTracker.Application.Mappers
                 Frequency = command.Frequency,
                 StartDate = command.StartDate,
                 EndDate = command.EndDate,
-                AutoRenew = command.AutoRenew
+                AutoRenew = command.AutoRenew,
+                InitialCashBalance = new Money(command.InitialCashBalance, currency),
+                InitialBankBalance = new Money(command.InitialBankBalance, currency)
             };
 
             // 2) Now map each item, using the parent’s ID
@@ -39,16 +41,28 @@ namespace BudgetTracker.Application.Mappers
         }
 
         public static BudgetDTO ToDto(this BudgetContainer budget)
+        => new BudgetDTO
         {
-            return new BudgetDTO
+            Id = budget.Id,
+            Name = budget.Name,
+            Frequency = budget.Frequency,
+            StartDate = budget.StartDate,
+            EndDate = budget.EndDate,
+            AutoRenew = budget.AutoRenew,
+            InitialCashBalance = budget.InitialCashBalance.Amount,
+            InitialBankBalance = budget.InitialBankBalance.Amount,
+            CurrentCashBalance = budget.CurrentCashBalance.Amount,
+            CurrentBankBalance = budget.CurrentBankBalance.Amount,
+
+            Items = budget.BudgetItems
+            .Select(i => new BudgetItemDTO
             {
-                Id = budget.Id,
-                Name = budget.Name,
-                Frequency = budget.Frequency,
-                StartDate = budget.StartDate,
-                EndDate = budget.EndDate,
-                AutoRenew = budget.AutoRenew
-            };
-        }
+                Id = i.Id,
+                Category = i.Category,
+                PlannedAmount = i.PlannedAmount.Amount
+            })
+            .ToList()
+        };
     }
 }
+

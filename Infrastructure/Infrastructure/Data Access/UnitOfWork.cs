@@ -18,6 +18,7 @@ namespace BudgetTracker.Infrastructure.DataAccess
         private ISavingGoalsRepository? _savingGoalsRepository;
         private ICategoryMappingRepository? _categoryMappingRepository;
         private IPlannedExpenseRepository? _plannedExpenseRepository;
+        private IPlannedIncomeRepository? _plannedIncomeRepository;
 
         public UnitOfWork(BudgetTrackerDbContext context, ILoggerFactory loggerFactory)
         {
@@ -42,6 +43,9 @@ namespace BudgetTracker.Infrastructure.DataAccess
 
         public IPlannedExpenseRepository PlannedExpenseRepository
             => _plannedExpenseRepository ??= new PlannedExpenseRepository( _context,_loggerFactory.CreateLogger<PlannedExpenseRepository>());
+
+        public IPlannedIncomeRepository PlannedIncomeRepository
+            => _plannedIncomeRepository ??= new PlannedIncomeRepository(_context, _loggerFactory.CreateLogger<PlannedIncomeRepository>());
         public async Task<int> CommitAsync()
         {
             return await _context.SaveChangesAsync();

@@ -7,8 +7,9 @@ namespace BudgetTracker.Application.DTOs
     {
         public Guid Id { get; set; }
         public string Category { get; set; } = string.Empty;
-        public Money Amount { get; set; }
-        public string Currency {  get; set; }
+        public string Name { get; set; } = null!;
+        public Money Amount { get; set; } = null!;
+        public string Currency { get; set; } = null!;
         public DateTime Period { get; set; }
     }
 }

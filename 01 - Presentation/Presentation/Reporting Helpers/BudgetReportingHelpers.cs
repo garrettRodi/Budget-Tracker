@@ -3,11 +3,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
-using BudgetTracker.Application.Services;
-using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
-using Microsoft.VisualBasic;
+using BudgetTracker.Presentation.PresentationHelpers;
 
 namespace BudgetTracker.Presentation.ReportingHelpers
 {
@@ -28,23 +26,14 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             IConsole console,
             ICurrencyService currencyService)
         {
-            _reportingService = reportingService
-                ?? throw new ArgumentNullException(nameof(reportingService));
-            _selector = selector
-                ?? throw new ArgumentNullException(nameof(selector));
-            _budgetService = budgetService
-            ?? throw new ArgumentNullException(nameof(budgetService));
-            _input = input
-                ?? throw new ArgumentNullException(nameof(input));
-            _console = console
-                ?? throw new ArgumentNullException(nameof(console));
-            _currencyService = currencyService
-                ?? throw new ArgumentNullException(nameof(currencyService));
+            _reportingService = reportingService ?? throw new ArgumentNullException(nameof(reportingService));
+            _selector = selector ?? throw new ArgumentNullException(nameof(selector));
+            _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
+            _input = input ?? throw new ArgumentNullException(nameof(input));
+            _console = console ?? throw new ArgumentNullException(nameof(console));
+            _currencyService = currencyService ?? throw new ArgumentNullException(nameof(currencyService));
         }
 
-        /// <summary>
-        ///  View a 50/20/30 or other budget rule report.
-        /// </summary>
         public async Task ViewBudgetRuleReportAsync()
         {
             _console.Clear();
@@ -52,36 +41,77 @@ namespace BudgetTracker.Presentation.ReportingHelpers
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
+            // 1. Get inputs
             var rule = _input.GetInput("Enter budget rule (e.g., 50/20/30): ");
             var start = _input.GetValidDate("Enter start date (yyyy-MM-dd): ");
-            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ");
+            var end = _input.GetValidDate("Enter end date (yyyy-MM-dd): ", allowFuture: true);
 
-            var report = await _reportingService.GenerateBudgetRuleReportAsync(rule, budgetId, start, end);
+            // 2. Generate report
+            var report = await _reportingService
+                .GenerateBudgetRuleReportAsync(rule, budgetId, start, end);
 
+            // 3. Fetch the budgets native currency code 
+            var nativeCurrency = report.InitialCashBalance.Currency;
+
+
+            // 4. Display Balances
+            _console.WriteLine();
+            _console.WriteLine("Balances at Budget Start / Now:");
+            _console.WriteLine(
+                $"  Cash: {await report.InitialCashBalance.ToDisplayAsync(_currencyService)} → " +
+                $"{await report.CurrentCashBalance.ToDisplayAsync(_currencyService)}");
+            _console.WriteLine(
+                $"  Bank: {await report.InitialBankBalance.ToDisplayAsync(_currencyService)} → " +
+                $"{await report.CurrentBankBalance.ToDisplayAsync(_currencyService)}");
+            _console.WriteLine();
+
+            // 5. Display Rule breakdown
             _console.WriteLine($"Rule: {report.Rule}");
-            _console.WriteLine($"  Necessities - Planned: {report.NecessitiesPlanned:C}, Actual: {report.NecessitiesActual:C}, Variance: {report.NecessitiesPercentageVariance:F2}%");
+            _console.WriteLine(
+                $"  Necessities - Planned: {await report.NecessitiesPlanned.ToDisplayAsync(_currencyService)}, " +
+                $"Actual: {await report.NecessitiesActual.ToDisplayAsync(_currencyService)}, " +
+                $"Variance: {report.NecessitiesPercentageVariance:F2}%");
 
-            // Add uncategorized/ bulk savings to the Savings line
-            var savingGoalsReport = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
-            var bulk = savingGoalsReport.FirstOrDefault(g => g.Id == Guid.Empty);
-            Money bulkAmount = bulk?.CurrentAmount ?? new Money(0m, _currencyService.CurrentCurrency); ;
+            // 6. Display Bulk savings
+            var goals = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
+            var bulk = goals.FirstOrDefault(g => g.Id == Guid.Empty);
 
-            Money totalSavingsActual = report.SavingsActual + bulkAmount;
-            _console.WriteLine($"  Savings      - Planned: {report.SavingsPlanned:C}, Actual: {totalSavingsActual:C} (Goals: {report.SavingsActual:C} + Bulk: {bulkAmount:C}), Variance: {report.SavingsPercentageVariance:F2}%");
-            _console.WriteLine($"  Discretion.  - Planned: {report.DiscretionaryPlanned:C}, Actual: {report.DiscretionaryActual:C}, Variance: {report.DiscretionaryPercentageVariance:F2}%");
+            Money bulkAmt = bulk?.CurrentAmount
+                ?? new Money(0m, nativeCurrency);
+
+            Money totalSavingsActual = report.SavingsActual + bulkAmt;
+
+            _console.WriteLine(
+                $"  Savings      - Planned: {await report.SavingsPlanned.ToDisplayAsync(_currencyService)}, " +
+                $"Actual: {await totalSavingsActual.ToDisplayAsync(_currencyService)} " +
+                $"(Goals: {await report.SavingsActual.ToDisplayAsync(_currencyService)} + " +
+                $"{await bulkAmt.ToDisplayAsync(_currencyService)}), " +
+                $"Variance: {report.SavingsPercentageVariance:F2}%");
+
+            _console.WriteLine(
+                $"  Discretion.  - Planned: {await report.DiscretionaryPlanned.ToDisplayAsync(_currencyService)}, " +
+                $"Actual: {await report.DiscretionaryActual.ToDisplayAsync(_currencyService)}, " +
+                $"Variance: {report.DiscretionaryPercentageVariance:F2}%");
+
             _console.ReadKey();
         }
+
         public async Task ViewBudgetMatrixReportAsync()
         {
-            // 1) Get the active budget and its matrix
+            _console.Clear();
+            _console.WriteLine("=== Budget Matrix Report ===");
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
-            var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
+            if (budgetId == Guid.Empty)
+            {
+                _console.WriteLine("No budget selected. Press any key to return...");
+                _console.ReadKey();
+                return;
+            }
 
-            // 2) Use exactly the periods your service populated
+            var matrix = await _reportingService.GenerateBudgetMatrixReportAsync(budgetId);
             var periods = matrix.ReportingPeriods;
             var categories = matrix.Categories;
 
-            // 3) Build pages (7 days per page for daily frequencies)
             const int PageSize = 7;
             var pages = periods
                 .Select((date, idx) => new { date, idx })
@@ -89,150 +119,181 @@ namespace BudgetTracker.Presentation.ReportingHelpers
                 .Select(g => g.Select(x => x.date).ToList())
                 .ToList();
 
-            // Save original console color to restore later
-            var prevColor = Console.ForegroundColor;
+            const int categoryColWidth = 15, cellColWidth = 15;
+            var prevColor = _console.ForegroundColor;
+            int currentPage = 0, totalPages = pages.Count + 1;
 
-            // 4) Render each page
-            for (int p = 0; p < pages.Count; p++)
+            while (true)
             {
-                var pageDates = pages[p];
+                _console.Clear();
 
-                Console.Clear();
-                Console.WriteLine(
-                    $"=== Budget Matrix: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} " +
-                    $"(Page {p + 1}/{pages.Count}) ===\n");
-
-                // --- Build separator line dynamically ---
-                string sep = "+" + new string('-', 15) + "+";
-                foreach (var _ in pageDates) sep += new string('-', 13) + "+";
-                sep += new string('-', 11) + "+";
-                Console.WriteLine(sep);
-
-                // --- Header row ---
-                Console.Write("| Category".PadRight(15) + "|");
-                foreach (var d in pageDates)
-                    Console.Write(d.ToString("MM/dd").PadLeft(12) + "|");
-                Console.Write(" TotPln".PadLeft(11) + "|\n");
-
-                Console.WriteLine(sep.Replace('-', '='));
-
-                // --- Data rows per category ---
-                foreach (var cat in categories)
+                if (currentPage < pages.Count)
                 {
-                    Console.Write("| " + cat.PadRight(13) + "|");
+                    var pageDates = pages[currentPage];
 
-                    Money rowPln = new Money(0, _currencyService.CurrentCurrency);
-                    Money rowAct = new Money(0, _currencyService.CurrentCurrency);
+                    _console.WriteLine(
+                        $"=== Budget Matrix: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} " +
+                        $"(Page {currentPage + 1}/{totalPages}) ===");
+                    _console.WriteLine("(Each cell: Planned / Actual)");
+
+                    // Separator
+                    string sep = "+" + new string('-', categoryColWidth) + "+";
+                    sep += string.Concat(Enumerable.Repeat(new string('-', cellColWidth) + "+", pageDates.Count));
+                    _console.WriteLine(sep);
+
+                    // Header row
+                    _console.Write("| Category".PadRight(categoryColWidth) + "|");
+                    foreach (var d in pageDates)
+                        _console.Write(d.ToString("MM/yyyy").PadLeft(cellColWidth) + "|");
+                    _console.WriteLine();
+                    _console.WriteLine(sep.Replace('-', '='));
+
+                    // Income row
+                    _console.Write("| Income".PadRight(categoryColWidth) + "|");
                     foreach (var d in pageDates)
                     {
-                        var pln = matrix.PlannedByCategoryAndDate[(cat, d)];
-                        var act = matrix.ActualByCategoryAndDate[(cat, d)];
-                        rowPln += pln;
-                        rowAct += act;
-                        Console.Write($"{pln,6:C}/{act,-6:C}|");
+                        matrix.PlannedByCategoryAndDate.TryGetValue(("Income", d), out var pln);
+                        matrix.ActualByCategoryAndDate.TryGetValue(("Income", d), out var act);
+                        pln ??= new Money(0m, _currencyService.CurrentCurrency);
+                        act ??= new Money(0m, _currencyService.CurrentCurrency);
+
+                        string text = $"{await pln.ToDisplayAsync(_currencyService)}/" +
+                                      $"{await act.ToDisplayAsync(_currencyService)}";
+                        _console.Write(text.PadLeft(cellColWidth) + "|");
+                    }
+                    _console.WriteLine();
+                    _console.WriteLine(sep);
+
+                    // Category rows
+                    foreach (var cat in categories)
+                    {
+                        _console.Write("| " + cat.PadRight(categoryColWidth - 2) + " |");
+                        foreach (var d in pageDates)
+                        {
+                            var pln = matrix.PlannedByCategoryAndDate[(cat, d)];
+                            var act = matrix.ActualByCategoryAndDate[(cat, d)];
+                            string text = $"{await pln.ToDisplayAsync(_currencyService)}/" +
+                                          $"{await act.ToDisplayAsync(_currencyService)}";
+                            _console.Write(text.PadLeft(cellColWidth) + "|");
+                        }
+                        _console.WriteLine();
+                        _console.WriteLine(sep);
                     }
 
-                    Console.Write($"{rowPln,9:C}|\n");
-                    Console.WriteLine(sep);
-                }
+                    // Period Totals row
+                    _console.Write("| Period Totals".PadRight(categoryColWidth) + "|");
+                    foreach (var d in pageDates)
+                    {
+                        matrix.PlannedByCategoryAndDate.TryGetValue(("Income", d), out var iPln);
+                        matrix.ActualByCategoryAndDate.TryGetValue(("Income", d), out var iAct);
+                        iPln ??= new Money(0m, _currencyService.CurrentCurrency);
+                        iAct ??= new Money(0m, _currencyService.CurrentCurrency);
 
-                // --- Differences Row for this page ---
-                Console.Write("| " + "Diff".PadRight(13) + "|");
-                Money pageTotalDiff = new Money(0, _currencyService.CurrentCurrency);
-                foreach (var d in pageDates)
+                        var sumExpPln = categories
+                            .Select(c => matrix.PlannedByCategoryAndDate[(c, d)])
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (s, m) => s + m);
+                        var sumExpAct = categories
+                            .Select(c => matrix.ActualByCategoryAndDate[(c, d)])
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (s, m) => s + m);
+
+                        var totPln = iPln - sumExpPln;
+                        var totAct = iAct - sumExpAct;
+
+                        string txtPln = await totPln.ToDisplayAsync(_currencyService);
+                        string txtAct = await totAct.ToDisplayAsync(_currencyService);
+
+                        // spacing
+                        int pad = cellColWidth - (txtPln.Length + 1 + txtAct.Length);
+                        _console.Write(new string(' ', Math.Max(pad, 0)));
+
+                        _console.ForegroundColor = totPln.Amount >= 0 ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write(txtPln);
+                        _console.ForegroundColor = prevColor;
+                        _console.Write("/");
+
+                        _console.ForegroundColor = totAct.Amount >= 0 ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write(txtAct);
+                        _console.ForegroundColor = prevColor;
+                        _console.Write("|");
+                    }
+                    _console.WriteLine();
+                    _console.WriteLine(sep);
+                }
+                else
                 {
-                    Money periodPln = categories
-                        .Select(cat => matrix.PlannedByCategoryAndDate[(cat, d)])
+                    // Summary page
+                    _console.WriteLine(
+                        $"=== Summary: {matrix.StartDate:MM/dd/yyyy} – {matrix.EndDate:MM/dd/yyyy} " +
+                        $"(Page {currentPage + 1}/{totalPages}) ===");
+                    _console.WriteLine("(Planned / Actual → Diff / Avg)");
+
+                    string sep2 = "+" + new string('-', categoryColWidth) + "+" +
+                                  new string('-', cellColWidth * 4 + 3) + "+";
+                    _console.WriteLine(sep2.Replace('-', '='));
+
+                    _console.Write("| Category".PadRight(categoryColWidth) + "|");
+                    _console.Write("Total Planned".PadLeft(cellColWidth) + "|");
+                    _console.Write("Total Actual".PadLeft(cellColWidth) + "|");
+                    _console.Write("Total Diff".PadLeft(cellColWidth) + "|");
+                    _console.Write("Avg Diff".PadLeft(cellColWidth) + "|\n");
+                    _console.WriteLine(sep2);
+
+                    var allCats = new[] { "Income" }.Concat(categories);
+                    foreach (var cat in allCats)
+                    {
+                        _console.Write("| " + cat.PadRight(categoryColWidth - 2) + " |");
+
+                        var totPln = periods
+                            .Select(d => matrix.PlannedByCategoryAndDate.TryGetValue((cat, d), out var p) ? p : new Money(0m, _currencyService.CurrentCurrency))
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (s, m) => s + m);
+                        var totAct = periods
+                            .Select(d => matrix.ActualByCategoryAndDate.TryGetValue((cat, d), out var a) ? a : new Money(0m, _currencyService.CurrentCurrency))
+                            .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (s, m) => s + m);
+
+                        var diff = totAct - totPln;
+                        decimal avg = periods.Count > 0 ? diff.Amount / periods.Count : 0m;
+                        var avgMoney = new Money(avg, _currencyService.CurrentCurrency);
+
+                        _console.Write((await totPln.ToDisplayAsync(_currencyService)).PadLeft(cellColWidth) + "|");
+                        _console.Write((await totAct.ToDisplayAsync(_currencyService)).PadLeft(cellColWidth) + "|");
+
+                        bool isInc = cat.Equals("Income", StringComparison.OrdinalIgnoreCase);
+                        bool isSav = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
+
+                        _console.ForegroundColor = (isInc || isSav ? diff.Amount >= 0 : diff.Amount <= 0)
+                            ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write((await diff.ToDisplayAsync(_currencyService)).PadLeft(cellColWidth) + "|");
+                        _console.ForegroundColor = prevColor;
+
+                        _console.ForegroundColor = (isInc || isSav ? avgMoney.Amount >= 0 : avgMoney.Amount <= 0)
+                            ? ConsoleColor.Green : ConsoleColor.Red;
+                        _console.Write((await avgMoney.ToDisplayAsync(_currencyService)).PadLeft(cellColWidth) + "|");
+                        _console.ForegroundColor = prevColor;
+
+                        _console.WriteLine();
+                        _console.WriteLine(sep2);
+                    }
+
+                    var totalSav = periods
+                        .Select(d => matrix.ActualByCategoryAndDate.TryGetValue(("Savings", d), out var s) ? s : new Money(0m, _currencyService.CurrentCurrency))
                         .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
-                    Money periodAct = categories
-                        .Select(cat => matrix.ActualByCategoryAndDate[(cat, d)])
-                        .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
-                    Money periodDiff = periodPln - periodAct;
-                    pageTotalDiff += periodDiff;
 
-                    Console.ForegroundColor = periodDiff.Amount >= 0
-                        ? ConsoleColor.Green
-                        : ConsoleColor.Red;
-                    Console.Write($"{periodDiff,12:C}|");
-                    Console.ForegroundColor = prevColor;
+                    _console.WriteLine();
+                    _console.WriteLine($"Total Savings: {await totalSav.ToDisplayAsync(_currencyService)}");
                 }
 
-                // Page total difference column
-                Console.ForegroundColor = pageTotalDiff.Amount >= 0
-                    ? ConsoleColor.Green
-                    : ConsoleColor.Red;
-                Console.Write($"{pageTotalDiff,11:C}|\n");
-                Console.ForegroundColor = prevColor;
-
-                Console.WriteLine(sep);
-
-                // Pause between pages
-                if (pages.Count > 1 && p < pages.Count - 1)
-                {
-                    Console.Write("Press any key for next page...");
-                    Console.ReadKey(true);
-                }
+                // paging
+                if (totalPages == 1) break;
+                _console.WriteLine("Press [<] Prev, [>] Next, [Q] Quit");
+                var key = _console.ReadKey(true).Key;
+                if (key == ConsoleKey.RightArrow && currentPage < totalPages - 1) currentPage++;
+                else if (key == ConsoleKey.LeftArrow && currentPage > 0) currentPage--;
+                else if (key == ConsoleKey.Q) break;
             }
 
-            // 5) Final totals & averages for Yearly budgets
-            _console.WriteLine($"DEBUG: _budgetService is {(_budgetService == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: _reportingService is {(_reportingService == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: matrix is {(matrix == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: matrix.ReportingPeriods is {(matrix?.ReportingPeriods == null ? "NULL" : "OK")}");
-            _console.WriteLine($"DEBUG: matrix.Categories is {(matrix?.Categories == null ? "NULL" : "OK")}");
-            var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
-            if (budget != null && budget.Frequency == BudgetFrequency.Yearly)
-            {
-                int divisor = budget.Frequency switch
-                {
-                    BudgetFrequency.Weekly => 7,
-                    BudgetFrequency.Monthly => (matrix.EndDate - matrix.StartDate).Days + 1,
-                    BudgetFrequency.Yearly => periods.Count,
-                    _ => periods.Count
-                };
-
-                _console.WriteLine("\n=== Yearly Category Totals ===");
-                foreach (var cat in categories)
-                {
-                    var currency = matrix.PlannedByCategoryAndDate[(cat, periods.First())].Currency; // or get from context/service
-                    Money totPln = periods
-                        .Select(d => matrix.PlannedByCategoryAndDate[(cat, d)])
-                        .Aggregate(new Money(0m, currency), (sum, m) => sum + m);
-
-                    Money totAct = periods
-                        .Select(d => matrix.ActualByCategoryAndDate[(cat, d)])
-                        .Aggregate(new Money(0m, currency), (sum, m) => sum + m);
-
-                    Money totDiff = totPln - totAct;
-                    bool isSavings = cat.Equals("Savings", StringComparison.OrdinalIgnoreCase);
-
-                    Console.ForegroundColor = (totDiff.Amount >= 0) ^ isSavings
-                        ? ConsoleColor.Green
-                        : ConsoleColor.Red;
-                    _console.WriteLine($"{cat.PadRight(15)} {totDiff,12:C}");
-                    Console.ForegroundColor = prevColor;
-                }
-
-                Money grandTotalDiff = categories
-                    .Select(cat => periods
-                    .Select(d => matrix.PlannedByCategoryAndDate[(cat, d)] - matrix.ActualByCategoryAndDate[(cat, d)])
-                    .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m))
-                    .Aggregate(new Money(0m, _currencyService.CurrentCurrency), (sum, m) => sum + m);
-                Money avgDiff = grandTotalDiff/ divisor;
-
-                _console.WriteLine($"\nAverage Difference ({divisor} periods): {avgDiff,12:C}");
-            }
-
-            //  Show bulk/uncategorized savings after the matrix 
-            var savingGoalsReport = (await _reportingService.GenerateSavingGoalReportAsync(budgetId)).ToList();
-            var bulk = savingGoalsReport.FirstOrDefault(g => g.Id == Guid.Empty);
-            if (bulk != null && bulk.CurrentAmount.Amount > 0)
-            {
-                _console.WriteLine($"\nBulk/Uncategorized Savings: {bulk.CurrentAmount.Amount:C}");
-            }
-
-            _console.WriteLine("\nPress any key to return to menu...");
-            Console.ReadKey(true);
+            _console.WriteLine("\nPress any key to return to Reports menu...");
+            _console.ReadKey();
+            _console.Clear();
         }
     }
 }
