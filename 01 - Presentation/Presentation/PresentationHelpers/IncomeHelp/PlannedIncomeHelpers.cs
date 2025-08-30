@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
@@ -6,25 +7,29 @@ using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Services;
 using BudgetTracker.Domain.ValueObjects;
 using BudgetTracker.Presentation.UIHelpers;
+using BudgetTracker.Presentation.PresentationHelpers;
 
 namespace BudgetTracker.Presentation.PresentationHelpers
 {
     public class PlannedIncomeHelpers
     {
-        private readonly IPlannedIncomeService _plannedService;
+        private readonly IPlannedIncomeService _plannedIncomeService;
+        private readonly IBudgetService _budgetService;
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
         private readonly ICurrencyService _currencyService;
 
         public PlannedIncomeHelpers(
-            IPlannedIncomeService plannedService,
+            IPlannedIncomeService plannedIncomeService,
+            IBudgetService budgetService,
             SelectBudgetContainer selector,
             InputProcessor input,
             IConsole console,
             ICurrencyService currencyService)
         {
-            _plannedService = plannedService;
+            _plannedIncomeService = plannedIncomeService;
+            _budgetService = budgetService;
             _selector = selector;
             _input = input;
             _console = console;
@@ -44,6 +49,9 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
                     if (budgetId == Guid.Empty) return;
 
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
                     DateTime period = _input.GetValidDate("Enter period date (yyyy-MM-dd): ", allowFuture: true);
                     decimal amount = _input.GetValidDecimal("Enter planned amount: ");
                     string source = _input.GetTitleInput("Enter income source: ");
@@ -53,10 +61,10 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         BudgetContainerId = budgetId,
                         Source = source,
                         PeriodStart = period,
-                        Amount = new Money(amount, _currencyService.CurrentCurrency)
+                        Amount = new Money(amount, nativeCurrency)
                     };
 
-                    var dto = await _plannedService.CreatePlannedIncomeAsync(cmd);
+                    var dto = await _plannedIncomeService.CreatePlannedIncomeAsync(cmd);
                     _console.WriteLine($"Planned income for {dto.Source} created (ID: {dto.Id})");
                     _console.ReadKey();
                 }
@@ -77,10 +85,10 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             Guid budgetId = await _selector.GetActiveBudgetContainerIdAsync();
             if (budgetId == Guid.Empty) return;
 
-            var list = await _plannedService.GetPlannedIncomesByBudgetAsync(budgetId);
+            var list = await _plannedIncomeService.GetPlannedIncomesByBudgetAsync(budgetId);
             foreach (var pi in list)
             {
-                _console.WriteLine($"ID: {pi.Id} |Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount.ToDisplay(_currencyService)}");
+                _console.WriteLine($"ID: {pi.Id} |Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {await pi.Amount.ToDisplayAsync(_currencyService)}");
             }
             if (!list.Any())
                 _console.WriteLine("No planned incomes found.");
@@ -104,7 +112,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         _console.ReadKey();
                         return;
                     }
-                    var list = await _plannedService.GetPlannedIncomesByBudgetAsync(budgetId);
+                    var list = await _plannedIncomeService.GetPlannedIncomesByBudgetAsync(budgetId);
                     if (!list.Any())
                     {
                         _console.WriteLine("No planned incomes available to update.");
@@ -114,7 +122,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                     foreach (var pi in list)
                     {
-                        _console.WriteLine($"ID: {pi.Id} | Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {pi.Amount:C}");
+                        _console.WriteLine($"ID: {pi.Id} | Source: {pi.Source} | Date: {pi.PeriodStart:d} | Amount: {await pi.Amount.ToDisplayAsync(_currencyService)}");
                     }
 
                     Guid id;
@@ -129,19 +137,33 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                     var existing = list.First(pi => pi.Id == id);
 
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
                     string source = _input.GetTitleInput($"Source ({existing.Source}): ");
                     DateTime period = _input.GetValidDate($"Date ({existing.PeriodStart:yyyy-MM-dd}): ", allowFuture: true);
-                    decimal amount = _input.GetValidDecimal($"Amount ({existing.Amount:C}): ");
+                    decimal amount = _input.GetValidDecimal($"Amount ({await existing.Amount.ToDisplayAsync(_currencyService)}): ");
+
+                    // 0 - Amount Rule
+                    if (amount == 0)
+                    {
+                        bool deleted = await _plannedIncomeService.DeletePlannedIncomeAsync(id);
+                        _console.WriteLine(deleted
+                            ? "Planned Income deleted successfully (amount set to zero)."
+                            : "Planned Income deletion failed.");
+                        _console.ReadKey();
+                        return;
+                    }
 
                     var cmd = new UpdatePlannedIncomeCommand
                     {
                         Id = id,
                         Source = source,
                         PeriodStart = period,
-                        Amount = new Money(amount, _currencyService.CurrentCurrency)
+                        Amount = new Money(amount, nativeCurrency)
                     };
 
-                    bool ok = await _plannedService.UpdatePlannedIncomeAsync(cmd);
+                    bool ok = await _plannedIncomeService.UpdatePlannedIncomeAsync(cmd);
                     _console.WriteLine(ok
                         ? "Updated successfully."
                         : "Update failed.");
@@ -174,7 +196,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         return;
                     }
 
-                    var list = await _plannedService.GetPlannedIncomesByBudgetAsync(budgetId);
+                    var list = await _plannedIncomeService.GetPlannedIncomesByBudgetAsync(budgetId);
                     if (!list.Any())
                     {
                         _console.WriteLine("No planned incomes available to delete.");
@@ -197,7 +219,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         _console.WriteLine("Invalid ID. Please try again.");
                     }
 
-                    bool ok = await _plannedService.DeletePlannedIncomeAsync(id);
+                    bool ok = await _plannedIncomeService.DeletePlannedIncomeAsync(id);
                     _console.WriteLine(ok
                         ? "Deleted successfully."
                         : "Delete failed.");

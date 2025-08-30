@@ -1,5 +1,6 @@
 ﻿// File: Presentation/ReportingHelpers/ExpenseReportHelpers.cs
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Presentation.UIHelpers;

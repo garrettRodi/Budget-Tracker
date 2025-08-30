@@ -12,5 +12,8 @@ namespace BudgetTracker.Application.DTOs.Commands
         public bool AutoRenew { get; set; }
         public decimal InitialCashBalance { get; set; }
         public decimal InitialBankBalance { get; set; }
+        public string Currency { get; set; }
+
+        public List<UpdateBudgetItemCommand> Items { get; set; } = new();
     }
 }

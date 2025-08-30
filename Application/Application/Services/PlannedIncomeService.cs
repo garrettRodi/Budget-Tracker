@@ -8,7 +8,6 @@ using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Interfaces;
-using BudgetTracker.Infrastructure.DataAccess;
 using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Application.Services

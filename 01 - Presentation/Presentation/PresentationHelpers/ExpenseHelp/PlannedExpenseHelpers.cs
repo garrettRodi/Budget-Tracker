@@ -1,8 +1,10 @@
 ﻿// File: Presentation/PresentationHelpers/PlannedExpenseHelpers.cs
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
+using BudgetTracker.Application.Helpers;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Services;
 using BudgetTracker.Domain.ValueObjects;
@@ -116,8 +118,9 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                     foreach (var exp in list)
                     {
+                        var amount = await exp.Amount.ToDisplayAsync(_currencyService);
                         _console.WriteLine(
-                            $"ID: {exp.Id} | Name: {exp.Name} | Amount: {exp.Amount.ToDisplay(_currencyService)} | Date: {exp.Period:yyyy-MM-dd} | Category: {exp.Category}");
+                            $"ID: {exp.Id} | Name: {exp.Name} | Amount: {amount} | Date: {exp.Period:yyyy-MM-dd} | Category: {exp.Category}");
                     }
                 }
             }
@@ -171,6 +174,16 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     decimal amount = _input.GetValidDecimal($"Amount ({existing.Amount:C}): ");
                     DateTime period = _input.GetValidDate($"Period ({existing.Period:yyyy-MM-dd}): ", allowFuture: true);
 
+                    // 0 - Amount Rule
+                    if (amount == 0)
+                    {
+                        bool deleted = await _plannedExpenseService.DeletePlannedExpenseAsync(id);
+                        _console.WriteLine(deleted
+                            ? "Planned Expense deleted successfully (amount set to zero)."
+                            : "Planned Expense deletion failed.");
+                        _console.ReadKey();
+                        return;
+                    }
                     var cmd = new UpdatePlannedExpenseCommand
                     {
                         Id = id,

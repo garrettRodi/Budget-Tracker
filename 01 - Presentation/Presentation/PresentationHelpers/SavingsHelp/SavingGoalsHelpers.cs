@@ -1,5 +1,6 @@
 ﻿// File: Presentation/SavingGoalsHelpers/SavingGoalsHelpers.cs
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
@@ -13,6 +14,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
     public class SavingGoalsHelpers
     {
         private readonly ISavingGoalsService _savingGoalsService;
+        private readonly IBudgetService _budgetService;
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
@@ -20,6 +22,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public SavingGoalsHelpers(
             ISavingGoalsService savingGoalsService,
+            IBudgetService budgetService,
             SelectBudgetContainer selector,
             InputProcessor input,
             IConsole console,
@@ -27,6 +30,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         {
             _savingGoalsService = savingGoalsService
                 ?? throw new ArgumentNullException(nameof(savingGoalsService));
+            _budgetService = budgetService
+                ?? throw new ArgumentNullException(nameof(budgetService));
             _selector = selector
                 ?? throw new ArgumentNullException(nameof(selector));
             _input = input
@@ -59,12 +64,15 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     var currentAmount = _input.GetValidDecimal("Enter current amount: ");
                     var targetDate = _input.GetValidDate("Enter target date (yyyy-MM-dd): ", allowFuture: true);
 
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
                     var cmd = new CreateSavingGoalCommand
                     {
                         BudgetContainerId = budgetId,
                         GoalName = goalName,
-                        TargetAmount = new Money(targetAmount, _currencyService.CurrentCurrency),
-                        CurrentAmount = new Money(currentAmount, _currencyService.CurrentCurrency),
+                        TargetAmount = new Money(targetAmount, nativeCurrency),
+                        CurrentAmount = new Money(currentAmount, nativeCurrency),
                         TargetDate = targetDate
                     };
 
@@ -93,8 +101,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             foreach (var goal in list)
             {
                 _console.WriteLine(
-                    $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount.ToDisplay(_currencyService)} | " +
-                    $"Current: {goal.CurrentAmount.ToDisplay(_currencyService)} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
+                    $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {await goal.TargetAmount.ToDisplayAsync(_currencyService)} | " +
+                    $"Current: {await goal.CurrentAmount.ToDisplayAsync(_currencyService)} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
             }
             if (!list.Any())
                 _console.WriteLine("No saving goals found for the active budget.");
@@ -132,8 +140,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     foreach (var goal in list)
                     {
                         _console.WriteLine(
-                            $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {goal.TargetAmount.ToDisplay(_currencyService)} | " +
-                            $"Current: {goal.CurrentAmount.ToDisplay(_currencyService)} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
+                            $"ID: {goal.Id} | Name: {goal.GoalName} | Target: {await goal.TargetAmount.ToDisplayAsync(_currencyService)} | " +
+                            $"Current: {await goal.CurrentAmount.ToDisplayAsync(_currencyService)} | Target Date: {goal.TargetDate:yyyy-MM-dd}");
                     }
 
                     Guid id;
@@ -148,17 +156,31 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     var existing = list.First(x => x.Id == id);
 
                     string goalName = _input.GetTitleInput($"Name ({existing.GoalName}): ");
-                    decimal targetAmount = _input.GetValidDecimal($"Target Amount ({existing.TargetAmount:C}): ");
-                    decimal currentAmount = _input.GetValidDecimal($"Current Amount ({existing.CurrentAmount:C}): ");
+                    decimal targetAmount = _input.GetValidDecimal($"Target Amount ({await existing.TargetAmount.ToDisplayAsync(_currencyService)}): ");
+                    decimal currentAmount = _input.GetValidDecimal($"Current Amount ({await existing.CurrentAmount.ToDisplayAsync(_currencyService)}): ");
                     DateTime targetDate = _input.GetValidDate($"Target Date ({existing.TargetDate:yyyy-MM-dd}): ", allowFuture: true);
+
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
+                    // 0 - Amount Rule
+                    if (targetAmount == 0)
+                    {
+                        bool deleted = await _savingGoalsService.DeleteSavingGoalAsync(id);
+                        _console.WriteLine(deleted
+                            ? "Savings Goal deleted successfully (targetAmount set to zero)."
+                            : "Savings Goal deletion failed.");
+                        _console.ReadKey();
+                        return;
+                    }
 
                     var cmd = new UpdateSavingGoalCommand
                     {
                         BudgetContainerId = budgetId,
                         Id = id,
                         GoalName = goalName,
-                        TargetAmount = new Money(targetAmount, _currencyService.CurrentCurrency),
-                        CurrentAmount = new Money(currentAmount, _currencyService.CurrentCurrency),
+                        TargetAmount = new Money(targetAmount, nativeCurrency),
+                        CurrentAmount = new Money(currentAmount, nativeCurrency),
                         TargetDate = targetDate
                     };
 

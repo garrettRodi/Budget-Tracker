@@ -1,45 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// File: 02 - Application/Application/Services/CurrencyService.cs
+
+using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using BudgetTracker.Application.Interfaces;
+using BudgetTracker.Domain.Interfaces;
 using BudgetTracker.Domain.ValueObjects;
-using BudgetTracker.Infrastructure.ExternalServices;
 
 namespace BudgetTracker.Application.Services
 {
     public class CurrencyService : ICurrencyService
     {
-        private readonly CurrencyConversionService _api;
-        public string CurrentCurrency { get; private set; } = "USD";
-            private decimal _conversionRate = 1.0m; // USD -> CurrentCurrency
+        private readonly ICurrencyConversionService _api;
 
-        public CurrencyService(CurrencyConversionService api)
+        public CurrencyService(ICurrencyConversionService api)
         {
-            _api = api;
+            _api = api ?? throw new ArgumentNullException(nameof(api));
+            CurrentCurrency = "USD"; // Default currency
         }
 
-        public async Task SetCurrencyAsync(string newCurrency)
-        {
-            if (string.Equals(newCurrency, CurrentCurrency, StringComparison.OrdinalIgnoreCase))
-                return;
+        public string CurrentCurrency { get; set; }
 
-            // Fetch the conversion rate from USD to the new currency
-            _conversionRate = await _api.GetConversionRateAsync("USD", newCurrency);
+        public Task SetCurrencyAsync(string newCurrency)
+        {
             CurrentCurrency = newCurrency.ToUpperInvariant();
+            return Task.CompletedTask;
         }
 
-        public Money Convert(Money original)
+        public Task<decimal> GetConversionRateAsync(string from, string to)
+            => _api.GetConversionRateAsync(from, to);
+        public async Task<bool> IsSupportedCurrencyAsync(string supportedCode)
         {
-            // If its already in the current currency, return it as is
-            if (string.Equals(original.Currency, CurrentCurrency, StringComparison.OrdinalIgnoreCase))
+            try
+            {
+                await _api.GetConversionRateAsync(CurrentCurrency, supportedCode);
+                return true;
+            }
+            catch (HttpRequestException)
+            {
+                // Infrastructure-level HTTP errors indicate unsupported currency
+                return false;
+            }
+        }
+
+        public async Task<Money> ConvertAsync(Money original)
+        {
+            if (original.Currency == CurrentCurrency)
                 return original;
 
-            // otherwise, convert it
-            var amountInUsd = original.Amount;
-            var converted = amountInUsd * _conversionRate;
-            return new Money(converted, CurrentCurrency);
+            decimal rate = await GetConversionRateAsync(original.Currency, CurrentCurrency);
+            return new Money(original.Amount * rate, CurrentCurrency);
         }
     }
 }

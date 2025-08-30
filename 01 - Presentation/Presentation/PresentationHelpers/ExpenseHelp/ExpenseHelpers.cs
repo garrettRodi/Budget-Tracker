@@ -64,6 +64,9 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     DateTime date = _input.GetValidDate("Enter expense date (yyyy-MM-dd): ");
                     string category = _input.GetTitleInput("Enter category: ");
 
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
                     Guid? savingGoalId = null;
                     if (category.Equals("Savings", StringComparison.OrdinalIgnoreCase))
                     {
@@ -94,7 +97,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     {
                         BudgetContainerId = budgetId,
                         Name = name,
-                        Amount = new Money(amount, _currencyService.CurrentCurrency),
+                        Amount = new Money(amount, nativeCurrency),
                         Date = date,
                         Category = category,
                         SavingGoalId = savingGoalId
@@ -140,7 +143,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 foreach (var exp in list)
                 {
                     _console.WriteLine(
-                        $"ID: {exp.Id} | Name: {exp.Name} | Amount: {exp.Amount.ToDisplay(_currencyService)} | Date: {exp.Date:yyyy-MM-dd} | " +
+                        $"ID: {exp.Id} | Name: {exp.Name} | Amount: {await exp.Amount.ToDisplayAsync(_currencyService)} | Date: {exp.Date:yyyy-MM-dd} | " +
                         $"Category: {exp.Category}" +
                         (exp.SavingGoalId.HasValue ? $" | Saving Goal ID: {exp.SavingGoalId.Value}" : ""));
                 }
@@ -177,7 +180,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     }
                     foreach (var exp in all)
                     {
-                        _console.WriteLine($"ID: {exp.Id} | Name: {exp.Name} | Amount: {exp.Amount:C} | Date: {exp.Date:yyyy-MM-dd} | Category: {exp.Category}");
+                        _console.WriteLine($"ID: {exp.Id} | Name: {exp.Name} | Amount: {await exp.Amount.ToDisplayAsync(_currencyService)} | Date: {exp.Date:yyyy-MM-dd} | Category: {exp.Category}");
                     }
 
                     Guid id;
@@ -193,9 +196,11 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     // 1. Prompt for new values.
                     string name = _input.GetTitleInput($"Name ({existing.Name}): ");
                     string category = _input.GetTitleInput($"Category ({existing.Category}): ");
-                    decimal amount = _input.GetValidDecimal($"Amount ({existing.Amount:C}): ");
+                    decimal amount = _input.GetValidDecimal($"Amount ({await existing.Amount.ToDisplayAsync(_currencyService)}): ");
                     DateTime date = _input.GetValidDate($"Date ({existing.Date:yyyy-MM-dd}): ");
 
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
 
                     // 0-Amount Rule
                     if (amount == 0)
@@ -242,7 +247,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                         Id = id,
                         Name = string.IsNullOrWhiteSpace(name) ? existing.Name : name,
                         Category = string.IsNullOrWhiteSpace(category) ? existing.Category : category,
-                        Amount = new Money(amount, _currencyService.CurrentCurrency),
+                        Amount = new Money(amount, nativeCurrency),
                         Date = date,
                         SavingGoalId = savingGoalId
                     };

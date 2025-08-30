@@ -1,7 +1,6 @@
 ﻿using BudgetTracker.Application.DTOs;
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
-using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Mappers;
 using BudgetTracker.Domain.Exceptions;
 using BudgetTracker.Domain.Interfaces;
@@ -69,27 +68,54 @@ namespace BudgetTracker.Application.Services
         {
             try
             {
+                // 1. Load the budget by ID.
                 var budget = await _unitOfWork.BudgetRepository.GetByIdAsync(command.Id);
                 if (budget == null)
                     return false;
 
-                // Update budget properties from the command.
+                // 2. Update budget properties
                 budget.Name = command.Name;
                 budget.Frequency = command.Frequency;
                 budget.StartDate = command.StartDate;
                 budget.EndDate = command.EndDate;
                 budget.AutoRenew = command.AutoRenew;
+
                 budget.InitialCashBalance = new Money(command.InitialCashBalance, _currencyService.CurrentCurrency);
                 budget.InitialBankBalance = new Money(command.InitialBankBalance, _currencyService.CurrentCurrency);
 
+                // 3. Reconcile items
+                // Remove
+                var toRemove = budget.BudgetItems
+                    .Where(e => !command.Items.Any(i => i.Id == e.Id))
+                    .ToList();
+                foreach (var item in toRemove)
+                {
+                    budget.RemoveItem(item.Id);
+                }
+                // Add or update
+                foreach (var itemDto in command.Items)
+                {
+                    var existing = budget.BudgetItems.FirstOrDefault(e => e.Id == itemDto.Id);
+                    if (existing != null)
+                    {
+                        existing.Category = itemDto.Category;
+                        existing.PlannedAmount = new Money(itemDto.PlannedAmount, _currencyService.CurrentCurrency);
+                    }
+                    else
+                    {
+                        budget.AddItem(
+                            Guid.NewGuid(),
+                            itemDto.Category,
+                            new Money(itemDto.PlannedAmount, _currencyService.CurrentCurrency));
+                    }
+                }
+                // 4. Validate & commit
                 var validator = new BudgetValidator();
                 validator.ValidateBudget(budget, isNew: false);
 
-                var result = await _unitOfWork.BudgetRepository.UpdateAsync(budget);
+                var success = await _unitOfWork.BudgetRepository.UpdateAsync(budget);
                 await _unitOfWork.CommitAsync();
-
-                _logger.LogInformation("Budget '{BudgetName}' updated successfully", budget.Name);
-                return result;
+                return success;
             }
             catch (BudgetTrackerException ex)
             {

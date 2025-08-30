@@ -2,13 +2,11 @@
 using BudgetTracker.Application.DTOs.Commands;
 using BudgetTracker.Application.Interfaces;
 using BudgetTracker.Application.Mappers;
-using BudgetTracker.Application.Helpers;
 using BudgetTracker.Domain.Entities;
 using BudgetTracker.Domain.Services;
 using BudgetTracker.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
-using SQLitePCL;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+
 namespace BudgetTracker.Application.Services
 {
     public class ExpenseService : IExpenseService

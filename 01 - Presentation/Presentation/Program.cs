@@ -1,5 +1,7 @@
-﻿using System;
+﻿// File: 01 - Presentation/Presentation/Program.cs
+using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,6 +17,8 @@ using Microsoft.EntityFrameworkCore;
 using BudgetTracker.Presentation.PresentationHelpers;
 using BudgetTracker.Presentation.ReportingHelpers;
 using BudgetTracker.Application.Mappers;
+using Polly;                                  // ← Added for retry policies
+using Polly.Extensions.Http;                  // ← Added for HttpClient Polly extensions
 
 namespace BudgetTracker.Presentation
 {
@@ -25,7 +29,7 @@ namespace BudgetTracker.Presentation
             // 1) Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.Console()           // ← write to console as well
+                //.WriteTo.Console()
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
@@ -45,10 +49,10 @@ namespace BudgetTracker.Presentation
                             opts.UseSqlite(@"Data Source=BudgetTracker.db",
                                 b => b.MigrationsAssembly("04 - Infrastructure")));
 
-                        //Console abstraction as singleton
+                        // Console abstraction as singleton
                         services.AddSingleton<IConsole, SystemConsole>();
 
-                        //UI Helpers (depend on IConsole)
+                        // UI Helpers
                         services.AddScoped<InputProcessor>();
                         services.AddScoped<MainMenu>();
                         services.AddScoped<IncomeMenu>();
@@ -59,16 +63,15 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<SettingsMenu>();
                         services.AddScoped<SelectBudgetContainer>();
 
-                        // Presentation-level helpers
+                        // Presentation‐level helpers
                         services.AddScoped<ExpenseHelpers>();
                         services.AddScoped<PlannedExpenseHelpers>();
                         services.AddScoped<IncomeHelpers>();
                         services.AddScoped<PlannedIncomeHelpers>();
                         services.AddScoped<BudgetHelpers>();
                         services.AddScoped<SavingGoalsHelpers>();
-                        services.AddScoped<SettingsHelpers>();
 
-                        // Presentation-level reporting helpers
+                        // Presentation‐level reporting helpers
                         services.AddScoped<BudgetReportingHelpers>();
                         services.AddScoped<DrillDownReport>();
                         services.AddScoped<ExpenseReportHelpers>();
@@ -76,29 +79,35 @@ namespace BudgetTracker.Presentation
                         services.AddScoped<ReportDashboard>();
                         services.AddScoped<SavingGoalsReportingHelpers>();
 
-                        
                         // Application services and repositories
                         services.AddScoped<IUnitOfWork, UnitOfWork>();
                         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-                        services.AddScoped<ExpenseRepository>();
                         services.AddScoped<IExpenseService, ExpenseService>();
-                        services.AddScoped<BudgetRepository>();
                         services.AddScoped<IBudgetService, BudgetService>();
-                        services.AddScoped<IncomeRepository>();
                         services.AddScoped<IIncomeService, IncomeService>();
-                        services.AddScoped<SavingGoalsRepository>();
                         services.AddScoped<ISavingGoalsService, SavingGoalsService>();
-                        services.AddScoped<CategoryMappingRepository>();
                         services.AddScoped<ICategoryMappingService, CategoryMappingService>();
                         services.AddScoped<IReportingService, ReportingService>();
-                        services.AddScoped<IPlannedIncomeRepository, PlannedIncomeRepository>();
                         services.AddScoped<IPlannedIncomeService, PlannedIncomeService>();
-                        services.AddScoped<IPlannedExpenseRepository, PlannedExpenseRepository>();
                         services.AddScoped<IPlannedExpenseService, PlannedExpenseService>();
 
-                        // Currency conversion
-                        services.AddHttpClient<CurrencyConversionService>();
-                        services.AddSingleton<ICurrencyService, CurrencyService>();
+                        // Currency conversion: configure HttpClient with Polly retry
+                        services
+                            .AddHttpClient<ICurrencyConversionService, CurrencyConversionService>(client =>
+                            {
+                                // Base URL for all conversion requests
+                                client.BaseAddress = new Uri("https://open.er-api.com/v6/");
+                            })
+                            // Retry up to 3 times on transient failures, with exponential back‐off
+                            .AddTransientHttpErrorPolicy(policy =>
+                                policy.WaitAndRetryAsync(
+                                    retryCount: 3,
+                                    sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))
+                                )
+                            );
+
+                        // Application‐level currency service
+                        services.AddScoped<ICurrencyService, CurrencyService>();
 
                         // App Controller
                         services.AddScoped<AppController>();

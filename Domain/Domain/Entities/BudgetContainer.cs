@@ -17,7 +17,7 @@ namespace BudgetTracker.Domain.Entities
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool AutoRenew { get; set; }
-
+        public string Currency { get; set; } // Default native currency
         public Money InitialCashBalance { get; set; }
         public Money CurrentCashBalance
         {
@@ -53,7 +53,6 @@ namespace BudgetTracker.Domain.Entities
                     - transferOut;
             }
         }
-
         public Money InitialBankBalance { get; set; }
         public Money CurrentBankBalance
         {
@@ -88,6 +87,27 @@ namespace BudgetTracker.Domain.Entities
                     + transferIn
                     - transferOut;
             }
+        }
+        public void AddItem(Guid id, string category, Money plannedAmount)
+        {
+            if (BudgetItems.Any(x => x.Id == id))
+                throw new InvalidOperationException($"Item {id} already exists.");
+
+            BudgetItems.Add(new BudgetItem
+            {
+                Id = id,
+                Category = category,
+                PlannedAmount = plannedAmount,
+                ActualAmount = new Money(0m, plannedAmount.Currency),
+                BudgetContainerId = this.Id
+            });
+        }
+
+        public void RemoveItem(Guid id)
+        {
+            var item = BudgetItems.FirstOrDefault(x => x.Id == id);
+            if (item != null)
+                BudgetItems.Remove(item);
         }
         public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
         public ICollection<Income> Incomes { get; set; } = new List<Income>();

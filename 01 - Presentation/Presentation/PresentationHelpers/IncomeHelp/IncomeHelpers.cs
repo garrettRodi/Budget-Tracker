@@ -1,5 +1,6 @@
 ﻿// File: Presentation/IncomeHelpers/IncomeHelpers.cs
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using BudgetTracker.Application.DTOs.Commands;
@@ -13,6 +14,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
     public class IncomeHelpers
     {
         private readonly IIncomeService _incomeService;
+        private readonly IBudgetService _budgetService;
         private readonly SelectBudgetContainer _selector;
         private readonly InputProcessor _input;
         private readonly IConsole _console;
@@ -20,6 +22,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
         public IncomeHelpers(
             IIncomeService incomeService,
+            IBudgetService budgetService,
             SelectBudgetContainer selector,
             InputProcessor input,
             IConsole console,
@@ -27,6 +30,8 @@ namespace BudgetTracker.Presentation.PresentationHelpers
         {
             _incomeService = incomeService
                 ?? throw new ArgumentNullException(nameof(incomeService));
+            _budgetService = budgetService
+                ?? throw new ArgumentNullException(nameof(BudgetService));
             _selector = selector
                 ?? throw new ArgumentNullException(nameof(selector));
             _input = input
@@ -45,8 +50,13 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                 {
                     _console.Clear();
                     _console.WriteLine("=== Create Income ===");
+                    // Get the active budget container ID
                     var budgetId = await _selector.GetActiveBudgetContainerIdAsync();
                     if (budgetId == Guid.Empty) return;
+
+                    // Fetch the budget to get its currency
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
 
                     string source = _input.GetTitleInput("Enter income source (e.g., Salary, Bonus): ");
                     decimal amount = _input.GetValidDecimal("Enter the actual amount received: ");
@@ -56,7 +66,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
                     {
                         BudgetContainerId = budgetId,
                         Source = source,
-                        ActualAmount = new Money(amount, _currencyService.CurrentCurrency),
+                        ActualAmount = new Money(amount, nativeCurrency),
                         ReceivedDate = date
                     };
 
@@ -84,7 +94,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
             {
                 _console.WriteLine(
                     $"ID: {inc.Id} | Source: {inc.Source} | " +
-                    $"Amount: {inc.ActualAmount.ToDisplay(_currencyService)} | " +
+                    $"Amount: {await inc.ActualAmount.ToDisplayAsync(_currencyService)} | " +
                     $"Date: {inc.ReceivedDate:yyyy-MM-dd}");
             }
             if (!list.Any())
@@ -118,7 +128,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                     foreach (var inc in list)
                     {
-                        _console.WriteLine($"ID: {inc.Id} | Source: {inc.Source} | Amount: {inc.ActualAmount:C} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
+                        _console.WriteLine($"ID: {inc.Id} | Source: {inc.Source} | Amount: {await inc.ActualAmount.ToDisplayAsync(_currencyService)} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
                     }
 
                     Guid id;
@@ -131,16 +141,30 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                     var existing = list.First(i => i.Id == id);
 
+                    var budget = await _budgetService.GetBudgetByIdAsync(budgetId);
+                    string nativeCurrency = budget.Currency;
+
                     string source = _input.GetTitleInput($"Source ({existing.Source}): ");
-                    decimal amount = _input.GetValidDecimal($"Amount ({existing.ActualAmount:C}): ");
+                    decimal amount = _input.GetValidDecimal($"Amount ({await existing.ActualAmount.ToDisplayAsync(_currencyService)}): ");
                     DateTime date = _input.GetValidDate($"Date ({existing.ReceivedDate:yyyy-MM-dd}): ");
+
+                    // 0 - Amount Rule
+                    if (amount == 0)
+                    {
+                        bool deleted = await _incomeService.DeleteIncomeAsync(id);
+                        _console.WriteLine(deleted
+                            ? "Income deleted successfully (amount set to zero)."
+                            : "Income deletion failed.");
+                        _console.ReadKey();
+                        return;
+                    }
 
                     var cmd = new UpdateIncomeCommand
                     {
                         BudgetContainerId = budgetId,
                         Id = id,
                         Source = string.IsNullOrWhiteSpace(source) ? existing.Source : source,
-                        ActualAmount = new Money(amount, _currencyService.CurrentCurrency),
+                        ActualAmount = new Money(amount, nativeCurrency),
                         ReceivedDate = date
                     };
 
@@ -186,7 +210,7 @@ namespace BudgetTracker.Presentation.PresentationHelpers
 
                     foreach (var inc in list)
                     {
-                        _console.WriteLine($"ID: {inc.Id} | Source: {inc.Source} | Amount: {inc.ActualAmount:C} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
+                        _console.WriteLine($"ID: {inc.Id} | Source: {inc.Source} | Amount: {await inc.ActualAmount.ToDisplayAsync(_currencyService)} | Date: {inc.ReceivedDate:yyyy-MM-dd}");
                     }
 
                     Guid id;

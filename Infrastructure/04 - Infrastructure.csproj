@@ -1,37 +1,31 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<!-- File: 04 - Infrastructure/04 - Infrastructure.csproj -->
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<!-- Only reference Domain interfaces -->
+	<ItemGroup>
+		<ProjectReference Include="..\Domain\03 - Domain.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+	<!-- NuGet dependencies -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
 
-    <!-- Added Serilog base and integration packages -->
-    <PackageReference Include="Serilog" Version="4.0.0" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="4.2.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
-  </ItemGroup>
+		<!-- Bump bundle to satisfy EF Core’s requirement of ≥2.1.6 -->
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.10" />
 
-  <ItemGroup>
-    <ProjectReference Include="..\Domain\03 - Domain.csproj" />
-  		<PackageReference Include="Serilog" Version="4.2.0" />
-		<PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1" />
-</ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Infrastructure\Data Seeding &amp; Migrations\" />
-    <Folder Include="Migrations\" />
-  </ItemGroup>
-
+		<!-- Logging -->
+		<PackageReference Include="Serilog" Version="4.2.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="4.2.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+	</ItemGroup>
 </Project>

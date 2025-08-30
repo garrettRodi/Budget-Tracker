@@ -88,6 +88,11 @@ namespace BudgetTracker.Infrastructure.DataAccess
                 .HasForeignKey(t => t.BudgetContainerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<BudgetContainer>()
+                .Property(b => b.Currency)
+                .HasMaxLength(3)
+                .IsRequired()
+                .HasDefaultValue("USD");
 
             //
             // ──────── OWNED TYPE MAPPINGS FOR Money ───────────────────
